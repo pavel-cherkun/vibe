@@ -11,29 +11,31 @@
   Vibe.esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
 
   /* ---------- Состояние (сохраняется в localStorage) ---------- */
-  const KEY = "vibe-state-v1";
+  const KEY = "vibe-state-v2";
   const DEFAULT = {
-    name: "Саша",
-    balance: 128450,
-    vibiki: 1240,
-    xp: 40,
-    level: 7,
-    streak: 12,
+    profile: null,
+    name: "",
+    balance: 15000,
+    vibiki: 100,
+    xp: 0,
+    level: 1,
+    streak: 0,
     sound: true,
     plus: false,
     carts: {},
     liked: {},
     orders: [],
-    tx: [
-      { t: "Vibe Eat · Рамен-бар «Мисо»", c: "🍜", a: -1290, d: "Сегодня, 13:40", col: "c-orange" },
-      { t: "Зарплата · ООО «Синергия Плюс»", c: "💼", a: 96000, d: "Вчера", col: "c-lime" },
-      { t: "Vibe Maps · Такси «Вайб»", c: "🚕", a: -640, d: "Вчера", col: "c-yellow" },
-      { t: "Подписка «Плюс Вайб»", c: "💎", a: -299, d: "14 окт", col: "c-lilac" },
-      { t: "Vibe Market · Кроссовки (рассрочка 1/12)", c: "👟", a: -1490, d: "13 окт", col: "c-pink" },
-    ],
-    achievements: ["first"],
+    tx: [{ t: "Перевод от мамы · «Не трать всё сразу»", c: "👩", a: 15000, d: "1 ноября", col: "c-lime" }],
+    achievements: [],
     spunDay: "",
     seenStories: {},
+    home: null,
+    job: null,
+    loans: [],
+    stats: {},
+    goalsDone: [],
+    quests: null,
+    game: null,
   };
   let S;
   try { S = Object.assign({}, DEFAULT, JSON.parse(localStorage.getItem(KEY) || "{}")); } catch (e) { S = Object.assign({}, DEFAULT); }
@@ -52,7 +54,8 @@
   /* ---------- Уровни и награды ---------- */
   Vibe.need = (level) => 100 + level * 40;
   const ACH = {
-    first: { e: "🐣", t: "Новичок", d: "Открыл Vibe" },
+    first: { e: "🐣", t: "Новичок", d: "Зарегистрировался в Vibe" },
+    employed: { e: "💼", t: "Трудоустроен", d: "Нашёл работу" },
     buyer: { e: "🛍️", t: "Шопоголик", d: "Первая покупка" },
     credit: { e: "🤑", t: "Предодобренный", d: "Взял кредит" },
     spinner: { e: "🎡", t: "Крутила", d: "Покрутил колесо" },
@@ -114,6 +117,14 @@
     Vibe.state.set({ balance: S.balance - amount, tx: [tx, ...S.tx].slice(0, 40), spent });
     Vibe.achieve("buyer");
     if (spent >= 50000) Vibe.achieve("rich");
+    if (Vibe.game) {
+      const t = String(title || "");
+      Vibe.game.track("pay");
+      if (/Eat/.test(t)) Vibe.game.track("eat");
+      if (/такси|Maps/i.test(t)) Vibe.game.track("taxi");
+      if (/Supermarket/.test(t)) Vibe.game.track("supermarket");
+      else if (/Market/.test(t)) Vibe.game.track("market");
+    }
     const vib = Math.max(5, Math.round(amount * cashback * (S.plus ? 2 : 1)));
     Vibe.reward({ vibiki: vib, xp: Math.min(60, 10 + Math.round(amount / 200)), from });
     return true;
@@ -141,6 +152,7 @@
   /* ---------- Роутер (hash) ---------- */
   let stack = [];
   let current = null;
+  const scrollPos = {};
   function parse(hash) {
     const h = (hash || "").replace(/^#\/?/, "");
     const [path, qs] = h.split("?");
@@ -166,6 +178,7 @@
     const def = screens[route.name] || screens.notfound;
     const stackEl = document.getElementById("stack");
     const prev = current;
+    if (prev) scrollPos[prev.route.key] = prev.el.scrollTop;
     const isTab = TABS.includes(route.name);
 
     const el = document.createElement("section");
@@ -178,6 +191,10 @@
     el.querySelectorAll(".stagger").forEach((g) => [...g.children].forEach((c, i) => c.style.setProperty("--i", i)));
 
     const cleanup = def.mount ? def.mount(el, route.params || {}) : null;
+    const tabSwitchRestore = prev && TABS.includes(prev.route.name) && isTab;
+    if ((mode === "back" || tabSwitchRestore) && scrollPos[route.key]) el.scrollTop = scrollPos[route.key];
+    if (mode === "forward" && !isTab) delete scrollPos[route.key];
+    if (Vibe.game && route.name) Vibe.game.track("visit:" + route.name);
     const tabSwitch = prev && TABS.includes(prev.route.name) && isTab;
     if (!prev || mode === "replace") el.classList.add("fade-in");
     else if (tabSwitch) el.classList.add("fade-in");
@@ -213,8 +230,23 @@
     render(route, mode);
   });
 
+  // Сбросить навигацию и открыть экран как корневой (например, после регистрации)
+  Vibe.resetTo = function (name) {
+    history.replaceState(null, "", "#/" + name);
+    stack = [name];
+    render(parse("#/" + name), "replace");
+  };
+
   Vibe.start = function () {
+    if (!S.profile) {
+      history.replaceState(null, "", "#/welcome");
+      stack = ["welcome"];
+      render(parse("#/welcome"), "first");
+      return;
+    }
+    if (Vibe.game) Vibe.game.boot();
     const route = parse(location.hash);
+    if (route.name === "welcome") { history.replaceState(null, "", "#/home"); return Vibe.start(); }
     stack = route.name === "home" ? ["home"] : ["home", route.key];
     if (route.name !== "home" && !location.hash) history.replaceState(null, "", "#/home");
     render(route, "first");

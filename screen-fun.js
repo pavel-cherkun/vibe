@@ -97,20 +97,19 @@
   .fz-popin { animation: fz-pop .5s var(--spring) both; }
 
   /* MAPS */
-  .fz-map { position: relative; height: 50vh; min-height: 300px; max-height: 460px; border: var(--line); border-radius: 30px; overflow: hidden; box-shadow: var(--shadow); background: #f6efdb; }
-  .fz-map svg { width: 100%; height: 100%; display: block; }
-  .fz-map .fz-amb, .fz-map #fzCar { transition: none; }
-  .fz-pinb { transform-box: fill-box; transform-origin: 50% 100%; animation: fz-pinb 1.3s var(--spring) infinite; }
-  @keyframes fz-pinb { 0%, 100% { transform: translateY(0) scale(1); } 30% { transform: translateY(-12px) scale(1.05, .95); } 55% { transform: translateY(0) scale(1.12, .86); } 70% { transform: translateY(-3px); } }
-  .fz-me-ring { transform-box: fill-box; transform-origin: center; animation: fz-ring 2s ease-out infinite; }
-  @keyframes fz-ring { from { transform: scale(.6); opacity: .7; } to { transform: scale(2.6); opacity: 0; } }
+  .fz-map { position: relative; height: 58vh; min-height: 320px; max-height: 560px; }
+  .fz-map .fz-vm { position: absolute; inset: 0; }
+  .fz-map-tag { position: absolute; z-index: 3; pointer-events: none; }
   .fz-radar circle { transform-box: fill-box; transform-origin: center; animation: fz-radar 1.8s ease-out infinite; opacity: 0; }
   .fz-radar circle:nth-child(2) { animation-delay: .6s; } .fz-radar circle:nth-child(3) { animation-delay: 1.2s; }
   @keyframes fz-radar { from { transform: scale(.2); opacity: .85; } to { transform: scale(4.5); opacity: 0; } }
-  .fz-route { fill: none; stroke: var(--violet); stroke-width: 7; stroke-linecap: round; stroke-linejoin: round; transition: stroke-dashoffset 1.1s cubic-bezier(.6,0,.2,1); }
-  .fz-route-glow { fill: none; stroke: #fff; stroke-width: 13; stroke-linecap: round; stroke-linejoin: round; opacity: .9; transition: stroke-dashoffset 1.1s cubic-bezier(.6,0,.2,1); }
-  .fz-map-tag { position: absolute; z-index: 2; }
-  .fz-panel { position: relative; z-index: 4; margin-top: -40px; border-radius: 30px; padding: 18px 16px 16px; }
+  .fz-panel { position: relative; z-index: 4; margin-top: -34px; border-radius: 30px; padding: 18px 16px 16px; }
+  .fz-ell { display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .fz-x { margin-left: auto; height: 32px; padding: 0 10px; border: 2px solid var(--ink); border-radius: 12px; background: var(--yellow); font-weight: 800; font-size: 12px; flex: 0 0 auto; box-shadow: 0 2px 0 var(--ink); }
+  .fz-trip { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 4px; }
+  .fz-trip .badge { background: var(--paper); }
+  .fz-tar .tm { font-size: 11px; font-weight: 800; display: block; margin-top: 4px; }
+  .fz-workcard { display: flex; gap: 10px; align-items: center; margin-top: 14px; text-align: left; }
   .fz-dest { display: flex; align-items: center; gap: 10px; background: var(--bg); border: 2px solid var(--ink); border-radius: 18px; padding: 10px 12px; font-weight: 800; font-size: 14px; }
   .fz-dest .dot { width: 14px; height: 14px; border-radius: 50%; background: var(--blue); border: 2.5px solid var(--ink); flex: 0 0 auto; }
   .fz-chip-dest.on { background: var(--violet); color: #fff; }
@@ -289,217 +288,180 @@
   }
 
   /* ============================================================
-     1. VIBE MAPS — такси с живым сёрджем
+     1. VIBE MAPS — живая карта города, такси с живым сёрджем
      ============================================================ */
-  const ME = { x: 180, y: 250 };
-  const DESTS = {
-    home: { t: "Домой", e: "🏠", x: 300, y: 60, d: "M180 250 H300 V60", m: 1, addr: "ул. Ипотечная, 25, кв. 25 (ещё 25 лет)" },
-    work: { t: "Работа", e: "💼", x: 40, y: 160, d: "M180 250 V160 H40", m: 1.35, addr: "БЦ «Синергия», опенспейс, место у принтера" },
-    good: { t: "Туда, где хорошо", e: "🌴", x: 300, y: 382, d: "M180 250 H300 V382", m: 2.4, addr: "Где нас нет. Уточняется" },
+  const PLACES = {
+    home: { e: "🏠", t: "Домой", s: "Дом", note: "Диван, вайфай и ипотека" },
+    work: { e: "💼", t: "На работу", s: "Работа", note: "Опенспейс, место у принтера" },
+    park: { e: "🌳", t: "Парк", s: "Парк", note: "Без вайфая. Страшно, но полезно" },
+    supermarket: { e: "🛒", t: "Супермаркет", s: "Супермаркет", note: "Зайду за хлебом. Выйду с тележкой" },
+    club: { e: "🎤", t: "Клуб", s: "Клуб", note: "Фейсконтроль по кредитному рейтингу" },
+    clinic: { e: "🏥", t: "Клиника", s: "Клиника", note: "Запись через 3 недели, приём через 4" },
+    hq: { e: "🏢", t: "Vibe HQ", s: "Vibe HQ", note: "Башня Корпорации. Тут всё решают за тебя" },
+    metro1: { e: "Ⓜ️", t: "Метро", s: "м. Кредитная", note: "Сигнала нет, зато честно" },
+    metro2: { e: "Ⓜ️", t: "Метро", s: "м. Сити", note: "Вход по лицу, выход по ситуации" },
+    wheel: { e: "🎡", t: "Колесо", s: "Колесо вайба", note: "Крутится. Как и твои мысли" },
   };
-  const APPROACH = "M40 60 H120 V160 H180 V250";
-  const TARIFFS = [
-    { e: "🚗", n: "Эконом", eta: "3 мин", note: "Кондиционер — опция", base: 390 },
-    { e: "🚙", n: "Комфорт", eta: "5 мин", note: "Молчание за 49 ₽", base: 590 },
-    { e: "🪩", n: "Вайб", eta: "7 мин", note: "Неон, бас и пенка", base: 890, neon: true },
-    { e: "🚘", n: "Бизнес", eta: "9 мин", note: "Вода и лёгкий снобизм", base: 1490 },
-    { e: "🚶", n: "Сам дойду", eta: "47 мин", note: "Кардио бесплатно", base: 0 },
+  const PIN_COL = { home: "#ffe14d", work: "#8fd8ff", park: "#c6ff4d", supermarket: "#7cf5c8", club: "#ff8a8a", clinic: "#ffffff", hq: "#e6dcff", metro1: "#ffffff", metro2: "#ffffff", wheel: "#ffb547" };
+  const DEST_CHIPS = ["home", "work", "park", "supermarket", "club", "clinic", "hq"];
+  const PIN_KEYS = [...DEST_CHIPS, "metro1", "metro2", "wheel"];
+  const MODES = [
+    { id: "walk", e: "🚶", n: "Пешком", note: "Кардио бесплатно", veh: "🚶", col: "#c6ff4d", route: "#12a150" },
+    { id: "metro", e: "🚇", n: "Метро", note: "Час пик 24/7", veh: "🚇", col: "#8fd8ff", route: "#3d7bff" },
+    { id: "eco", e: "🚕", n: "Эконом", note: "Кондиционер — опция", veh: "🚕", col: "#ffe14d", m: 1, sub: 3, taxi: true },
+    { id: "comfort", e: "✨", n: "Комфорт", note: "Молчание за 49 ₽", veh: "🚙", col: "#ffffff", m: 1.4, sub: 5, taxi: true },
+    { id: "vibe", e: "💜", n: "Вайб", note: "Неон, бас и пенка", veh: "🚗", col: "#ff6bcb", m: 1.9, sub: 6, taxi: true, neon: true },
+    { id: "biz", e: "🖤", n: "Бизнес", note: "Вода и лёгкий снобизм", veh: "🚘", col: "#d9c8ff", m: 3, sub: 8, taxi: true },
   ];
+  const METRO_PRICE = 61;
   const DRIVERS = [
     { n: "Рустам", ava: "🧔🏻", car: "Лада Вайбина · жёлтая", plate: "В 777 ИБ", reg: "77", r: "4,98", perks: ["Знает короткий путь (длинный)", "Шансон по запросу"] },
     { n: "Валерий", ava: "👨🏼‍🦳", car: "Кия Чилл · белая", plate: "А 404 НЕ", reg: "99", r: "4,97", perks: ["Молчит, если попросить", "Зарядка Type-C"] },
     { n: "Алина", ava: "👩🏻‍🦰", car: "Тесля, но не та · синяя", plate: "М 001 ВБ", reg: "777", r: "5,00", perks: ["Ароматизатор «Вайб»", "Подкаст про крипту"] },
     { n: "Гоша", ava: "🧑🏽", car: "Солярис Про Макс · серый", plate: "О 123 КК", reg: "197", r: "4,91", perks: ["Едет как в последний раз", "Водичка — 89 ₽"] },
   ];
+  const CARS = { vibe: "Солярис с диско-шаром · неон", biz: "Майбах (в рассрочку) · чёрный" };
   const SEARCH_LINES = ["Уговариваем водителя…", "Водитель доедает шаурму…", "Сравниваем ваш рейтинг с его…", "Повышаем спрос вручную…", "Ищем ближайшего (в 7 км)…", "Почти нашли. Честно."];
   const RIDE_LINES = ["Водитель включил шансон 🎶", "Объезжаем пробку через другую пробку 🚦", "Ароматизатор «Новая машина 2009» 🌲", "Водитель рассказывает про крипту 📈", "Едем по навигатору. Почти 🧭", "Окно не закрывается. Это фича 🌬️"];
+  const WALK_LINES = ["Шаги засчитаны. Страховка довольна 👟", "Обогнал самокат. Самокат стоял 🛴", "Голубь уступил дорогу. Уважение 🐦", "Пульс 112. Это кардио или цены? 💓", "Ускорили прогулку в 300 раз для демонстрации ⏩"];
+  const METRO_LINES = ["Осторожно, двери закрываются. Как и вакансии 🚪", "Сигнала нет. Наконец-то тишина 📵", "Кто-то читает книгу. Бумажную! 📖", "Пересадка на станции «Кредитная» 💳", "Поезд следует до конечной. Как и зарплата 🚇"];
 
-  function mapSvg() {
-    const xs = [[-30, 28], [52, 108], [132, 168], [192, 288], [312, 390]];
-    const ys = [[-30, 48], [72, 148], [172, 238], [262, 290], [352, 430]];
-    const cols = ["#ff6bcb", "#ffe14d", "#d9c8ff", "#7cf5c8", "#8fd8ff", "#ff8a8a", "#ffffff", "#ffb547"];
-    let blocks = "", n = 0;
-    xs.forEach(([x1, x2], i) => ys.forEach(([y1, y2], j) => {
-      if (i === 3 && j === 2) return; // парк
-      const c = cols[(i * 3 + j * 5 + n++) % cols.length];
-      blocks += `<rect x="${x1}" y="${y1}" width="${x2 - x1}" height="${y2 - y1}" rx="11" fill="${c}" stroke="#0e0e12" stroke-width="2.2"/>`;
-      if ((i + j) % 2 === 0 && x2 - x1 > 40 && y2 - y1 > 40) blocks += `<rect x="${x1 + 9}" y="${y1 + 9}" width="${(x2 - x1) / 3}" height="${(y2 - y1) / 3}" rx="5" fill="#fff" opacity=".55"/>`;
-    }));
-    const roads = "M-20 60 H380 M-20 160 H380 M-20 250 H380 M40 -20 V420 M120 -20 V420 M180 -20 V420 M300 -20 V420";
-    return `
-    <svg viewBox="0 0 360 400" preserveAspectRatio="xMidYMid slice" aria-label="Карта">
-      <rect x="-40" y="-40" width="440" height="480" fill="#f6efdb"/>
-      ${blocks}
-      <rect x="192" y="172" width="96" height="66" rx="18" fill="#c6ff4d" stroke="#0e0e12" stroke-width="2.5"/>
-      <text x="212" y="200" font-size="18">🌳</text><text x="246" y="194" font-size="15">🌳</text><text x="258" y="226" font-size="18">🌲</text><text x="222" y="230" font-size="13">🌼</text>
-      <path d="M-20 296 C 50 276, 90 344, 160 330 S 280 292, 380 334" fill="none" stroke="#0e0e12" stroke-width="34" stroke-linecap="round"/>
-      <path d="M-20 296 C 50 276, 90 344, 160 330 S 280 292, 380 334" fill="none" stroke="#8fd8ff" stroke-width="28" stroke-linecap="round"/>
-      <path d="M10 292 C 50 282, 80 330, 150 322" fill="none" stroke="#fff" stroke-width="2.5" stroke-dasharray="10 14" opacity=".8"/>
-      <text x="70" y="318" font-size="14">🦆</text><text x="232" y="312" font-size="13">⛵</text>
-      <path d="${roads}" fill="none" stroke="#0e0e12" stroke-width="17"/>
-      <path d="${roads}" fill="none" stroke="#ffffff" stroke-width="12"/>
-      <path d="${roads}" fill="none" stroke="#ffe14d" stroke-width="1.6" stroke-dasharray="7 8"/>
-      <g font-family="Manrope, sans-serif" font-weight="800" font-size="8.5" fill="#0e0e12">
-        <text x="196" y="186">Парк Кэшбека</text>
-        <text x="58" y="104">ТЦ «Вайб Молл»</text>
-        <text x="200" y="285" transform="rotate(-6 200 285)">р. Вайбовка</text>
-        <text x="314" y="120">Банк</text>
-      </g>
-      <text x="80" y="128" font-size="20">🛍️</text><text x="318" y="140" font-size="18">🏦</text><text x="140" y="208" font-size="18">☕</text><text x="60" y="210" font-size="18">🏢</text>
-      <path id="fzAmb1" d="M40 60 H300 V250 H40 Z" fill="none"/>
-      <path id="fzAmb2" d="M120 420 V-20" fill="none"/>
-      <path id="fzAmb3" d="M380 160 H-20" fill="none"/>
-      <g class="fz-amb" data-p="fzAmb1"><text font-size="20" text-anchor="middle" dominant-baseline="central">🚙</text></g>
-      <g class="fz-amb" data-p="fzAmb2"><text font-size="18" text-anchor="middle" dominant-baseline="central">🛵</text></g>
-      <g class="fz-amb" data-p="fzAmb3"><text font-size="20" text-anchor="middle" dominant-baseline="central">🚌</text></g>
-      <path id="fzMeasure" d="${APPROACH}" fill="none" stroke="none"/>
-      <path id="fzRouteG" class="fz-route-glow" d="" style="opacity:0"/>
-      <path id="fzRoute" class="fz-route" d="" style="opacity:0"/>
-      <g class="fz-radar" id="fzRadar" transform="translate(${ME.x} ${ME.y})" style="display:none">
-        <circle r="18" fill="rgba(139,92,255,.3)" stroke="#8b5cff" stroke-width="2"/><circle r="18" fill="rgba(139,92,255,.3)" stroke="#8b5cff" stroke-width="2"/><circle r="18" fill="rgba(139,92,255,.3)" stroke="#8b5cff" stroke-width="2"/>
-      </g>
-      <g id="fzMe" transform="translate(${ME.x} ${ME.y})">
-        <circle class="fz-me-ring" r="12" fill="#3d7bff"/>
-        <circle r="15" fill="#fff" stroke="#0e0e12" stroke-width="2.5"/>
-        <circle r="9" fill="#3d7bff"/>
-        <g transform="translate(0 -26)"><rect x="-13" y="-10" width="26" height="17" rx="8" fill="#0e0e12"/><text y="2" font-size="9" fill="#fff" text-anchor="middle" font-family="Manrope" font-weight="800">Ты</text></g>
-      </g>
-      <g id="fzDest" transform="translate(300 60)">
-        <g class="fz-pinb">
-          <ellipse cx="0" cy="1" rx="9" ry="3" fill="rgba(0,0,0,.25)"/>
-          <path d="M0 0 C -12 -16 -17 -21 -17 -31 A17 17 0 1 1 17 -31 C17 -21 12 -16 0 0Z" fill="#ff6bcb" stroke="#0e0e12" stroke-width="2.5"/>
-          <circle cy="-31" r="11" fill="#fff" stroke="#0e0e12" stroke-width="2"/>
-          <text id="fzDestE" y="-30" font-size="13" text-anchor="middle" dominant-baseline="central">🏠</text>
-        </g>
-      </g>
-      <g id="fzCar" opacity="0"><text font-size="30" text-anchor="middle" dominant-baseline="central">🚕</text></g>
-    </svg>`;
+  const kmTxt = (k) => String(k).replace(".", ",") + " км";
+  const hhmm = (min) => { const m = ((Math.round(min) % 1440) + 1440) % 1440; return `${String(Math.floor(m / 60)).padStart(2, "0")}:${String(m % 60).padStart(2, "0")}`; };
+  const gameInfo = () => (Vibe.game && Vibe.game.info ? Vibe.game.info() : null);
+  const isRush = (i) => !!i && ((i.hour >= 8 && i.hour < 10) || (i.hour >= 18 && i.hour < 20));
+  function placeName(k) {
+    const s = S();
+    if (k === "home") return s.home && s.home.title ? `Дом · ${s.home.title}` : "Дом · ул. Ипотечная, 25";
+    if (k === "work") return s.job ? `Работа · ${s.job.company}` : "Работа";
+    const p = Vibe.map.place(k);
+    return p ? p.label : PLACES[k].s;
+  }
+  // Откуда стартуем: последняя точка поездки или дом
+  function loadFrom() {
+    const k = S().fz_lastPos;
+    return k && PLACES[k] && Vibe.map.place(k) ? k : "home";
+  }
+  // Случайная точка на соседней улице — оттуда выезжает таксист
+  function nearbyStart(p) {
+    const col = clamp(Math.floor((p.x - 60) / 172), 0, 4), row = clamp(Math.floor((p.y - 60) / 172), 0, 4);
+    for (let i = 0; i < 10; i++) {
+      const d = Vibe.map.door(clamp(col + ri(-1, 1), 0, 4), clamp(row + pick([-1, 1]), 0, 4), ri(0, 5));
+      if (Math.hypot(d.x - p.x, d.y - p.y) > 130) return d;
+    }
+    return Vibe.map.door(col > 0 ? col - 1 : col + 1, row, 1);
   }
 
   Vibe.screen("maps", {
     render() {
+      const i = gameInfo();
+      const rush = isRush(i);
       return `
-        ${Vibe.ui.head("Vibe Maps", "такси за 3 мин (обычно за 47)", Vibe.ui.vibikiPill())}
-        <div class="fz-map" data-map>
-          ${mapSvg()}
-          <div class="fz-map-tag badge" style="top:12px;left:12px;background:#fff;font-size:12px;padding:6px 10px">☀️ +18° · вайбово</div>
-          <button class="fz-map-tag icon-btn" data-act="locate" style="top:10px;right:10px;width:42px;height:42px;font-size:18px" aria-label="Где я">🧭</button>
-          <div class="fz-map-tag sticker" style="left:12px;bottom:52px;background:#ff3b3b;color:#fff;font-size:12px">Пробки: 9 баллов 🔥</div>
+        ${Vibe.ui.head("Vibe Maps", i ? `🕒 ${i.time} · ${rush ? "час пик, держись" : "такси за 3 мин (обычно за 7)"}` : "такси за 3 мин (обычно за 7)", Vibe.ui.vibikiPill())}
+        <div class="fz-map">
+          <div class="fz-vm" data-vmhost></div>
+          <div class="fz-map-tag badge" style="top:12px;left:12px;background:#fff;font-size:12px;padding:6px 10px">${i && i.night ? "🌙 +9°" : "☀️ +18°"} · вайбово</div>
+          <div class="fz-map-tag sticker" style="left:12px;bottom:46px;top:auto;background:#ff3b3b;color:#fff;font-size:12px">Пробки: ${rush ? 9 : ri(4, 7)} баллов 🔥</div>
         </div>
         <div class="card fz-panel" data-panel></div>
-        <div class="fine" style="text-align:center">Стоимость поездки может измениться в любую сторону, но обычно вверх. Повышенный спрос создаётся вашим интересом.</div>`;
+        <div class="fine" style="text-align:center">Стоимость поездки может измениться в любую сторону, но обычно вверх. Повышенный спрос создаётся вашим интересом. Шаги считаются, только если телефон в руке.</div>`;
     },
     mount(root) {
       const sc = scope();
-      const svg = root.querySelector("svg");
-      const $ = (id) => svg.querySelector("#" + id);
+      const MP = Vibe.map;
       const panel = root.querySelector("[data-panel]");
-      const measure = $("fzMeasure"), route = $("fzRoute"), routeG = $("fzRouteG"), car = $("fzCar"), carTxt = car.querySelector("text");
-      const st = { phase: "pick", dest: "home", tar: 1, surge: TARIFFS.map(() => 1), driver: null, price: 0, rated: 0, tipped: false, run: 0, sgen: 0 };
+      const pt = (k) => MP.place(k);
+      const rush = isRush(gameInfo());
+      const baseSurge = () => MODES.map((m) => (m.taxi && rush ? 1.2 : 1));
+      const st = { phase: "pick", from: loadFrom(), to: null, trip: null, mode: 2, surge: baseSurge(), driver: null, price: 0, rated: 0, tipped: false, run: 0, sgen: 0, drv: null, arr: null, kind: null };
 
-      const price = (i) => {
-        const t = TARIFFS[i]; if (!t.base) return 0;
-        return Math.round((t.base * DESTS[st.dest].m * st.surge[i]) / 10) * 10 - 1;
+      const ctrl = MP.create(root.querySelector("[data-vmhost]"), {
+        pins: [],
+        fit: [pt(st.from), pt("home"), pt("work")].filter(Boolean),
+        onPin: (id) => onPin(id),
+      });
+
+      /* ----- Расчёты ----- */
+      function trip() {
+        const pts = MP.path(pt(st.from), pt(st.to));
+        return { pts, km: Math.max(0.3, MP.km(pts)), walk: MP.minutes(pts, "walk"), metro: MP.minutes(pts, "metro"), taxi: MP.minutes(pts, "taxi") };
+      }
+      const modeMin = (i, T = st.trip) => { const m = MODES[i]; return m.id === "walk" ? T.walk : m.id === "metro" ? T.metro : T.taxi + m.sub; };
+      const price = (i, T = st.trip) => {
+        const m = MODES[i];
+        if (m.id === "walk") return 0;
+        if (m.id === "metro") return METRO_PRICE;
+        return Math.ceil(((99 + 18 * T.km) * m.m * st.surge[i]) / 10) * 10 - 1;
       };
-      const toScreen = (x, y) => {
-        const m = svg.getScreenCTM(); if (!m) return { x: innerWidth / 2, y: 200 };
-        const p = svg.createSVGPoint(); p.x = x; p.y = y; const q = p.matrixTransform(m);
-        return { x: q.x, y: q.y };
-      };
+      const steps = (T = st.trip) => Math.round(T.km * 1350);
+      const walkVib = (T = st.trip) => clamp(Math.round(T.km * 8), 5, 50);
+      const surging = () => st.surge.some((s) => s > 1.001);
 
-      // Маршрут: рисуется «сам» через dashoffset
-      function showRoute(d, color = "var(--violet)") {
-        [routeG, route].forEach((p) => {
-          p.setAttribute("d", d);
-          const len = p.getTotalLength();
-          p.style.transition = "none";
-          p.style.strokeDasharray = `${len} ${len}`;
-          p.style.strokeDashoffset = len;
-          p.style.opacity = 1;
-          void p.getBoundingClientRect();
-          p.style.transition = "";
-          p.style.strokeDashoffset = 0;
-        });
-        route.style.stroke = color;
-      }
-      const hideRoute = () => { route.style.opacity = 0; routeG.style.opacity = 0; };
-
-      function setDest(key) {
-        st.dest = key;
-        const D = DESTS[key];
-        const g = $("fzDest");
-        g.setAttribute("transform", `translate(${D.x} ${D.y})`);
-        $("fzDestE").textContent = D.e;
-        const pin = g.querySelector(".fz-pinb");
-        pin.style.animation = "none"; void pin.getBoundingClientRect(); pin.style.animation = "";
-        showRoute(D.d);
-        const p = toScreen(D.x, D.y - 30);
-        FX.burst(p, { emojis: [D.e, "✨", "📍"], count: 8, spread: 70 });
+      /* ----- Пины ----- */
+      function pins() {
+        return PIN_KEYS.map((k) => {
+          const p = pt(k); if (!p) return null;
+          const isFrom = k === st.from, isTo = k === st.to;
+          return {
+            id: k, x: p.x, y: p.y, e: p.e || PLACES[k].e,
+            label: isFrom ? "Ты здесь" : isTo ? PLACES[k].s : k === "home" || k === "work" ? PLACES[k].s : "",
+            color: isTo ? "#ff6bcb" : isFrom ? "#c6ff4d" : PIN_COL[k],
+            pulse: isFrom || isTo || k === "home" || k === "work",
+            big: isFrom || isTo,
+            o: isFrom || isTo ? 1 : 0,
+          };
+        }).filter(Boolean).sort((a, b) => a.o - b.o);
       }
 
-      // Проезд по маршруту
-      function drive(d, dur, emoji, onStep, onDone) {
-        measure.setAttribute("d", d);
-        const len = measure.getTotalLength();
-        carTxt.textContent = emoji;
-        car.setAttribute("opacity", 1);
-        route.style.transition = "none"; routeG.style.transition = "none";
-        let lastX = null, sx = 1;
-        const t0 = performance.now(), run = st.run;
-        (function step(t) {
-          if (run !== st.run) return;
-          const k = Math.min(1, (t - t0) / dur);
-          const e = easeInOut(k);
-          const p = measure.getPointAtLength(e * len);
-          if (lastX !== null && Math.abs(p.x - lastX) > 0.05) sx = p.x > lastX ? -1 : 1;
-          lastX = p.x;
-          car.setAttribute("transform", `translate(${p.x} ${p.y - 6}) scale(${sx} 1)`);
-          route.style.strokeDashoffset = -e * len; routeG.style.strokeDashoffset = -e * len;
-          onStep && onStep(k);
-          if (k < 1) sc.raf(step); else { route.style.transition = ""; routeG.style.transition = ""; onDone && onDone(); }
-        })(t0);
+      // Радар поиска — прямо в SVG карты, вокруг точки посадки
+      function radar(on) {
+        const old = ctrl.svg.querySelector(".fz-radar");
+        if (old) old.remove();
+        if (!on) return;
+        const p = pt(st.from);
+        const g = document.createElementNS("http://www.w3.org/2000/svg", "g");
+        g.setAttribute("class", "fz-radar");
+        g.setAttribute("transform", `translate(${p.x} ${p.y - 20})`);
+        g.innerHTML = [0, 1, 2].map(() => `<circle r="22" fill="rgba(139,92,255,.28)" stroke="#8b5cff" stroke-width="3"/>`).join("");
+        ctrl.svg.insertBefore(g, ctrl.svg.querySelector(".vm-pins"));
       }
-
-      // Фоновые машинки
-      const ambs = [...svg.querySelectorAll(".fz-amb")].map((g, i) => ({ g, p: $(g.dataset.p), off: i * 0.33, speed: [0.045, 0.07, 0.05][i], lastX: null, sx: 1 }));
-      ambs.forEach((a) => (a.len = a.p.getTotalLength()));
-      (function amb(t) {
-        ambs.forEach((a) => {
-          const k = ((t / 1000) * a.speed + a.off) % 1;
-          const p = a.p.getPointAtLength(k * a.len);
-          if (a.lastX !== null && Math.abs(p.x - a.lastX) > 0.05) a.sx = p.x > a.lastX ? -1 : 1;
-          a.lastX = p.x;
-          a.g.setAttribute("transform", `translate(${p.x} ${p.y - 4}) scale(${a.sx} 1)`);
-        });
-        sc.raf(amb);
-      })(performance.now());
+      function stopDrive() { if (st.drv) { st.drv.stop(); st.drv = null; } }
 
       /* ----- Панель по фазам ----- */
+      const tarHtml = (m, i) => `
+        <button class="fz-tar ${m.neon ? "neon" : ""} ${i === st.mode ? "on" : ""} ${st.surge[i] > 1.001 ? "surging" : ""}" data-tar="${i}">
+          ${m.taxi ? `<span class="badge surge" data-sg="${i}">⚡ ×${st.surge[i].toFixed(1).replace(".", ",")}</span>` : ""}
+          <span class="e emo ${i === st.mode ? "wobble" : ""}">${m.e}</span>
+          <b>${m.n}</b><small>${m.note}</small>
+          <span class="tm">🕒 ${m.taxi ? `подача ${m.sub} мин · ${st.trip.taxi} в пути` : `${modeMin(i)} мин`}</span>
+          <span class="pr" data-pr="${i}">${Vibe.rub(price(i))}</span>
+          ${m.id === "walk" ? `<small>+${walkVib()} 🪙 за ${Vibe.fmt(steps())} шагов</small>` : ""}
+        </button>`;
+      const orderLabel = () => {
+        const m = MODES[st.mode];
+        if (m.id === "walk") return "Пойти пешком 🚶";
+        if (m.id === "metro") return `Спуститься в метро · ${Vibe.rub(METRO_PRICE)}`;
+        return `Заказать ${m.n} · <span data-oprice>${Vibe.rub(price(st.mode))}</span>`;
+      };
+      const arriveTxt = () => { const i = gameInfo(); return i ? `🕒 будешь в ${hhmm(i.hour * 60 + i.minute + modeMin(st.mode))}` : `🕒 ${modeMin(st.mode)} мин`; };
+
       function render() {
-        const D = DESTS[st.dest];
-        const T = TARIFFS[st.tar];
-        $("fzRadar").style.display = st.phase === "search" ? "" : "none";
-        $("fzMe").style.display = st.phase === "ride" || st.phase === "walk" ? "none" : "";
+        const M = MODES[st.mode];
         if (st.phase === "pick") {
+          const to = st.to;
           panel.innerHTML = `
-            <div class="fz-between"><div class="display" style="font-size:28px">Куда едем?</div><span class="emo wobble" style="font-size:34px">🚕</span></div>
-            <div class="fz-dest" style="margin-top:12px"><span class="dot"></span><div style="min-width:0"><small class="muted" style="font-size:11px;display:block">Откуда</small>ул. Вайбовая, 7 (это ты)</div></div>
-            <div class="fz-dest" style="margin-top:8px"><span class="dot" style="background:var(--pink);border-radius:5px"></span><div style="min-width:0;flex:1"><small class="muted" style="font-size:11px;display:block">Куда</small><span style="display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${D.addr}</span></div></div>
+            <div class="fz-between"><div class="display" style="font-size:26px">Куда едем?</div><span class="emo wobble" style="font-size:34px">${to ? M.e : "🧭"}</span></div>
+            <div class="fz-dest" style="margin-top:12px"><span class="dot"></span><div style="min-width:0;flex:1"><small class="muted" style="font-size:11px;display:block">Откуда</small><span class="fz-ell">${Vibe.esc(placeName(st.from))}</span></div>${st.from !== "home" ? `<button class="fz-x" data-act="fromhome">🏠 Из дома</button>` : ""}</div>
+            <div class="fz-dest" style="margin-top:8px"><span class="dot" style="background:var(--pink);border-radius:5px"></span><div style="min-width:0;flex:1"><small class="muted" style="font-size:11px;display:block">Куда</small><span class="fz-ell">${to ? Vibe.esc(placeName(to)) : "Выбери ниже или тапни пин на карте"}</span>${to ? `<small class="muted fz-ell" style="font-size:11px">${PLACES[to].note}</small>` : ""}</div></div>
             <div class="chips" style="margin-top:10px">
-              ${Object.entries(DESTS).map(([k, v]) => `<button class="chip fz-chip-dest ${k === st.dest ? "on" : ""}" data-dest="${k}">${v.e} ${v.t}</button>`).join("")}
+              ${DEST_CHIPS.filter((k) => pt(k)).map((k) => `<button class="chip fz-chip-dest ${k === to ? "on" : ""}" data-dest="${k}" ${k === st.from ? 'style="opacity:.45"' : ""}>${PLACES[k].e} ${PLACES[k].t}</button>`).join("")}
             </div>
-            <div class="hscroll fz-tars">
-              ${TARIFFS.map((t, i) => `
-                <button class="fz-tar ${t.neon ? "neon" : ""} ${i === st.tar ? "on" : ""}" data-tar="${i}">
-                  <span class="badge surge">⚡ ×${st.surge[i].toFixed(1).replace(".", ",")}</span>
-                  <span class="e emo ${i === st.tar ? "wobble" : ""}">${t.e}</span>
-                  <b>${t.n}</b><small>${t.eta} · ${t.note}</small>
-                  <span class="pr" data-pr="${i}">${Vibe.rub(price(i))}</span>
-                </button>`).join("")}
-            </div>
-            <div class="fz-surge-bar" data-surgebar style="display:${st.surge.some((s) => s > 1.001) ? "flex" : "none"}"><span class="emo">⚡</span><span>Повышенный спрос. Цены растут, пока вы думаете</span></div>
-            <button class="btn black xl block" data-act="order" style="margin-top:14px">${st.tar === 4 ? "Пойти пешком 🚶" : `Заказать ${T.n} · <span data-oprice>${Vibe.rub(price(st.tar))}</span>`}</button>`;
-          panel.querySelectorAll(".fz-tar").forEach((el, i) => el.classList.toggle("surging", st.surge[i] > 1.001));
+            ${to ? `
+            <div class="fz-trip"><span class="badge">📏 ${kmTxt(st.trip.km)}</span><span class="badge" data-arrive>${arriveTxt()}</span></div>
+            <div class="hscroll fz-tars">${MODES.map(tarHtml).join("")}</div>
+            <div class="fz-surge-bar" data-surgebar style="display:${surging() ? "flex" : "none"}"><span class="emo">⚡</span><span>Повышенный спрос. Цены растут, пока вы думаете</span></div>
+            <button class="btn black xl block" data-act="order" style="margin-top:14px">${orderLabel()}</button>` : `
+            <div class="card flat tight c-lilac" style="margin-top:10px;display:flex;gap:10px;align-items:center;font-weight:800;font-size:13px"><span class="emo wobble" style="font-size:28px">🗺️</span><span>Пины на карте — тоже кнопки. Тапай всё, это бесплатно (пока)</span></div>`}`;
         } else if (st.phase === "search") {
           panel.innerHTML = `
             <div style="text-align:center;padding:6px 0">
@@ -507,7 +469,7 @@
               <div class="display" style="font-size:28px;margin-top:6px">Ищем водителя</div>
               <div class="fz-dots" style="margin:10px 0"><span></span><span></span><span></span></div>
               <div class="fz-search-txt" data-stxt>${SEARCH_LINES[0]}</div>
-              <div class="badge" style="margin-top:10px;background:var(--yellow)">${T.e} ${T.n} · ${Vibe.rub(st.price)} · цена зафиксирована*</div>
+              <div class="badge" style="margin-top:10px;background:var(--yellow)">${M.e} ${M.n} · ${Vibe.rub(st.price)} · цена зафиксирована*</div>
               <button class="btn block" data-act="cancel" style="margin-top:14px">Отменить поиск</button>
               <div class="fine">*на 0,5 секунды</div>
             </div>`;
@@ -516,195 +478,291 @@
           const arrived = st.phase === "arrived";
           panel.innerHTML = `
             <div class="fz-between">
-              <div class="display" style="font-size:24px">${arrived ? "Водитель на месте! 🚖" : "Водитель найден!"}</div>
-              <span class="timer-pill" data-eta>${arrived ? "0:59" : "0:05"}</span>
+              <div class="display" style="font-size:24px">${arrived ? "Водитель на месте!" : "Водитель найден!"}</div>
+              <span class="timer-pill" data-eta>${arrived ? "тут" : M.sub + " мин"}</span>
             </div>
             <div class="fz-row" style="margin-top:14px">
-              <div class="fz-driver-ava c-yellow emo">${d.ava}</div>
+              <div class="fz-driver-ava ${M.neon ? "c-pink" : "c-yellow"} emo">${d.ava}</div>
               <div style="flex:1;min-width:0">
                 <div style="font-weight:900;font-size:18px">${d.n} <span class="badge" style="background:var(--yellow);vertical-align:3px">⭐ ${d.r}</span></div>
                 <div class="muted" style="font-weight:800;font-size:13px;margin:3px 0 6px">${d.car}</div>
                 <span class="fz-plate">${d.plate}<i>${d.reg} RUS</i></span>
               </div>
-              <span class="emo float" style="font-size:44px">🚕</span>
+              <span class="emo float" style="font-size:44px">${M.veh}</span>
             </div>
             <div class="fz-row" style="flex-wrap:wrap;gap:6px;margin-top:12px">${d.perks.map((p, i) => `<span class="badge" style="background:${i ? "var(--sky)" : "var(--lilac)"}">${p}</span>`).join("")}</div>
-            ${arrived ? `<div class="fz-surge-bar" style="background:var(--yellow);color:var(--ink)"><span class="emo">⏳</span><span>Бесплатное ожидание закончится через <b data-wait>59</b> сек</span></div>` : ""}
+            ${arrived ? `<div class="fz-surge-bar" style="background:var(--yellow);color:var(--ink)"><span class="emo">⏳</span><span>Бесплатное ожидание закончится через <b data-wait>59</b> сек</span></div>` : `<div class="muted" style="font-weight:800;font-size:13px;margin-top:10px">Едет к тебе по улицам. Мы видим всё 👀</div>`}
             <div class="grid2" style="margin-top:14px;grid-template-columns:auto auto 1fr">
               <button class="icon-btn" data-act="call" aria-label="Позвонить">📞</button>
               <button class="icon-btn" data-act="msg" aria-label="Написать">💬</button>
               ${arrived ? `<button class="btn lime block" data-act="go">Поехали! 🚀</button>` : `<button class="btn block" data-act="cancel">Отменить</button>`}
             </div>`;
-        } else if (st.phase === "ride" || st.phase === "walk") {
-          const walk = st.phase === "walk";
+        } else if (st.phase === "ride") {
+          const k = st.kind;
+          const title = k === "walk" ? "Идём пешком" : k === "metro" ? "Едем в метро" : "В пути";
           panel.innerHTML = `
-            <div class="fz-between"><div class="display" style="font-size:26px">${walk ? "Идём пешком" : "В пути"} ${walk ? "🚶" : "🛣️"}</div><span class="timer-pill" data-eta>${walk ? "47 мин" : "12 мин"}</span></div>
-            <div class="muted" style="font-weight:800;font-size:13px;margin:4px 0 12px">${D.e} ${D.t} · ${D.addr}</div>
+            <div class="fz-between"><div class="display" style="font-size:26px">${title} ${M.veh}</div><span class="timer-pill" data-eta>${modeMin(st.mode) - (M.sub || 0)} мин</span></div>
+            <div class="muted fz-ell" style="font-weight:800;font-size:13px;margin:4px 0 12px">${PLACES[st.to].e} ${Vibe.esc(placeName(st.to))} · ${kmTxt(st.trip.km)}</div>
             <div class="progress" style="height:18px"><i data-rprog style="--p:0%;transition:none"></i></div>
-            <div class="card flat tight c-lilac" style="margin-top:12px;display:flex;align-items:center;gap:10px"><span class="emo wobble" style="font-size:28px">${walk ? "👟" : "📻"}</span><b data-rline style="font-size:14px">${walk ? "Ускорили прогулку в 300 раз для демонстрации" : RIDE_LINES[0]}</b></div>
-            ${walk ? "" : `<button class="btn block" data-go="music" style="margin-top:12px">🎧 Включить свой вайб в Vibe Music</button>`}`;
+            <div class="card flat tight c-lilac" style="margin-top:12px;display:flex;align-items:center;gap:10px"><span class="emo wobble" style="font-size:28px">${k === "walk" ? "👟" : k === "metro" ? "🚇" : "📻"}</span><b data-rline style="font-size:14px">${(k === "walk" ? WALK_LINES : k === "metro" ? METRO_LINES : RIDE_LINES)[0]}</b></div>
+            ${k === "taxi" ? `<button class="btn block" data-go="music" style="margin-top:12px">🎧 Включить свой вайб в Vibe Music</button>` : ""}`;
         } else if (st.phase === "done") {
-          const walk = st.tar === 4;
+          const k = st.kind, arr = st.arr, T = st.trip;
+          const i = gameInfo();
+          let work = "";
+          if (arr === "work") {
+            if (i && i.workHours) {
+              const left = Vibe.game.tasksLeft ? Vibe.game.tasksLeft() : 0;
+              work = `<div class="card flat c-sky fz-workcard"><span class="emo wobble" style="font-size:34px">💼</span><div style="flex:1"><b style="display:block;font-size:15px">Ты на работе. Задачи ждут в Vibe Job</b><small style="font-weight:700;opacity:.8">${left ? `Осталось задач на сегодня: ${left}` : "Задачи сделаны. Можно делать вид, что работаешь"}</small></div></div>
+                <button class="btn lime block" data-go="job" style="margin-top:10px">Открыть Vibe Job 💼</button>`;
+            } else work = `<div class="card flat c-lilac fz-workcard"><span class="emo" style="font-size:30px">🌙</span><b style="font-size:14px">Офис закрыт. Охранник смотрит с уважением и подозрением</b></div>`;
+          }
           panel.innerHTML = `
             <div style="text-align:center">
-              <div class="emo float" style="font-size:72px">${walk ? "🏅" : "🎉"}</div>
-              <div class="display" style="font-size:32px">Приехали!</div>
-              <div class="big-num" style="font-size:40px;margin-top:8px">${walk ? "0 ₽" : Vibe.rub(st.price)}</div>
-              <div class="muted" style="font-weight:800;font-size:13px;margin-top:4px">${walk ? "4 812 шагов · страховка не подорожала" : `${TARIFFS[st.tar].n} · ${st.driver.n} · списано с Vibe Pay`}</div>
-              ${walk ? "" : `
+              <div class="emo float" style="font-size:72px">${k === "walk" ? "🏅" : k === "metro" ? "🚇" : "🎉"}</div>
+              <div class="display" style="font-size:30px">${k === "walk" ? "Дошёл!" : "Приехали!"}</div>
+              <div class="muted fz-ell" style="font-weight:800;font-size:13px;margin-top:2px">${PLACES[arr].e} ${Vibe.esc(placeName(arr))}</div>
+              <div class="big-num" style="font-size:36px;margin-top:8px">${k === "walk" ? `${Vibe.fmt(steps(T))} шагов` : Vibe.rub(st.price)}</div>
+              <div class="muted" style="font-weight:800;font-size:13px;margin-top:4px">${k === "walk" ? `+${walkVib(T)} вайбиков · страховка не подорожала` : k === "metro" ? "Оплачено на турникете. Лицом" : `${M.n} · ${st.driver.n} · ${kmTxt(T.km)} · списано с Vibe Pay`}</div>
+              ${work}
+              ${k === "taxi" ? `
               <div style="font-weight:900;margin-top:16px">Как вам поездка?</div>
               <div class="fz-stars" data-stars>${[1, 2, 3, 4, 5].map((n) => `<button data-star="${n}" aria-label="${n} звёзд">⭐</button>`).join("")}</div>
               <div class="fz-row" style="justify-content:center;gap:8px" data-tips>
                 ${[50, 100, 200].map((a) => `<button class="chip" data-tip="${a}">💸 ${a} ₽</button>`).join("")}
-              </div>`}
-              <button class="btn black xl block" data-act="again" style="margin-top:16px">Ещё поездка 🚕</button>
-              <div class="fine">Оценка влияет на рейтинг водителя, ваш рейтинг и рейтинг вашего рейтинга.</div>
+              </div>` : ""}
+              <button class="btn black xl block" data-act="again" style="margin-top:16px">Ещё поездка ${k === "taxi" ? "🚕" : "🗺️"}</button>
+              <div class="fine">${k === "taxi" ? "Оценка влияет на рейтинг водителя, ваш рейтинг и рейтинг вашего рейтинга." : "Маршрут построен по улицам. Дворы пока платные."}</div>
             </div>`;
         }
         panel.classList.remove("fz-popin"); void panel.offsetWidth; panel.classList.add("fz-popin");
       }
 
+      /* ----- Выбор точки назначения ----- */
+      function setDest(k, srcEl, quiet) {
+        if (st.phase !== "pick") { FX.toast("Сначала доедь. Потом мечтай", "🛣️"); return; }
+        if (!pt(k)) return;
+        if (k === st.from) { FX.toast("Ты уже здесь. Поздравляем с прибытием!", "📍"); if (srcEl) FX.bump(srcEl); return; }
+        if (k === st.to) { if (srcEl) FX.bump(srcEl); return; }
+        st.to = k; st.trip = trip();
+        ctrl.setPins(pins());
+        ctrl.route(st.trip.pts, { color: "#8b5cff" });
+        ctrl.fit(st.trip.pts, 90);
+        render();
+        if (!quiet) FX.sound.pop();
+        if (srcEl) FX.burst(srcEl, { emojis: [PLACES[k].e, "✨", "📍"], count: 8, spread: 60 });
+        if (st.trip.km < 0.6) sc.to(() => FX.toast("Тут идти 5 минут. Но мы не осуждаем", "🦥"), 700);
+        startSurge();
+      }
+      function onPin(id) {
+        if (!PLACES[id]) return;
+        if (st.phase !== "pick") { FX.toast("Сначала доедь. Потом мечтай", "🛣️"); return; }
+        const chip = panel.querySelector(`[data-dest="${id}"]`);
+        if (chip) chip.scrollIntoView({ behavior: "smooth", inline: "center", block: "nearest" });
+        setDest(id, null, true);
+      }
+
       /* ----- Сёрдж: цены живут своей жизнью ----- */
-      function surgeTick(gen) {
-        if (st.phase !== "pick" || gen !== st.sgen) return;
-        const i = ri(0, 3);
+      function startSurge() { const g = ++st.sgen; sc.to(() => surgeTick(g), rand(2200, 3200)); }
+      function surgeTick(g) {
+        if (g !== st.sgen || st.phase !== "pick" || !st.to) return;
+        const i = ri(2, 5);
         st.surge[i] = Math.min(2.6, st.surge[i] + rand(0.06, 0.2));
         const card = panel.querySelector(`.fz-tar[data-tar="${i}"]`);
         const pr = panel.querySelector(`[data-pr="${i}"]`);
         if (card && pr) {
           card.classList.add("surging");
-          card.querySelector(".surge").textContent = `⚡ ×${st.surge[i].toFixed(1).replace(".", ",")}`;
+          const sg = card.querySelector("[data-sg]");
+          if (sg) sg.textContent = `⚡ ×${st.surge[i].toFixed(1).replace(".", ",")}`;
           FX.countTo(pr, price(i), { from: parseInt(pr.textContent.replace(/\D/g, ""), 10) || 0, dur: 500, fmt: Vibe.rub });
           FX.bump(pr);
         }
         const bar = panel.querySelector("[data-surgebar]");
         if (bar) { bar.style.display = "flex"; FX.bump(bar); }
-        if (i === st.tar) {
+        if (i === st.mode) {
           const op = panel.querySelector("[data-oprice]");
           if (op) { op.textContent = Vibe.rub(price(i)); FX.bump(op.closest(".btn")); }
         }
-        sc.to(() => surgeTick(gen), rand(2600, 4200));
+        sc.to(() => surgeTick(g), rand(2600, 4200));
       }
-      sc.to(() => surgeTick(st.sgen), 2200);
 
       /* ----- Сценарий поездки ----- */
-      function startSearch() {
-        st.phase = "search"; st.price = price(st.tar);
-        hideRoute(); render();
+      function order(btn) {
+        const M = MODES[st.mode];
+        if (!st.to) return;
+        if (M.id === "walk") { st.run++; st.sgen++; return go("walk"); }
+        if (M.id === "metro") {
+          if (!Vibe.pay(METRO_PRICE, { title: "Vibe Метро · проход по лицу", emoji: "🚇", col: "c-sky", from: btn })) return;
+          st.run++; st.sgen++; st.price = METRO_PRICE;
+          return go("metro");
+        }
+        const p = price(st.mode);
+        if (p > S().balance) { FX.shake(btn); FX.toast("Не хватает на такси. Метро — 61 ₽, ноги — бесплатно", "🫠", 2800); return; }
+        st.run++; st.sgen++; st.price = p;
+        search();
+      }
+      function search() {
+        const run = st.run;
+        st.phase = "search"; render();
+        ctrl.clearRoute();
+        radar(true);
+        ctrl.center(pt(st.from), 380);
         FX.sound.whoosh();
         let k = 0;
-        const lines = sc.every(() => {
+        st.lines = sc.every(() => {
           const el = panel.querySelector("[data-stxt]");
           if (el) { el.textContent = SEARCH_LINES[++k % SEARCH_LINES.length]; FX.bump(el); }
-          FX.sound.tick();
         }, 900);
-        st.searchT = sc.to(() => { sc.stop(lines); found(); }, 3800);
-        st.searchLines = lines;
+        st.searchT = sc.to(() => { sc.stop(st.lines); if (run === st.run) found(); }, 3600);
       }
       function found() {
-        st.phase = "found"; st.driver = pick(DRIVERS);
-        render();
+        const M = MODES[st.mode], run = st.run;
+        const d = Object.assign({}, pick(DRIVERS));
+        if (CARS[M.id]) d.car = CARS[M.id];
+        st.driver = d; st.phase = "found";
+        radar(false); render();
         FX.sound.success(); FX.haptic([10, 40, 10]);
-        FX.burst(panel.querySelector(".fz-driver-ava"), { emojis: ["⭐", "🚕", "✨"], count: 12 });
-        showRoute(APPROACH, "var(--orange)");
-        const dur = 5600;
-        car.setAttribute("transform", `translate(40 54)`);
-        drive(APPROACH, dur, "🚕", (k) => {
-          const eta = panel.querySelector("[data-eta]");
-          if (eta) eta.textContent = "0:0" + Math.max(0, Math.ceil((1 - k) * 5));
-        }, () => {
-          st.phase = "arrived"; render();
-          FX.sound.levelup(); FX.haptic([20, 40, 20]);
-          FX.burst(toScreen(ME.x, ME.y), { emojis: ["🚕", "💛", "✨", "🎉"], count: 16 });
-          let w = 59;
-          st.waitIv = sc.every(() => {
-            const el = panel.querySelector("[data-wait]");
-            if (!el) return;
-            w = Math.max(0, w - 1); el.textContent = w;
-            if (w === 0) { el.parentElement.innerHTML = "Платное ожидание: 9 ₽/мин. Шутка. Пока что."; sc.stop(st.waitIv); }
-          }, 1000);
+        FX.burst(panel.querySelector(".fz-driver-ava"), { emojis: ["⭐", M.veh, "✨"], count: 12 });
+        const from = pt(st.from);
+        const ap = MP.path(nearbyStart(from), from);
+        ctrl.route(ap, { color: "#ff6b2c" });
+        ctrl.fit(ap, 90);
+        let last = -1;
+        stopDrive();
+        st.drv = ctrl.drive(ap, {
+          emoji: M.veh, color: M.col, duration: clamp(MP.len(ap) * 9, 3500, 6000),
+          onProgress(k) {
+            const v = Math.max(0, Math.ceil((1 - k) * M.sub));
+            if (v === last) return;
+            last = v;
+            const el = panel.querySelector("[data-eta]");
+            if (el) el.textContent = v ? v + " мин" : "тут";
+          },
+          onDone() { sc.to(() => { if (run === st.run) pickedUp(); }, 0); },
         });
       }
-      function ride() {
+      function pickedUp() {
+        const M = MODES[st.mode];
+        st.phase = "arrived"; render();
+        FX.sound.success(); FX.haptic([20, 40, 20]);
+        FX.burst(panel.querySelector(".fz-driver-ava"), { emojis: [M.veh, "💛", "✨", "🎉"], count: 14 });
+        let w = 59;
+        st.waitIv = sc.every(() => {
+          const el = panel.querySelector("[data-wait]");
+          if (!el) return;
+          w = Math.max(0, w - 1); el.textContent = w;
+          if (w === 0) { el.parentElement.innerHTML = "Платное ожидание: 9 ₽/мин. Шутка. Пока что."; sc.stop(st.waitIv); }
+        }, 1000);
+      }
+      function go(kind) {
+        const M = MODES[st.mode], T = st.trip, run = st.run;
         if (st.waitIv) sc.stop(st.waitIv);
-        st.phase = "ride"; render();
+        stopDrive();
+        st.kind = kind; st.phase = "ride"; render();
         FX.sound.whoosh();
-        const D = DESTS[st.dest];
-        showRoute(D.d);
-        let li = 0;
+        ctrl.route(T.pts, { color: M.route || "#8b5cff" });
+        ctrl.center(pt(st.from), 340);
+        const total = modeMin(st.mode) - (M.sub || 0);
+        const dur = kind === "walk" ? clamp(T.km * 1400, 3500, 7500) : kind === "metro" ? clamp(T.km * 900, 3000, 6000) : clamp(T.km * 2200, 5000, 11000);
+        const lines = kind === "walk" ? WALK_LINES : kind === "metro" ? METRO_LINES : RIDE_LINES;
+        let li = 0, lastEta = -1, lastP = -1;
         const lineIv = sc.every(() => {
           const el = panel.querySelector("[data-rline]");
-          if (el) { el.textContent = RIDE_LINES[++li % RIDE_LINES.length]; FX.bump(el.parentElement); FX.sound.pop(); }
+          if (el) { el.textContent = lines[++li % lines.length]; FX.bump(el.parentElement); }
         }, 2100);
-        sc.to(() => drive(D.d, 8200, "🚕", (k) => {
-          const p = panel.querySelector("[data-rprog]");
-          if (p) p.style.setProperty("--p", Math.round(k * 100) + "%");
-          const eta = panel.querySelector("[data-eta]");
-          if (eta) eta.textContent = Math.max(1, Math.ceil((1 - k) * 12)) + " мин";
-        }, () => { sc.stop(lineIv); arrive(); }), 500);
+        sc.to(() => {
+          if (run !== st.run) return;
+          st.drv = ctrl.drive(T.pts, {
+            emoji: M.veh, color: M.col, duration: dur, follow: true,
+            onProgress(k) {
+              const p = Math.round(k * 100);
+              if (p !== lastP) { lastP = p; const bar = panel.querySelector("[data-rprog]"); if (bar) bar.style.setProperty("--p", p + "%"); }
+              const eta = Math.max(0, Math.ceil((1 - k) * total));
+              if (eta !== lastEta) { lastEta = eta; const el = panel.querySelector("[data-eta]"); if (el) el.textContent = eta + " мин"; }
+            },
+            onDone() { sc.stop(lineIv); sc.to(() => { if (run === st.run) arrive(kind); }, 0); },
+          });
+        }, 650);
       }
-      function walk() {
-        st.phase = "walk"; render();
-        const D = DESTS[st.dest];
-        showRoute(D.d, "var(--lime)");
-        drive(D.d, 9000, "🚶", (k) => {
-          const p = panel.querySelector("[data-rprog]");
-          if (p) p.style.setProperty("--p", Math.round(k * 100) + "%");
-          const eta = panel.querySelector("[data-eta]");
-          if (eta) eta.textContent = Math.max(1, Math.ceil((1 - k) * 47)) + " мин";
-        }, () => {
-          st.phase = "done"; render();
-          FX.confetti(); FX.sound.levelup();
-          Vibe.reward({ vibiki: 15, xp: 25, from: panel.querySelector(".big-num") });
-        });
-      }
-      function arrive() {
-        const D = DESTS[st.dest];
-        const from = toScreen(D.x, D.y);
-        st.phase = "done"; st.rated = 0; st.tipped = false;
+      function arrive(kind) {
+        const M = MODES[st.mode], T = st.trip, arr = st.to;
+        stopDrive();
+        st.arr = arr; st.from = arr; st.to = null; st.phase = "done"; st.rated = 0; st.tipped = false;
+        Vibe.state.set({ fz_lastPos: arr });
+        ctrl.clearRoute();
+        ctrl.setPins(pins());
+        ctrl.center(pt(arr), 420);
         render();
-        Vibe.pay(st.price, { title: `Vibe Maps · Такси «${TARIFFS[st.tar].n}»`, emoji: "🚕", col: "c-yellow", from: panel.querySelector(".big-num") });
+        const big = panel.querySelector(".big-num");
+        if (kind === "taxi") {
+          const ok = Vibe.pay(st.price, { title: `Vibe Maps · Такси «${M.n}»`, emoji: M.veh, col: "c-yellow", from: big });
+          if (!ok) sc.to(() => FX.toast(`${st.driver.n} записал тебя в должники. Рейтинг −0,3`, "📉", 2800), 1200);
+        } else if (kind === "walk") {
+          Vibe.reward({ vibiki: walkVib(T), xp: 20, from: big });
+        }
         FX.confetti(); FX.sound.success();
-        FX.burst(from, { emojis: [D.e, "🎉", "✨", "🚕"], count: 18 });
+        FX.burst(big, { emojis: [PLACES[arr].e, "🎉", "✨", M.veh], count: 16 });
+        const i = gameInfo();
+        if (arr === "work" && i && i.workHours) sc.to(() => FX.toast("Ты на работе. Задачи ждут в Vibe Job", "💼", 3200), 1300);
+        else if (arr === "home") sc.to(() => FX.toast("Дома. Диван засчитан", "🛋️"), 1300);
+        else if (arr === "clinic") sc.to(() => FX.toast("Регистратура: «Вас нет в списке. Но вы держитесь»", "🏥", 2800), 1300);
+        else if (arr === "club") sc.to(() => FX.toast("Фейсконтроль одобрил. Кредитный рейтинг — нет", "🎤", 2800), 1300);
       }
       function reset() {
-        st.phase = "pick"; st.surge = TARIFFS.map(() => 1);
         st.run++; st.sgen++;
         if (st.waitIv) sc.stop(st.waitIv);
-        car.setAttribute("opacity", 0);
-        route.style.transition = ""; routeG.style.transition = "";
-        render(); setDest(st.dest);
-        const g = st.sgen;
-        sc.to(() => surgeTick(g), 2500);
+        stopDrive(); radar(false);
+        st.phase = "pick"; st.to = null; st.trip = null; st.surge = baseSurge();
+        ctrl.clearRoute();
+        ctrl.setPins(pins());
+        ctrl.fit([pt(st.from), pt("home"), pt("work")].filter(Boolean), 90);
+        render();
+      }
+      function cancel() {
+        const wasFound = st.phase === "found";
+        st.run++;
+        if (st.lines) sc.stop(st.lines);
+        if (st.searchT) sc.stop(st.searchT);
+        stopDrive(); radar(false);
+        if (wasFound) FX.toast(`Отменили. ${st.driver.n} уже был за углом 😢`, "🚕");
+        st.phase = "pick";
+        ctrl.route(st.trip.pts, { color: "#8b5cff" });
+        ctrl.fit(st.trip.pts, 90);
+        render();
+        FX.sound.error();
+        startSurge();
       }
 
       /* ----- Клики ----- */
       sc.on(root, "click", (e) => {
         const dest = e.target.closest("[data-dest]");
-        if (dest && st.phase === "pick") {
-          if (dest.dataset.dest === st.dest) { FX.bump(dest); return; }
-          st.dest = dest.dataset.dest; render(); setDest(st.dest); FX.sound.pop();
-          return;
-        }
+        if (dest) { setDest(dest.dataset.dest, dest); return; }
         const tar = e.target.closest("[data-tar]");
         if (tar && st.phase === "pick") {
           const i = +tar.dataset.tar;
+          if (i === st.mode) { FX.bump(tar); return; }
           panel.querySelectorAll(".fz-tar").forEach((el) => { el.classList.toggle("on", el === tar); el.querySelector(".e").classList.toggle("wobble", el === tar); });
-          st.tar = i;
+          st.mode = i;
           const btn = panel.querySelector('[data-act="order"]');
-          btn.innerHTML = i === 4 ? "Пойти пешком 🚶" : `Заказать ${TARIFFS[i].n} · <span data-oprice>${Vibe.rub(price(i))}</span>`;
-          FX.bump(btn); FX.sound.add();
-          FX.burst(tar, { emojis: [TARIFFS[i].e, "✨"], count: 6, spread: 60 });
-          if (i === 4) FX.toast("Смелый выбор. Колени скажут спасибо", "🦵");
-          if (i === 2) FX.toast("Вайб-тариф: диско-шар включён", "🪩");
+          if (btn) { btn.innerHTML = orderLabel(); FX.bump(btn); }
+          const ar = panel.querySelector("[data-arrive]");
+          if (ar) ar.textContent = arriveTxt();
+          FX.sound.pop();
+          FX.burst(tar, { emojis: [MODES[i].e, "✨"], count: 6, spread: 60 });
+          const id = MODES[i].id;
+          if (id === "walk") FX.toast("Смелый выбор. Колени скажут спасибо", "🦵");
+          if (id === "metro") FX.toast("61 ₽ и никакого сёрджа. Подозрительно честно", "🚇");
+          if (id === "vibe") FX.toast("Вайб-тариф: диско-шар включён", "🪩");
+          if (id === "biz") FX.toast("Бизнес: водитель молчит профессионально", "🤵");
           return;
         }
         const star = e.target.closest("[data-star]");
         if (star) {
           if (st.rated) { FX.bump(star); return; }
           const n = +star.dataset.star; st.rated = n;
+          FX.sound.like();
           panel.querySelectorAll("[data-star]").forEach((s, i) => {
-            sc.to(() => { s.classList.toggle("on", i < n); if (i < n) { FX.burst(s, { emojis: ["⭐", "✨"], count: 5, spread: 50 }); blip(600 + i * 140, 0.12, { vol: 0.05 }); } }, i * 90);
+            sc.to(() => { s.classList.toggle("on", i < n); if (i < n) FX.burst(s, { emojis: ["⭐", "✨"], count: 5, spread: 50 }); }, i * 90);
           });
           sc.to(() => {
             if (n === 5) { FX.confetti({ count: 80, from: star }); FX.toast(`${st.driver.n} плачет от счастья`, "🥹"); Vibe.reward({ vibiki: 10, xp: 10, from: star }); }
@@ -725,35 +783,37 @@
         const act = e.target.closest("[data-act]");
         if (!act) return;
         const a = act.dataset.act;
-        if (a === "locate") {
-          FX.toast("Вы здесь. Всегда были здесь", "📍");
-          FX.burst(toScreen(ME.x, ME.y), { emojis: ["📍", "💙"], count: 8, spread: 60 });
+        if (a === "fromhome") {
+          st.from = "home";
+          Vibe.state.set({ fz_lastPos: "home" });
           FX.bump(act);
+          if (st.to === "home") { reset(); return; }
+          ctrl.setPins(pins());
+          if (st.to) { st.trip = trip(); ctrl.route(st.trip.pts, { color: "#8b5cff" }); ctrl.fit(st.trip.pts, 90); }
+          else ctrl.center(pt("home"), 380);
+          render();
+          FX.toast("Стартуем из дома. Тапки не забудь", "🏠");
         } else if (a === "order") {
           FX.bump(act);
-          if (st.tar === 4) walk(); else startSearch();
+          order(act);
         } else if (a === "cancel") {
-          if (st.searchLines) sc.stop(st.searchLines);
-          if (st.searchT) sc.stop(st.searchT);
-          if (st.phase === "found") { FX.toast("Отменили. Водитель уже был за углом 😢", "🚕"); }
-          // отмена во время подъезда: «телепортируем» машину и сбрасываем
-          st.phase = "cancelling";
-          sc.to(reset, 50);
-          FX.sound.error();
+          cancel();
         } else if (a === "go") {
-          ride();
+          go("taxi");
         } else if (a === "call") {
           FX.toast(`${st.driver.n} за рулём и не берёт трубку. Это правильно`, "📞"); FX.bump(act);
         } else if (a === "msg") {
           FX.toast(`${st.driver.n}: «выхожу», в смысле — «подъезжаю»`, "💬"); FX.bump(act);
         } else if (a === "again") {
           reset();
+          FX.sound.pop();
         }
       });
 
+      ctrl.setPins(pins());
       render();
-      sc.to(() => setDest(st.dest), 350);
-      return () => sc.clear();
+      if (st.from !== "home") sc.to(() => FX.toast(`Ты сейчас: ${PLACES[st.from].s}. Карта помнит всё`, "📍"), 500);
+      return () => { sc.clear(); ctrl.destroy(); };
     },
   });
 

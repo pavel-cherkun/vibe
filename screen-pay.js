@@ -15,11 +15,27 @@
     { n: "Мама", e: "👩" }, { n: "Лёха", e: "🧔" }, { n: "Катя", e: "👩‍🎤" }, { n: "Арендодатель", e: "🧛" }, { n: "Бро", e: "🤙" },
   ];
 
-  const SPEND = [
-    { t: "Доставка", e: "🍜", a: 18400, c: "var(--pink)" },
-    { t: "Такси", e: "🚕", a: 9600, c: "var(--yellow)" },
-    { t: "Шопинг", e: "🛍️", a: 14200, c: "var(--sky)" },
-    { t: "Подписки", e: "💎", a: 4100, c: "var(--violet)" },
+  // Траты по категориям — из реальных операций
+  const CATS = [
+    { t: "Жильё", e: "🔑", c: "var(--mint)", re: /Аренда|ЖКХ|Связь/ },
+    { t: "Еда", e: "🍜", c: "var(--pink)", re: /Eat|Supermarket|Продукты|Кофе|Шаурма/i },
+    { t: "Такси", e: "🚕", c: "var(--yellow)", re: /такси|Maps|Drive|Самокат/i },
+    { t: "Шопинг", e: "🛍️", c: "var(--sky)", re: /Market|Pets|Health/ },
+    { t: "Кредиты", e: "🏦", c: "var(--violet)", re: /кредит|Ипотек/i },
+  ];
+  function spend() {
+    const out = CATS.map((c) => Object.assign({ a: 0 }, c));
+    S().tx.forEach((t) => {
+      if (t.a >= 0) return;
+      const c = out.find((x) => x.re.test(t.t));
+      if (c) c.a += -t.a;
+    });
+    return out;
+  }
+  const SPEND_TIPS = [
+    "На доставку ушло столько, что можно было научиться готовить. Но зачем? 🍳",
+    "Если не тратить, то и кэшбека не будет. Подумай об этом 🤔",
+    "Аренда — это ипотека, только квартира не твоя. Загляни в Vibe Home 😉",
   ];
 
   function txList() {
@@ -34,7 +50,9 @@
   Vibe.screen("pay", {
     render() {
       const s = S();
-      const max = Math.max(...SPEND.map((x) => x.a));
+      const SPEND = spend();
+      const max = Math.max(1, ...SPEND.map((x) => x.a));
+      const loans = s.loans || [];
       return `
       <div class="head">
         <div class="title" style="font-size:30px">Vibe Pay<small>Банк, который всегда рядом. Слишком рядом</small></div>
@@ -74,12 +92,21 @@
 
       <div class="pay-actions stagger">
         <button class="pa c-lime" data-act="transfer"><span class="emo">↗️</span>Перевести</button>
-        <button class="pa c-sky" data-act="topup"><span class="emo">💸</span>Пополнить</button>
+        <button class="pa c-sky" data-act="topup"><span class="emo">👩</span>У мамы</button>
         <button class="pa c-pink" data-act="credit"><span class="emo">🤑</span>Кредит</button>
         <button class="pa c-orange" data-act="jar"><span class="emo">🐷</span>Копилка</button>
       </div>
 
-      <h2 class="sec">Траты за октябрь <small>${Vibe.rub(SPEND.reduce((a, b) => a + b.a, 0))}</small></h2>
+      ${loans.length ? `
+      <h2 class="sec">Кредиты <small>${loans.length}</small></h2>
+      <div class="stack">${loans.map((l) => `
+        <div class="card tight c-pink" style="display:flex;gap:12px;align-items:center">
+          <span class="emo" style="font-size:30px">🏦</span>
+          <div style="flex:1"><b>«${Vibe.esc(l.name)}» · ${Vibe.rub(l.monthly)}/мес</b><div style="font-size:12px;font-weight:700">Осталось ${l.left} из ${l.months} платежей · списание ${l.dom}-го</div>
+          <div class="progress" style="height:8px;margin-top:6px"><i style="--p:${Math.round(((l.months - l.left) / l.months) * 100)}%"></i></div></div>
+        </div>`).join("")}</div>` : ""}
+
+      <h2 class="sec">Траты <small>${Vibe.rub(SPEND.reduce((a, b) => a + b.a, 0))}</small></h2>
       <div class="card">
         <div class="bars">
           ${SPEND.map((x) => `
@@ -88,7 +115,7 @@
               <small>${x.t}</small>
             </button>`).join("")}
         </div>
-        <div class="zab-tip">${Vibe.zabotik(40, "sly")}<span>На доставку ушло столько, что можно было научиться готовить. Но зачем? 🍳</span></div>
+        <div class="zab-tip">${Vibe.zabotik(40, "sly")}<span>${SPEND_TIPS[s.tx.length % SPEND_TIPS.length]}</span></div>
       </div>
 
       <h2 class="sec">Операции <small>${s.tx.length}</small></h2>
@@ -108,11 +135,7 @@
         const act = a.dataset.act;
         if (act === "flip") { a.classList.toggle("flipped"); FX.sound.whoosh(); }
         if (act === "transfer") openTransfer();
-        if (act === "topup") {
-          Vibe.addMoney(5000, { title: "Пополнение с карты другого банка", emoji: "💸" });
-          FX.burst(a, { emojis: ["💸", "💵", "🤑", "✨"], count: 16 });
-          FX.sound.coin(); FX.toast("+5 000 ₽ на счёте", "💸");
-        }
+        if (act === "topup") askMom(a);
         if (act === "credit") openCredit();
         if (act === "jar") openJar();
         if (act === "cat") {
@@ -180,50 +203,79 @@
     });
   }
 
+  /* ---------- Мама ---------- */
+  const MOM = ["Опять? Ладно. Только не на ерунду.", "Держи. Шапку купи!", "Последний раз. Ты поел?", "Папе не говори.", "Это на еду, а не на рамен."];
+  function askMom(btn) {
+    const s = S();
+    const week = Math.floor(Vibe.game.info().day / 7);
+    if (s.momWeek === week) {
+      FX.shake(btn);
+      FX.toast("Мама: «Я же на этой неделе уже давала!» Следующий раз — через " + (7 - (Vibe.game.info().day % 7)) + " дн.", "👩", 3200);
+      return;
+    }
+    const amount = s.job ? 1500 : 3000;
+    Vibe.state.set({ momWeek: week });
+    Vibe.addMoney(amount, { title: "Перевод от мамы · «" + MOM[week % MOM.length] + "»", emoji: "👩" });
+    FX.burst(btn, { emojis: ["💜", "👩", "💸"], count: 12 });
+    FX.toast(`+${Vibe.rub(amount)} от мамы. ${MOM[week % MOM.length]}`, "👩", 3000);
+  }
+
   /* ---------- Кредит ---------- */
   function openCredit() {
+    const s = S();
+    const maxSum = s.job ? Math.round((s.job.salary * 8) / 10000) * 10000 : 30000;
     Vibe.ui.sheet(`
-      <div class="badge" style="background:var(--lime)">⚡ Предодобрено</div>
+      <div class="badge" style="background:var(--lime)">⚡ Предодобрено до ${Vibe.rub(maxSum)}</div>
       <div class="display" style="font-size:30px;margin:10px 0 4px">Сколько хочешь?</div>
-      <div class="big-num credit-sum" data-sum>250&nbsp;000&nbsp;₽</div>
-      <input type="range" min="10000" max="500000" step="10000" value="250000" data-range style="--p:49%">
+      <div class="big-num credit-sum" data-sum>${Vibe.rub(Math.round(maxSum / 2 / 1000) * 1000)}</div>
+      <input type="range" min="10000" max="${maxSum}" step="5000" value="${Math.round(maxSum / 2 / 5000) * 5000}" data-range>
+      <div class="chips" style="margin-top:12px" data-terms>${[6, 12, 24, 36].map((m) => `<button class="chip ${m === 12 ? "on" : ""}" data-m="${m}">${m} мес</button>`).join("")}</div>
       <div class="credit-grid">
-        <div class="card tight c-yellow"><small>В месяц</small><b data-month></b></div>
+        <div class="card tight c-yellow"><small>Платёж в месяц</small><b data-month></b></div>
         <div class="card tight c-pink"><small>Переплата</small><b data-over></b></div>
       </div>
-      <div class="card tight c-lilac" style="margin-top:10px;display:flex;gap:10px;align-items:center">${Vibe.zabotik(44, "sly")}<span style="font-weight:700;font-size:13px" data-zab>Отличный выбор! На эти деньги можно купить 83 рамена.</span></div>
+      <div class="card tight c-lilac" style="margin-top:10px;display:flex;gap:10px;align-items:center">${Vibe.zabotik(44, "sly")}<span style="font-weight:700;font-size:13px" data-zab></span></div>
       <button class="btn grad xl block" style="margin-top:16px" data-take>Получить за 1 минуту <span class="arrow">→</span></button>
-      <div class="fine">Ставка 39,9% годовых, срок 5 лет. Страховка жизни, здоровья, питомца и вайба — включена. Досрочное погашение возможно после 4 лет 11 месяцев. Ставка может измениться, если изменится настроение банка.</div>
+      <div class="fine">Ставка ${s.job ? "29,9" : "59,9"}% годовых${s.job ? "" : " (без работы — дороже)"}. Платёж списывается автоматически каждый месяц. Не хватит денег — уйдёшь в минус под 1% в день. Страховка вайба включена.</div>
     `, {
       onMount(sh, close) {
         const range = sh.querySelector("[data-range]");
         const zab = sh.querySelector("[data-zab]");
+        const rate = s.job ? 0.299 : 0.599;
+        let months = 12;
         const calc = () => {
           const v = +range.value;
-          const r = 0.399 / 12, n = 60;
-          const m = (v * r) / (1 - Math.pow(1 + r, -n));
-          range.style.setProperty("--p", ((v - 10000) / 490000) * 100 + "%");
-          FX.countTo(sh.querySelector("[data-sum]"), v, { fmt: Vibe.rub, dur: 300 });
+          const r = rate / 12;
+          const m = (v * r) / (1 - Math.pow(1 + r, -months));
+          range.style.setProperty("--p", ((v - 10000) / Math.max(1, maxSum - 10000)) * 100 + "%");
+          FX.countTo(sh.querySelector("[data-sum]"), v, { fmt: Vibe.rub, dur: 250 });
           sh.querySelector("[data-month]").textContent = Vibe.rub(m);
-          sh.querySelector("[data-over]").textContent = Vibe.rub(m * n - v);
-          zab.textContent = v > 400000 ? "Ого! Берёшь по-крупному. Уважаю 😎" : `На эти деньги можно купить ${Math.round(v / 3000)} раменов.`;
+          sh.querySelector("[data-over]").textContent = Vibe.rub(m * months - v);
+          const inc = s.job ? s.job.salary * 0.87 : 0;
+          zab.textContent = !inc ? "Без работы? Не беда! Беда будет потом 😅" : m > inc * 0.5 ? "Платёж больше половины зарплаты. Смело! 😬" : `Это всего ${Math.round((m / inc) * 100)}% зарплаты. Бери, не думай!`;
         };
         calc();
         range.addEventListener("input", calc);
+        sh.querySelector("[data-terms]").addEventListener("click", (e) => {
+          const c = e.target.closest("[data-m]"); if (!c) return;
+          months = +c.dataset.m;
+          sh.querySelectorAll("[data-m]").forEach((x) => x.classList.toggle("on", x === c));
+          calc();
+        });
         sh.querySelector("[data-take]").addEventListener("click", (e) => {
           const v = +range.value;
           const btn = e.currentTarget;
           btn.disabled = true;
           btn.innerHTML = "Проверяем тебя… 🔍";
-          setTimeout(() => { btn.innerHTML = "Смотрим соцсети… 👀"; FX.sound.tick(); }, 600);
+          setTimeout(() => { btn.innerHTML = "Смотрим соцсети… 👀"; }, 600);
           setTimeout(() => { btn.innerHTML = "Одобрено! 🎉"; FX.sound.success(); }, 1300);
           setTimeout(() => {
             close();
-            Vibe.addMoney(v, { title: "Кредит «Мечта» 39,9%", emoji: "🤑", col: "c-pink" });
+            const loan = Vibe.game.addLoan({ name: "Мечта", amount: v, rate, months });
+            Vibe.refreshCounters();
             FX.confetti();
-            FX.coins({ x: innerWidth / 2, y: innerHeight - 100 }, "[data-balance]", 10, { emoji: "💸" });
             Vibe.achieve("credit");
-            Vibe.modal(`<div class="m-emo float">🤑</div><div class="display">+${Vibe.rub(v)}</div><p>Деньги уже на счёте. Первый платёж — завтра. Шутка. Через месяц. Наверное.</p><button class="btn black block" data-close>Потратить всё</button>`);
+            Vibe.modal(`<div class="m-emo float">🤑</div><div class="display">+${Vibe.rub(v)}</div><p>Деньги на счёте. Платёж ${Vibe.rub(loan.monthly)} будет списываться ${loan.dom}-го числа ${months} месяцев. Мы напомним. Точнее, просто спишем.</p><button class="btn black block" data-close>Понятно</button>`);
           }, 1900);
         });
       },

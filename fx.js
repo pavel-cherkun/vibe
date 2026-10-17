@@ -46,9 +46,9 @@
   }
   const NOTES = [523.25, 587.33, 659.25, 783.99, 880, 1046.5, 1174.66, 1318.5];
   const sound = {
-    tap() { tone(rand(820, 980), 0.05, { to: 1400, vol: 0.035 }); },
+    tap() { tone(rand(820, 980), 0.035, { to: 1300, vol: 0.012 }); },
     pop() { tone(360, 0.09, { type: "triangle", to: 980, vol: 0.07 }); },
-    coin() { tone(988, 0.06, { type: "square", vol: 0.03 }); tone(1319, 0.14, { type: "square", vol: 0.03, delay: 0.06 }); },
+    coin() { tone(988, 0.06, { type: "triangle", vol: 0.035 }); tone(1319, 0.12, { type: "triangle", vol: 0.03, delay: 0.06 }); },
     add() { tone(660, 0.07, { type: "triangle", vol: 0.06 }); tone(990, 0.1, { type: "triangle", vol: 0.06, delay: 0.06 }); },
     success() { [0, 2, 4, 5].forEach((n, i) => tone(NOTES[n], 0.18, { type: "triangle", vol: 0.07, delay: i * 0.08 })); },
     levelup() { [0, 2, 4, 5, 7].forEach((n, i) => tone(NOTES[n], 0.22, { type: "square", vol: 0.035, delay: i * 0.09 })); noise(0.6, { vol: 0.03, from: 2000, to: 9000, delay: 0.3 }); },
@@ -154,7 +154,7 @@
         { transform: `translate(${mx}px, ${my}px) translate(-50%,-50%) scale(1.1) rotate(180deg)`, offset: 0.6 },
         { transform: `translate(${b.x}px, ${b.y}px) translate(-50%,-50%) scale(.5) rotate(360deg)` },
       ], { duration: 900 + i * 70, easing: "cubic-bezier(.5,0,.4,1)", delay: i * 45, fill: "both" }).onfinish = () => {
-        el.remove(); sound.coin(); haptic(6);
+        el.remove(); if (i === 0) sound.coin(); haptic(6);
         if (target) bump(target);
         onEach && onEach(i);
         if (++done === n) onDone && onDone();
@@ -182,7 +182,6 @@
       const k = Math.min(1, (t - t0) / dur);
       const e = 1 - Math.pow(1 - k, 4);
       el.textContent = fmt(Math.round(start + (to - start) * e));
-      if (t - lastTick > 70 && k < 1) { sound.tick(); lastTick = t; }
       if (k < 1) requestAnimationFrame(step);
     })(t0);
   }

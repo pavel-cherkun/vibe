@@ -41,13 +41,15 @@
 .cm-place-head{border:var(--line);border-radius:32px;box-shadow:var(--shadow);padding:18px;position:relative;overflow:hidden;min-height:180px}
 .cm-place-head .display{font-size:30px;max-width:70%;position:relative;z-index:1}
 .cm-place-head .big{position:absolute;right:6px;bottom:-4px;font-size:110px}
-.cm-map{position:relative;height:250px;padding:0;background:#dff5c8}
-.cm-map svg{width:100%;height:100%;display:block}
-.cm-map .route{stroke-dasharray:10 8;animation:cm-dash 1s linear infinite}
-@keyframes cm-dash{to{stroke-dashoffset:-18}}
-.cm-map .eta{position:absolute;left:50%;top:10px;transform:translateX(-50%);white-space:nowrap;text-align:center;background:var(--ink);color:#fff;border-radius:18px;padding:8px 14px;border:2.5px solid var(--ink);box-shadow:var(--shadow-sm)}
-.cm-map .eta small{display:block;font-size:11px;font-weight:800;color:var(--lime)}
-.cm-map .eta .big-num{font-size:28px;display:inline-block}
+.cm-mapw{position:relative;height:300px}
+.cm-vm{position:absolute;inset:0}
+.cm-eta{position:absolute;left:50%;top:10px;transform:translateX(-50%);z-index:3;white-space:nowrap;text-align:center;background:var(--ink);color:#fff;border-radius:18px;padding:8px 14px;border:2.5px solid var(--ink);box-shadow:var(--shadow-sm);pointer-events:none}
+.cm-eta small{display:block;font-size:11px;font-weight:800;color:var(--lime)}
+.cm-eta .big-num{font-size:28px;display:inline-block}
+.cm-cam{position:absolute;left:10px;bottom:12px;z-index:3;height:38px;padding:0 12px;border:2.5px solid var(--ink);border-radius:14px;background:#fff;font-weight:800;font-size:13px;box-shadow:0 3px 0 var(--ink);transition:background .2s}
+.cm-cam.on{background:var(--lime)}
+.cm-cam:active{transform:translateY(3px);box-shadow:none}
+.cm-km{position:absolute;right:10px;bottom:16px;z-index:3;background:var(--yellow);pointer-events:none}
 .cm-event{max-height:0;overflow:hidden;transition:max-height .45s var(--spring),margin .3s;padding:0 2px}
 .cm-event.on{max-height:110px;margin-top:12px;padding-bottom:6px}
 .cm-steps .st{display:flex;align-items:center;gap:12px;padding:10px 0;opacity:.38;transition:opacity .3s}
@@ -222,8 +224,18 @@
     }));
   }
   const restById = (id) => RESTS.find((r) => r.id === String(id)) || RESTS[0];
+  // Доставка до дома по улицам города (Vibe.map): км и минуты курьера
+  const kmRu = (k) => String(k).replace(".", ",") + " км";
+  function deliv(id) {
+    const M = V.map;
+    if (!M) return { km: 0, min: 30 };
+    const pts = M.path(M.place("restaurant:" + id), M.place("home"));
+    return { km: M.km(pts), min: M.minutes(pts, "courier") };
+  }
+  const byDist = (list) => list.map((r) => [r, deliv(r.id).min]).sort((a, b) => a[1] - b[1]).map((x) => x[0]);
 
   function restCard(r) {
+    const d = deliv(r.id);
     return `<div class="card tap cm-rest" data-go="eat-place" ${P({ id: r.id })}>
       <div class="cm-rest-pic ${r.col}">
         <span class="bg">${r.emo}</span>
@@ -235,7 +247,8 @@
         <div class="cm-row"><b class="nm">${r.name}</b><span class="badge" style="background:var(--yellow)">${r.tag}</span></div>
         <div class="cm-meta">
           <span class="badge">⭐ ${String(r.rating).replace(".", ",")}</span>
-          <span class="badge w">🛵 ${r.time} мин</span>
+          <span class="badge w">🛵 ${d.min} мин</span>
+          <span class="badge w">📍 ${kmRu(d.km)}</span>
           <span class="badge w">${r.lvl}</span>
           <span class="muted" style="font-size:12px;font-weight:700">${r.rev} отзывов</span>
         </div>
@@ -247,8 +260,10 @@
   V.screen("eat", {
     render() {
       const hot = RESTS.map((r, i) => { const m = menuOf(r)[0].items[0]; return { r, m, i }; });
+      const near = byDist(RESTS);
+      const fast = deliv(near[0].id).min;
       return `
-      ${ui.head("Vibe Eat", "📍 Дом · доставка за 30 мин*", ui.vibikiPill())}
+      ${ui.head("Vibe Eat", `📍 Дом · ближайшая кухня в ${fast} мин*`, ui.vibikiPill())}
       <div class="hero c-orange" style="min-height:190px">
         <div class="sticker" style="top:14px;right:14px;background:var(--lime)" id="eat-timer">−50% · 00:59</div>
         <div class="display">Голоден?<br>Мы тоже.</div>
@@ -276,8 +291,8 @@
 
       ${ui.marquee(["Бесплатная доставка*", "Кэшбек вайбиками", "Курьеры с рейтингом 4.98", "*от 9 999 ₽"])}
 
-      <h2 class="sec">Рестораны рядом<small id="eat-count">${RESTS.length} мест</small></h2>
-      <div class="stack stagger" id="eat-list">${RESTS.map(restCard).join("")}</div>
+      <h2 class="sec">Рестораны рядом<small id="eat-count">${RESTS.length} мест · ближе к дому — выше</small></h2>
+      <div class="stack stagger" id="eat-list">${near.map((r) => restCard(r)).join("")}</div>
       <div class="fine">*Доставка за 30 минут указана для курьеров, которые бегут. Не все курьеры бегут. Рейтинги ресторанов формируются на основе отзывов, оценок и настроения алгоритма. «Бесплатная доставка» бесплатна только для доставки.</div>`;
     },
     mount(root) {
@@ -295,8 +310,8 @@
         if (c) {
           chipOn(c);
           const i = +c.dataset.cat;
-          const list = i === 0 ? RESTS : RESTS.filter((r) => r.cat === i - 1);
-          fill(root.querySelector("#eat-list"), list.map(restCard).join(""));
+          const list = byDist(i === 0 ? RESTS : RESTS.filter((r) => r.cat === i - 1));
+          fill(root.querySelector("#eat-list"), list.map((r) => restCard(r)).join(""));
           root.querySelector("#eat-count").textContent = `${list.length} ${list.length === 1 ? "место" : list.length < 5 ? "места" : "мест"}`;
           return;
         }
@@ -323,13 +338,14 @@
       const r = restById(params.id);
       const menu = menuOf(r);
       const other = cart.count("eat") && S().eatPlace && S().eatPlace !== r.id;
+      const d = deliv(r.id);
       return `
       ${ui.head(r.name, `⭐ ${String(r.rating).replace(".", ",")} · ${r.rev} отзывов`, likeBtn("eat-" + r.id).replace('class="like', 'class="like icon-btn'))}
       <div class="cm-place-head ${r.col}">
         <div class="sticker" style="top:14px;right:14px">${r.promo}</div>
         <div class="display">${r.name}</div>
         <div class="cm-meta" style="position:relative;z-index:1;max-width:66%">
-          <span class="badge w">🛵 ${r.time} мин</span><span class="badge w">${r.lvl}</span><span class="badge">${r.tag}</span>
+          <span class="badge w">🛵 ${d.min} мин</span><span class="badge w">📍 ${kmRu(d.km)} до дома</span><span class="badge w">${r.lvl}</span><span class="badge">${r.tag}</span>
         </div>
         <div class="big emo float">${r.emo}</div>
       </div>
@@ -400,62 +416,66 @@
     });
   }
 
-  /* ---------- Экран: трекинг заказа ---------- */
-  const STEPS = [
-    ["👨‍🍳", "Готовят", "Повар смотрит на твой заказ с уважением"],
-    ["🛵", "Курьер забрал", "Тимур надел шлем и уверенность"],
-    ["📍", "Рядом", "Тимур в 300 метрах. Или в 3 км. GPS не уверен"],
-    ["🚪", "У двери", "Выходи! Иначе оставит у соседа"],
-  ];
-  const STEP_AT = [0, 6, 13, 21];
-  const TOTAL = 25;
-  const ROUTE = "M34 58 H92 V172 H250 V58 H308";
-
-  function mapSvg(emo) {
-    const b = (x, y, w, h, c) => `<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="8" fill="${c}" stroke="#0e0e12" stroke-width="2"/>`;
-    const road = (d) => `<path d="${d}" stroke="#0e0e12" stroke-width="24" fill="none"/><path d="${d}" stroke="#fff" stroke-width="19" fill="none"/><path d="${d}" stroke="#ffe14d" stroke-width="2" stroke-dasharray="6 7" fill="none"/>`;
-    return `<svg viewBox="0 0 340 240" preserveAspectRatio="xMidYMid slice">
-      <rect width="340" height="240" fill="#dff5c8"/>
-      <circle cx="170" cy="112" r="34" fill="#7cf5c8" stroke="#0e0e12" stroke-width="2"/>
-      <text x="170" y="118" font-size="22" text-anchor="middle">🌳</text>
-      ${b(8, 8, 60, 34, "#ff8a8a")}${b(110, 8, 56, 36, "#8fd8ff")}${b(176, 8, 58, 30, "#ffe14d")}${b(270, 6, 62, 36, "#d9c8ff")}
-      ${b(8, 80, 66, 50, "#ffe14d")}${b(8, 140, 66, 18, "#ff6bcb")}${b(112, 74, 30, 70, "#d9c8ff")}${b(206, 76, 30, 72, "#ff6bcb")}${b(268, 80, 64, 76, "#8fd8ff")}
-      ${b(8, 192, 70, 42, "#c6ff4d")}${b(112, 194, 120, 40, "#ffb547")}${b(268, 192, 64, 42, "#ff8a8a")}
-      ${road("M0 58 H340")}${road("M0 172 H340")}${road("M92 0 V240")}${road("M250 0 V240")}
-      <path id="cm-route" class="route" d="${ROUTE}" stroke="#ff6bcb" stroke-width="5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
-      <g transform="translate(34 40)"><circle r="16" fill="#fff" stroke="#0e0e12" stroke-width="2.5"/><text font-size="18" text-anchor="middle" dominant-baseline="central">${emo}</text></g>
-      <g transform="translate(308 40)"><circle r="16" fill="#c6ff4d" stroke="#0e0e12" stroke-width="2.5"/><text font-size="18" text-anchor="middle" dominant-baseline="central">🏠</text></g>
-      <g id="cm-scooter" transform="translate(34 58)">
-        <circle r="17" fill="#ff6bcb" opacity=".35"><animate attributeName="r" values="12;20;12" dur="1.2s" repeatCount="indefinite"/></circle>
-        <text id="cm-scooter-e" font-size="26" text-anchor="middle" dominant-baseline="central">👨‍🍳</text>
-      </g>
-    </svg>`;
+  /* ---------- Экран: трекинг заказа (на общей карте города) ---------- */
+  // ?src=supermarket — те же дофамины для продуктов
+  const COURIERS = {
+    eat: {
+      name: "Тимур", veh: "🛵", ava: "🧑🏻‍🦱", info: "⭐ 4.98 · 12 408 доставок · самокат «Молния-3»",
+      steps: [
+        ["👨‍🍳", "Готовят", "Повар смотрит на твой заказ с уважением"],
+        ["🛵", "Курьер забрал", "Тимур надел шлем и уверенность"],
+        ["📍", "Рядом", "Тимур в 300 метрах. Или в 3 км. GPS не уверен"],
+        ["🚪", "У двери", "Выходи! Иначе оставит у соседа"],
+      ],
+    },
+    supermarket: {
+      name: "Арсений", veh: "🚲", ava: "🧔🏻", info: "⭐ 4.97 · 8 113 доставок · велосипед «Ветер-1»",
+      steps: [
+        ["🧺", "Собирают", "Сборщик выбирает самый мятый банан"],
+        ["🚲", "Курьер забрал", "Арсений крутит педали и надежды"],
+        ["📍", "Рядом", "Арсений в 300 метрах. Пакет держится"],
+        ["🚪", "У двери", "Выходи! Яйца целы. Почти все"],
+      ],
+    },
+  };
+  function trackSrc(params) {
+    const sm = params.src === "supermarket";
+    const tr = S().eatTrack || {};
+    const r = sm ? null : restById(tr.place || "1");
+    const M = V.map;
+    const from = M.place(sm ? "supermarket" : "restaurant:" + r.id);
+    const home = M.place("home");
+    const pts = M.path(from, home);
+    return { sm, r, name: sm ? "Vibe Supermarket" : r.name, emo: sm ? "🛒" : r.emo, from, home, pts, km: M.km(pts), min: M.minutes(pts, "courier"), C: sm ? COURIERS.supermarket : COURIERS.eat };
   }
 
   V.screen("eat-track", {
     render(params) {
+      const T = trackSrc(params);
       const tr = S().eatTrack || {};
-      const r = restById(tr.place || "1");
+      const C = T.C;
       return `
-      ${ui.head("Заказ в пути", `№ ${String(params.id || tr.id || "4242").slice(-6)} · ${r.name}`, ui.vibikiPill())}
-      <div class="card cm-map">
-        ${mapSvg(r.emo)}
-        <div class="eta"><small>ПРИЕДЕТ ЧЕРЕЗ</small><span class="big-num" id="trk-eta">25</span> <b>мин</b></div>
+      ${ui.head(T.sm ? "Продукты в пути" : "Заказ в пути", `№ ${String(params.id || tr.id || "4242").slice(-6)} · ${T.name}`, ui.vibikiPill())}
+      <div class="cm-mapw" id="trk-wrap">
+        <div class="cm-vm" id="trk-map"></div>
+        <div class="cm-eta"><small>ПРИЕДЕТ ЧЕРЕЗ</small><span class="big-num" id="trk-eta">${T.min}</span> <b>мин</b></div>
+        <button class="cm-cam" id="trk-cam">🎥 Следить</button>
+        <span class="badge cm-km">📏 ${kmRu(T.km)}</span>
       </div>
-      <div class="cm-event" id="trk-event"><div class="card tight c-yellow" style="display:flex;gap:10px;align-items:center;font-weight:800;font-size:14px"><span class="emo wobble" style="font-size:30px">🤝</span><span id="trk-event-t">Курьер встретил друга. +3 мин</span></div></div>
+      <div class="cm-event" id="trk-event"><div class="card tight c-yellow" style="display:flex;gap:10px;align-items:center;font-weight:800;font-size:14px"><span class="emo wobble" style="font-size:30px">🤝</span><span id="trk-event-t">${C.name} встретил друга. +3 мин</span></div></div>
       <div class="progress" style="margin-top:14px"><i id="trk-bar" style="--p:2%"></i></div>
 
       <div class="card" style="margin-top:16px;padding:6px 16px">
         <div class="cm-steps" id="trk-steps">
-          ${STEPS.map((s, i) => `<div class="st ${i === 0 ? "on now" : ""}" data-st="${i}"><div class="ic">${s[0]}</div><div><b>${s[1]}</b><small>${s[2]}</small></div></div>`).join("")}
+          ${C.steps.map((s, i) => `<div class="st ${i === 0 ? "on now" : ""}" data-st="${i}"><div class="ic">${s[0]}</div><div><b>${s[1]}</b><small>${s[2]}</small></div></div>`).join("")}
         </div>
       </div>
 
       <h2 class="sec">Твой курьер</h2>
       <div class="card c-sky">
         <div class="cm-doc">
-          <div class="ava c-yellow"><span class="emo float">🧑🏻‍🦱</span></div>
-          <div style="flex:1"><b>Тимур</b><small style="color:inherit;opacity:.8">⭐ 4.98 · 12 408 доставок · самокат «Молния-3»</small></div>
+          <div class="ava c-yellow"><span class="emo float">${C.ava}</span></div>
+          <div style="flex:1"><b>${C.name}</b><small style="color:inherit;opacity:.8">${C.info}</small></div>
         </div>
         <div style="display:flex;gap:8px;margin-top:14px">
           <button class="btn sm" data-msg style="flex:1">💬 Написать</button>
@@ -463,96 +483,118 @@
           <button class="icon-btn" data-call style="width:38px;height:38px;font-size:16px">📞</button>
         </div>
       </div>
-      <div style="margin-top:16px">${zab("sly", "Пока ждёшь — может, закажешь десерт? Курьер всё равно ещё не доехал 😏")}</div>
+      <div style="margin-top:16px">${zab("sly", T.sm ? `Обещали 15 минут, навигатор говорит ${T.min}. Правы оба: 15 — это маркетинговые минуты 😏` : "Пока ждёшь — может, закажешь десерт? Курьер всё равно ещё не доехал 😏")}</div>
       <div class="fine">Время доставки — оценочное и зависит от пробок, погоды, ретроградного Меркурия и личной жизни курьера. Компенсация за опоздание выплачивается вайбиками по курсу 1 к 0.</div>`;
     },
     mount(root, params) {
+      const T = trackSrc(params);
+      const C = T.C;
       const tr = S().eatTrack || {};
       const orderId = String(params.id || tr.id || "4242");
-      const path = root.querySelector("#cm-route");
-      const len = path.getTotalLength ? path.getTotalLength() : 0;
-      const sc = root.querySelector("#cm-scooter");
-      const scE = root.querySelector("#cm-scooter-e");
+      const M = V.map;
+      const srcPin = { id: "src", x: T.from.x, y: T.from.y, e: T.emo, label: T.name, color: "#ffe14d", pulse: true };
+      const ctrl = M.create(root.querySelector("#trk-map"), { pins: M.basePins([srcPin]), fit: T.pts });
+      const wrap = root.querySelector("#trk-wrap");
       const etaEl = root.querySelector("#trk-eta");
       const bar = root.querySelector("#trk-bar");
       const ev = root.querySelector("#trk-event");
       const evT = root.querySelector("#trk-event-t");
+      const cam = root.querySelector("#trk-cam");
       const stepsEl = [...root.querySelectorAll("[data-st]")];
       const timeouts = [];
       const later = (fn, ms) => timeouts.push(setTimeout(fn, ms));
-      let t = 0, last = performance.now(), raf = 0, step = 0, alive = true;
-      let paused = false, eventDone = false, extra = 0, lastEta = -1, prevX = 34, done = false;
+      // Реальное время доставки: 25–40 сек, из них ~четверть — готовка
+      const TOTAL = Math.max(25, Math.min(40, 25 + T.km * 3));
+      const PREP = TOTAL * 0.24;
+      let phase = "cook", cookT = 0, k = 0, last = performance.now(), raf = 0, alive = true, step = 0;
+      let eventDone = false, extra = 0, lastEta = -1, lastBar = -1, follow = false, drv = null;
+      const vehEmo = () => ctrl.svg.querySelector(".vm-veh .vm-emo");
+      later(() => alive && ctrl.route(T.pts, { color: "#ff6bcb" }), 300);
 
       function setStep(i) {
-        stepsEl.forEach((el, k) => { el.classList.toggle("on", k <= i); el.classList.toggle("now", k === i && i < 3); });
+        if (!alive) return;
+        stepsEl.forEach((el, n) => { el.classList.toggle("on", n <= i); el.classList.toggle("now", n === i && i < 3); });
         const ic = stepsEl[i].querySelector(".ic");
-        FX.burst(ic, { emojis: [STEPS[i][0], "✨", "⭐", "💚"], count: 14, spread: 110 });
+        FX.burst(ic, { emojis: [C.steps[i][0], "✨", "⭐", "💚"], count: 14, spread: 110 });
         FX.sound.success(); FX.haptic([10, 30, 10]);
-        FX.toast(STEPS[i][1] + "!", STEPS[i][0], 1600);
-        if (i === 1) scE.textContent = "🛵";
+        FX.toast(C.steps[i][1] + "!", C.steps[i][0], 1600);
+      }
+
+      function startDrive() {
+        phase = "drive"; step = 1;
+        later(() => setStep(1), 0);
+        drv = ctrl.drive(T.pts, {
+          emoji: C.veh, color: "#ff6bcb", duration: (TOTAL - PREP) * 1000,
+          onProgress(kk, p) {
+            k = kk;
+            if (follow && p) ctrl.fit([{ x: p.x - 150, y: p.y - 150 }, { x: p.x + 150, y: p.y + 150 }], 0, true);
+          },
+          onDone() { later(arrive, 0); },
+        });
+      }
+
+      // Сатира: курьер встретил друга — машинка встаёт на паузу
+      function friend() {
+        if (!alive || !drv) return;
+        drv.pause(); extra = 3;
+        const emo = vehEmo();
+        if (emo) emo.textContent = "🧍";
+        ev.classList.add("on"); FX.shake(wrap); FX.toast(`${C.name} встретил друга. +3 мин`, "🤝");
+        later(() => { evT.textContent = "Обсуждают сериал. Важное"; FX.bump(ev); }, 1800);
+        later(() => {
+          if (!alive) return;
+          drv.resume(); extra = 0;
+          if (emo) emo.textContent = C.veh;
+          evT.textContent = `Друг ушёл. ${C.name} снова в пути! −3 мин`;
+          FX.sound.pop(); FX.bump(ev);
+          later(() => ev.classList.remove("on"), 1800);
+        }, 3600);
       }
 
       function frame(now) {
         if (!alive) return;
         const dt = Math.min(0.1, (now - last) / 1000);
         last = now;
-        if (!paused) t = Math.min(TOTAL, t + dt);
-        // Сатира: курьер встретил друга
-        if (!eventDone && t >= 15) {
-          eventDone = true; paused = true; extra = 3;
-          ev.classList.add("on"); FX.sound.error(); FX.shake(etaEl.closest(".cm-map")); FX.toast("Курьер встретил друга. +3 мин", "🤝");
-          scE.textContent = "🧍";
-          later(() => { evT.textContent = "Обсуждают сериал. Важное"; FX.bump(ev); }, 1800);
-          later(() => {
-            paused = false; extra = 0;
-            evT.textContent = "Друг ушёл. Тимур снова в пути! −3 мин";
-            scE.textContent = "🛵"; FX.sound.pop(); FX.bump(ev);
-            later(() => ev.classList.remove("on"), 1800);
-          }, 3600);
+        if (phase === "cook") { cookT += dt; if (cookT >= PREP) startDrive(); }
+        const prog = phase === "cook" ? cookT / TOTAL : phase === "done" ? 1 : (PREP + k * (TOTAL - PREP)) / TOTAL;
+        const eta = phase === "done" ? 0 : Math.max(0, Math.ceil(T.min * (1 - prog)) + extra);
+        if (eta !== lastEta) { lastEta = eta; etaEl.textContent = eta; if (extra) FX.bump(etaEl); }
+        const bp = Math.max(2, Math.round(prog * 100));
+        if (bp !== lastBar) { lastBar = bp; bar.style.setProperty("--p", bp + "%"); }
+        if (phase === "drive") {
+          if (!eventDone && k >= 0.45) { eventDone = true; later(friend, 0); }
+          if (step < 2 && k >= 0.62) { step = 2; later(() => setStep(2), 0); }
         }
-        // Шаги
-        while (step < 3 && t >= STEP_AT[step + 1]) { step++; setStep(step); }
-        // Самокат
-        const k = Math.max(0, Math.min(1, (t - STEP_AT[1]) / (TOTAL - STEP_AT[1])));
-        if (len) {
-          const p = path.getPointAtLength(k * len);
-          const dir = p.x > prevX + 0.01 ? -1 : p.x < prevX - 0.01 ? 1 : (sc.dataset.dir || -1);
-          sc.dataset.dir = dir;
-          prevX = p.x;
-          const bob = paused ? 0 : Math.sin(now / 90) * 1.5;
-          sc.setAttribute("transform", `translate(${p.x.toFixed(1)} ${(p.y - 4 + bob).toFixed(1)})`);
-          scE.setAttribute("transform", step >= 1 && !paused ? `scale(${dir} 1)` : "");
-        }
-        bar.style.setProperty("--p", Math.max(2, (t / TOTAL) * 100) + "%");
-        const eta = Math.max(0, Math.ceil(TOTAL - t) + extra);
-        if (eta !== lastEta) {
-          lastEta = eta;
-          etaEl.textContent = eta;
-          if (extra) FX.bump(etaEl);
-        }
-        if (t >= TOTAL && !done) { done = true; arrive(); return; }
+        if (phase === "done") return;
         raf = requestAnimationFrame(frame);
       }
       raf = requestAnimationFrame(frame);
 
       function arrive() {
+        if (!alive || phase === "done") return;
+        phase = "done"; step = 3;
         etaEl.textContent = "0";
-        scE.textContent = "🎉";
-        FX.confetti(); FX.sound.success();
+        bar.style.setProperty("--p", "100%");
+        const emo = vehEmo();
+        if (emo) emo.textContent = "🎉";
+        setStep(3);
+        FX.confetti();
+        if (follow) { follow = false; cam.classList.remove("on"); cam.textContent = "🎥 Следить"; }
+        ctrl.center(T.home, 320);
         later(() => {
           if (!alive) return;
           let rated = (S().eatRatings || {})[orderId] || 0;
           V.modal(`
-            <div class="m-emo float">🛵</div>
-            <div class="display">Тимур у двери!</div>
-            <p id="rt-p">Оцени доставку — Тимур очень ждёт. Ну, алгоритм ждёт.</p>
+            <div class="m-emo float">${C.veh}</div>
+            <div class="display">${C.name} у двери!</div>
+            <p id="rt-p">Оцени доставку — ${C.name} очень ждёт. Ну, алгоритм ждёт.</p>
             <div class="cm-stars">${[1, 2, 3, 4, 5].map((n) => `<button data-star="${n}" class="${n <= rated ? "on" : ""}">⭐</button>`).join("")}</div>
-            <button class="btn black block" data-close>Забрать еду 😋</button>
+            <button class="btn black block" data-close>${T.sm ? "Забрать пакеты 🛍️" : "Забрать еду 😋"}</button>
             <button class="btn block" data-again style="margin-top:10px">Заказать ещё</button>`, {
             sound: "levelup",
             onMount(m, close) {
               m.addEventListener("click", (e) => {
-                if (e.target.closest("[data-again]")) { close(); V.go("eat"); return; }
+                if (e.target.closest("[data-again]")) { close(); V.go(T.sm ? "supermarket" : "eat"); return; }
                 const s = e.target.closest("[data-star]");
                 if (!s) return;
                 const n = +s.dataset.star;
@@ -564,10 +606,10 @@
                 FX.burst(s, { emojis: ["⭐", "🌟", "✨", n >= 4 ? "💖" : "😬"], count: 8 + n * 3 });
                 FX.sound.like();
                 const pEl = m.querySelector("#rt-p");
-                pEl.textContent = n === 5 ? "Тимур получил 5 звёзд и смысл жизни 🥹"
-                  : n === 4 ? "Четыре звезды. Тимур делает вид, что не расстроен"
-                  : n === 3 ? "Мы передали отзыв. Тимур уже плачет. Шучу, он не узнает"
-                  : "Оценка учтена. Тимура отправят на курс «Вайб-доставка 2.0»";
+                pEl.textContent = n === 5 ? `${C.name} получил 5 звёзд и смысл жизни 🥹`
+                  : n === 4 ? `Четыре звезды. ${C.name} делает вид, что не расстроен`
+                  : n === 3 ? `Мы передали отзыв. ${C.name} уже плачет. Шучу, он не узнает`
+                  : `Оценка учтена. ${C.name} отправят на курс «Вайб-доставка 2.0»`;
                 FX.bump(pEl);
                 const ratings = Object.assign({}, S().eatRatings || {});
                 const first = !ratings[orderId];
@@ -581,15 +623,23 @@
       }
 
       root.addEventListener("click", (e) => {
-        if (e.target.closest("[data-msg]")) {
+        if (e.target.closest("#trk-cam")) {
+          follow = !follow;
+          cam.classList.toggle("on", follow);
+          cam.textContent = follow ? "🎥 Слежу за курьером" : "🎥 Следить";
+          FX.bump(cam); FX.sound.pop();
+          if (!follow) ctrl.fit(T.pts, 70);
+          else if (phase === "cook") { ctrl.center(T.from, 300); FX.toast("Курьер ещё ждёт заказ. Следим за поваром", "👨‍🍳"); }
+          else if (phase === "done") ctrl.center(T.home, 300);
+        } else if (e.target.closest("[data-msg]")) {
           FX.sound.pop();
-          FX.toast("Тимур прочитал и поставил 👍. Это максимум", "💬", 2600);
-          later(() => FX.toast("Тимур печатает… передумал", "⌨️"), 2200);
+          FX.toast(`${C.name} прочитал и поставил 👍. Это максимум`, "💬", 2600);
+          later(() => FX.toast(`${C.name} печатает… передумал`, "⌨️"), 2200);
         } else if (e.target.closest("[data-tip]")) {
           const b = e.target.closest("[data-tip]");
-          if (V.pay(50, { title: "Чаевые курьеру Тимуру", emoji: "🛵", col: "c-sky", from: b })) {
-            FX.burst(b, { emojis: ["💛", "🪙", "🛵", "✨"], count: 16 });
-            FX.toast("Тимур почувствовал прилив сил. +0,5 км/ч", "⚡");
+          if (V.pay(50, { title: `Чаевые курьеру · ${C.name}`, emoji: C.veh, col: "c-sky", from: b })) {
+            FX.burst(b, { emojis: ["💛", "🪙", C.veh, "✨"], count: 16 });
+            FX.toast(`${C.name} почувствовал прилив сил. +0,5 км/ч`, "⚡");
             b.textContent = "💛 Спасибо!"; b.disabled = true;
           }
         } else if (e.target.closest("[data-call]")) {
@@ -598,7 +648,7 @@
         }
       });
 
-      return () => { alive = false; cancelAnimationFrame(raf); timeouts.forEach(clearTimeout); };
+      return () => { alive = false; cancelAnimationFrame(raf); timeouts.forEach(clearTimeout); ctrl.destroy(); };
     },
   });
 
@@ -630,11 +680,20 @@
     return { id: "sm" + i, cat: r[0], name: r[1], price: r[2], emo: r[3], col: r[4], sub: r[5], old: sale ? Math.round(r[2] / 0.7) : 0, st: sale ? "−30%" : i % 5 === 0 ? "ХИТ" : "", stc: sale ? "var(--yellow)" : "var(--lime)", left: i % 7 === 2 ? 2 : 0, d: i % 4 };
   });
 
+  // После оплаты продуктов — тот же трекинг, что у Vibe Eat, но из супермаркета
+  function smPaid(order) {
+    setTimeout(() => refreshCtl(order.svc), 50);
+    FX.toast("Курьер уже крутит педали. Мороженое не растает. Наверное", "🚲", 2400);
+    setTimeout(() => V.go("eat-track", { id: order.id, src: "supermarket" }), 500);
+  }
+
   V.screen("supermarket", {
     render() {
       const t = cart.total("supermarket");
+      const M = V.map;
+      const smMin = M ? M.minutes(M.path(M.place("supermarket"), M.place("home")), "courier") : 15;
       return `
-      ${ui.head("Vibe Supermarket", "📍 Дом · 15 мин*", ui.vibikiPill())}
+      ${ui.head("Vibe Supermarket", `📍 Дом · 15 мин* (навигатор: ${smMin})`, ui.vibikiPill())}
       <div class="hero c-lime">
         <div class="sticker" style="top:14px;right:14px;background:var(--pink)">15 мин ⚡</div>
         <div class="display">Продукты за 15 минут</div>
@@ -649,7 +708,7 @@
       <div style="margin-top:14px">${chipsHtml(SM_CATS)}</div>
       <div class="grid2 stagger" id="sm-grid" style="margin-top:6px">${SM.map((p) => prodCard("supermarket", p)).join("")}</div>
       <div class="fine">«−30%» рассчитано от цены, которую мы придумали утром. Курьер сам выбирает спелость авокадо, исходя из личного опыта. 15 минут отсчитываются с момента, когда курьер решил, что пора.</div>
-      ${dock("supermarket", { freeFrom: 1500, txTitle: "Vibe Supermarket", col: "c-lime", onPaid: paidModal("Курьер уже бежит. Мороженое не растает. Наверное.", "🛒") })}`;
+      ${dock("supermarket", { freeFrom: 1500, txTitle: "Vibe Supermarket", col: "c-lime", onPaid: smPaid })}`;
     },
     mount(root) {
       cart.renderBar("supermarket");

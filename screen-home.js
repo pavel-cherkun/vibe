@@ -56,6 +56,56 @@
     return h < 6 ? "Не спится" : h < 12 ? "Доброе утро" : h < 18 ? "Йо" : "Добрый вечер";
   }
 
+  // Блоки жизни: работа, ближайшие деньги, цель, задания дня
+  function lifeBlocks() {
+    const s = S();
+    const G = Vibe.game;
+    const up = G.upcoming(4);
+    const goal = G.goal();
+    const qs = G.quests();
+    const job = s.job;
+    const left = job ? G.tasksLeft() : 0;
+    return `
+      ${job ? `
+      <button class="card tap job-card c-sky" data-go="job">
+        <div class="li-ic c-white"><span class="emo float">${job.emoji || "💼"}</span></div>
+        <div style="flex:1;text-align:left;min-width:0"><b>${Vibe.esc(G.jobTitle(job))}</b><small>${Vibe.esc(job.company)} · ${Vibe.rub(job.salary)}/мес</small>
+          <div class="progress" style="height:10px;margin-top:6px"><i style="--p:${job.perf || 0}%"></i></div><small>До повышения ${100 - (job.perf || 0)}%</small></div>
+        <span class="sticker" style="position:static;transform:rotate(6deg);background:${left ? "var(--lime)" : "#fff"}">${left ? `${left} задачи` : "✓"}</span>
+      </button>` : `
+      <button class="card tap job-card c-coral" data-go="job">
+        <div class="li-ic c-white"><span class="emo wobble">💼</span></div>
+        <div style="flex:1;text-align:left"><b>Ты без работы</b><small>Денег хватит примерно на ${G.runway()} дн. Пора искать!</small></div>
+        <span class="sticker" style="position:static;transform:rotate(6deg)">ИСКАТЬ</span>
+      </button>`}
+
+      ${up.length ? `<div class="hscroll up-row">${up.map((u) => `
+        <div class="up ${u.a > 0 ? "c-lime" : "c-white"}">
+          <span class="emo">${u.e}</span>
+          <b>${u.a > 0 ? "+" : "−"}${Vibe.rub(Math.abs(u.a))}</b>
+          <small>${u.t} · через ${u.in} дн.</small>
+          <small class="muted">≈ ${u.real < 60 ? u.real + " мин" : Math.round(u.real / 60) + " ч"} реального времени</small>
+        </div>`).join("")}</div>` : ""}
+
+      ${goal ? `
+      <div class="card goal-card ${goal.done ? "c-yellow" : ""}">
+        <div style="display:flex;gap:12px;align-items:center">
+          <span class="emo ${goal.done ? "wobble" : "float"}" style="font-size:42px">${goal.e}</span>
+          <div style="flex:1"><small class="muted" style="font-weight:800">Цель ${goal.index} из ${goal.total}</small><div class="display" style="font-size:19px">${goal.t}</div></div>
+        </div>
+        <div class="progress" style="margin:10px 0 8px"><i style="--p:${Math.round(goal.progress * 100)}%"></i></div>
+        ${goal.done ? `<button class="btn black block" data-act="goal">Забрать +${goal.r} 🪙</button>` : `<button class="btn sm" data-go="${goal.go}">Как это сделать →</button>`}
+      </div>` : ""}
+
+      <h2 class="sec">Задания дня <small>обновятся завтра</small></h2>
+      <div class="stack">${qs.map((q) => `
+        <div class="card tight quest ${q.claimed ? "claimed" : q.done ? "c-lime" : ""}">
+          <span class="emo">${q.e}</span>
+          <div style="flex:1;min-width:0"><b>${q.t}</b><div class="progress" style="height:8px;margin-top:5px"><i style="--p:${Math.round((Math.min(q.n, q.need) / q.need) * 100)}%"></i></div></div>
+          ${q.claimed ? `<span class="badge" style="background:#fff">✓</span>` : q.done ? `<button class="btn black sm" data-act="quest" data-q="${q.id}">+${q.r} 🪙</button>` : `<small class="muted" style="font-weight:900">${q.n}/${q.need}</small>`}
+        </div>`).join("")}</div>`;
+  }
+
   Vibe.screen("home", {
     render() {
       const s = S();
@@ -71,13 +121,14 @@
       </div>
 
       <div class="hello card c-white tap" data-go="profile">
-        <div class="hello-ava c-lilac"><span class="emo">😎</span><span class="lvl" data-level>${s.level}</span></div>
+        <div class="hello-ava c-lilac"><span class="emo">${(s.profile && s.profile.avatar) || "😎"}</span><span class="lvl" data-level>${s.level}</span></div>
         <div style="flex:1;min-width:0">
           <div class="display" style="font-size:22px">${greeting()}, ${Vibe.esc(s.name)}</div>
           <div style="display:flex;align-items:center;gap:8px;margin-top:6px">
             <div class="progress" style="flex:1"><i data-xpbar style="--p:${xpP}%"></i></div>
             <span class="badge" style="background:var(--orange)">🔥 ${s.streak}</span>
           </div>
+          <div class="clock" data-clock>📅 ${Vibe.game.info().label}</div>
         </div>
       </div>
 
@@ -100,24 +151,24 @@
         <div style="position:relative;font-weight:800;font-size:13px">Кэшбек: <span class="badge" style="background:#fff">🪙 <span data-vibiki>${Vibe.fmt(s.vibiki)}</span> вайбиков</span></div>
         <div class="pc-actions">
           <button data-act="transfer"><span>↗</span>Перевести</button>
-          <button data-act="topup"><span>＋</span>Пополнить</button>
+          <button data-go="job"><span>💼</span>Работа</button>
           <button data-go="qr"><span>▦</span>QR</button>
           <button data-go="wheel"><span>🎡</span>Колесо</button>
         </div>
         <div class="emo pc-emo float">💳</div>
       </div>
 
+      <div data-life>${lifeBlocks()}</div>
+
+      <h2 class="sec">Карта <small>${s.job ? "дом · работа" : "твой район"}</small></h2>
+      <div class="home-map" data-homemap data-go="maps"></div>
+
       ${lastEat ? `
       <button class="card tap live" data-go="eat-track" data-params='{"id":"${lastEat.id}"}'>
         <div class="li-ic c-pink"><span class="emo wobble">🛵</span></div>
-        <div style="flex:1;text-align:left"><b>Vibe Eat · заказ в пути</b><small class="muted">Курьер уже рядом. Наверное</small><div class="progress" style="height:10px;margin-top:6px"><i style="--p:68%"></i></div></div>
-        <div class="big-num" style="font-size:18px">7 мин</div>
-      </button>` : `
-      <button class="card tap live c-lilac" data-go="wheel">
-        <div class="li-ic c-white"><span class="emo spin-slow">🎡</span></div>
-        <div style="flex:1;text-align:left"><b>Колесо вайба</b><small>Бесплатный спин каждый день. Крути!</small></div>
-        <span class="sticker" style="position:static;transform:rotate(6deg)">ГО</span>
-      </button>`}
+        <div style="flex:1;text-align:left"><b>Vibe Eat · заказ в пути</b><small class="muted">Следи за курьером на карте</small></div>
+        <span class="sticker" style="position:static;transform:rotate(6deg)">→</span>
+      </button>` : ""}
 
       <h2 class="sec">Главное <small>4 из 34</small></h2>
       <div class="big-tiles stagger">
@@ -216,20 +267,36 @@
             <button class="btn black block" style="margin-top:16px" data-close>Прочитать все (ещё 94)</button>`);
         }
         if (act === "transfer") Vibe.go("pay", { transfer: "1" });
-        if (act === "topup") {
-          Vibe.addMoney(5000, { title: "Пополнение с карты другого банка", emoji: "💸" });
-          FX.burst(a, { emojis: ["💸", "💵", "✨"], count: 14 });
-          FX.sound.coin();
-          FX.toast("+5 000 ₽ на счёте", "💸");
-        }
       });
+
+      // Мини-карта
+      const mapEl = root.querySelector("[data-homemap]");
+      const pins = Vibe.map.basePins();
+      const mapCtl = Vibe.map.create(mapEl, { interactive: false, pins, fit: pins.filter(Boolean).filter((p) => p.id !== "hq") });
+      const home = Vibe.map.place("home"), work = Vibe.map.place("work");
+      if (work) mapCtl.route(Vibe.map.path(home, work), { color: "#8b5cff" });
+      setTimeout(() => mapCtl.fit(work ? [home, work] : [home], work ? 110 : 220, true), 50);
+
+      // Часы и живые блоки
+      const clock = root.querySelector("[data-clock]");
+      const life = root.querySelector("[data-life]");
+      const refreshLife = () => { if (life) { life.innerHTML = lifeBlocks(); } };
+      const cv = setInterval(() => { if (clock) clock.textContent = "📅 " + Vibe.game.info().label; }, 3000);
+      const offGame = Vibe.game.on(() => { refreshLife(); Vibe.refreshCounters(); });
+      root.addEventListener("click", (e) => {
+        const a = e.target.closest("[data-act]");
+        if (!a) return;
+        if (a.dataset.act === "goal") { e.stopPropagation(); Vibe.game.claimGoal(a); setTimeout(refreshLife, 400); }
+        if (a.dataset.act === "quest") { e.stopPropagation(); Vibe.game.claimQuest(a.dataset.q, a); setTimeout(refreshLife, 300); }
+      });
+      const qv = setInterval(refreshLife, 15000);
 
       const onSeen = () => {
         const s = S();
         root.querySelectorAll(".story").forEach((el, i) => el.classList.toggle("seen", !!s.seenStories[i]));
       };
       window.addEventListener("vibe:stories-seen", onSeen);
-      return () => { clearInterval(iv); clearInterval(zv); window.removeEventListener("vibe:stories-seen", onSeen); };
+      return () => { clearInterval(iv); clearInterval(zv); clearInterval(cv); clearInterval(qv); offGame(); mapCtl.destroy(); window.removeEventListener("vibe:stories-seen", onSeen); };
     },
   });
 
@@ -241,6 +308,17 @@
   .hello-ava { width:58px; height:58px; border-radius:50%; border:var(--line); display:grid; place-items:center; font-size:32px; position:relative; flex:0 0 auto; }
   .hello-ava .lvl { position:absolute; bottom:-6px; right:-6px; background:var(--lime); border:2px solid var(--ink); border-radius:999px; font-size:12px; font-weight:900; padding:1px 7px; }
   .search { cursor:pointer; }
+  .clock { font-size:12px; font-weight:800; color:var(--muted); margin-top:6px; }
+  .job-card { display:flex; gap:12px; align-items:center; width:100%; margin-top:14px; padding:12px 14px; }
+  .job-card b { display:block; font-size:15px; } .job-card small { display:block; font-size:12px; font-weight:700; }
+  .up-row { margin-top:4px; padding-top:12px; }
+  .up { width:150px; border:var(--line); border-radius:22px; box-shadow:var(--shadow-sm); padding:12px; display:flex; flex-direction:column; gap:2px; }
+  .up .emo { font-size:26px; } .up b { font-family:var(--font-display); font-weight:400; font-size:17px; } .up small { font-size:11px; font-weight:800; }
+  .goal-card { margin-top:4px; }
+  .quest { display:flex; gap:10px; align-items:center; }
+  .quest .emo { font-size:28px; } .quest b { font-size:14px; font-weight:800; }
+  .quest.claimed { opacity:.55; }
+  .home-map { height:210px; cursor:pointer; }
   .stories { display:flex; gap:12px; overflow-x:auto; margin:0 -16px 18px; padding:2px 16px 4px; scrollbar-width:none; }
   .stories::-webkit-scrollbar { display:none; }
   .story { flex:0 0 auto; width:70px; display:flex; flex-direction:column; align-items:center; gap:6px; font-size:11px; font-weight:800; }

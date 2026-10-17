@@ -144,6 +144,64 @@
   .lf-chk.done{background:var(--lime)}
   .lf-glow{animation:lf-glow 1.6s ease-in-out infinite}
   @keyframes lf-glow{50%{box-shadow:0 0 0 6px rgba(198,255,77,.6),var(--shadow)}}
+  .lf-tabs{display:grid;grid-auto-flow:column;grid-auto-columns:1fr;gap:4px;padding:4px;border:var(--line);border-radius:999px;background:var(--paper);box-shadow:var(--shadow-sm)}
+  .lf-tabs button{height:40px;border-radius:999px;font-weight:800;font-size:13px;display:flex;align-items:center;justify-content:center;gap:4px;transition:background .2s,color .2s,transform .2s var(--spring);white-space:nowrap;min-width:0;padding:0 4px}
+  .lf-tabs button.on{background:var(--ink);color:#fff}
+  .lf-tabs.sm{box-shadow:none}
+  .lf-tabs.sm button{height:34px;font-size:12px}
+  .lf-dot-n{font-style:normal;min-width:20px;height:20px;padding:0 5px;border-radius:10px;background:var(--pink);color:var(--ink);border:2px solid #fff;font-size:11px;font-weight:900;display:inline-grid;place-items:center;animation:badge-bounce 2.4s var(--spring) infinite}
+  .lf-dot-n[hidden]{display:none}
+  .lf-vt{display:block;font-size:15px;line-height:1.2}
+  .lf-st{flex:0 0 auto;padding:5px 10px;border-radius:999px;border:2px solid var(--ink);font-size:11px;font-weight:900;white-space:nowrap}
+  .lf-steps{display:grid;grid-template-columns:repeat(4,1fr);gap:4px;margin-top:10px}
+  .lf-steps span{height:8px;border-radius:4px;border:1.5px solid var(--ink);background:#fff;transition:background .4s}
+  .lf-steps span.on{background:var(--lime)}
+  .lf-steps.bad span.on{background:var(--coral)}
+  .lf-eta{font-size:12px;font-weight:700;margin-top:8px;color:var(--muted)}
+  .lf-eta b{color:var(--ink);font-variant-numeric:tabular-nums}
+  .lf-new{animation:lf-glow 1.2s ease-in-out infinite}
+  .lf-live{display:inline-block;width:8px;height:8px;border-radius:50%;background:#12a150;animation:pulse 1s ease-in-out infinite;vertical-align:middle}
+  .lf-warn .display{line-height:1.05}
+  .lf-cvb{display:grid;grid-template-columns:repeat(5,1fr);gap:4px;margin-top:12px}
+  .lf-cvb span{background:rgba(255,255,255,.16);border:2px solid rgba(255,255,255,.55);border-radius:12px;padding:5px 1px;text-align:center;font-size:9.5px;font-weight:800;line-height:1.2;min-width:0;overflow:hidden}
+  .lf-cvb b{display:block;font-size:14px}
+  .lf-skills{display:flex;flex-wrap:wrap;gap:8px}
+  .lf-skills .chip{height:auto;min-height:36px;padding:6px 12px;font-size:13px;white-space:normal;text-align:left}
+  .lf-skills .chip small{font-size:10px;opacity:.7}
+  .lf-hr{display:flex;align-items:flex-end;gap:8px;margin:12px 0;text-align:left}
+  .lf-hr>.emo{font-size:46px}
+  .lf-quiz{display:grid;gap:8px}
+  .lf-quiz button{min-height:50px;padding:10px 14px;border:var(--line);border-radius:18px;background:var(--paper);font-weight:800;font-size:14px;box-shadow:var(--shadow-sm);text-align:left;transition:transform .15s var(--spring),background .2s}
+  .lf-quiz button:active{transform:translateY(3px);box-shadow:none}
+  .lf-quiz button.good{background:var(--lime)}
+  .lf-quiz button.mid{background:var(--yellow)}
+  .lf-quiz button.bad{background:var(--coral)}
+  .lf-react{min-height:44px;margin-top:10px;font-weight:800;font-size:14px;line-height:1.3}
+  .lf-ivdots{display:flex;gap:6px;justify-content:center;margin:12px 0 0}
+  .lf-ivdots i{width:26px;height:8px;border-radius:4px;border:2px solid var(--ink);background:#fff}
+  .lf-ivdots i.on{background:var(--lime)}
+  .lf-ivdots i.now{background:var(--yellow)}
+  .lf-gtop{display:flex;justify-content:space-between;align-items:center;gap:8px;text-align:left}
+  .lf-tbar{height:10px;border-radius:5px;border:2px solid var(--ink);margin-top:10px;overflow:hidden;background:#fff}
+  .lf-tbar i{display:block;height:100%;width:100%;background:var(--pink);transform-origin:left;transition:transform .1s linear}
+  .lf-game{position:relative;height:280px;border:var(--line);border-radius:22px;overflow:hidden;margin-top:10px;touch-action:none}
+  .lf-cd{position:absolute;inset:0;display:grid;place-items:center;font-family:var(--font-display);font-size:60px}
+  .lf-gi{position:absolute;border:2px solid var(--ink);border-radius:14px;background:#fff;font-weight:800;font-size:12px;padding:8px 10px;box-shadow:0 3px 0 var(--ink);animation:pop-in .35s var(--spring) both;transition:opacity .25s,transform .25s;max-width:48%;text-align:left;line-height:1.2}
+  .lf-gi.out{opacity:0;transform:scale(.6)}
+  .lf-mail span{margin-right:4px}
+  .lf-mail.spam{background:var(--coral)}
+  .lf-num{font-size:15px;padding:8px 12px;animation:none}
+  .lf-num.up{background:var(--lime)}
+  .lf-num.down{background:var(--coral)}
+  .lf-call{display:flex;flex-direction:column;align-items:center;justify-content:space-between;height:100%;padding:12px}
+  .lf-faces{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;width:100%}
+  .lf-faces span{height:60px;border-radius:14px;border:2px solid var(--ink);background:#2a2a33;display:grid;place-items:center;font-size:32px}
+  .lf-says{font-weight:800;font-size:13px;min-height:36px;display:grid;place-items:center;text-align:center;line-height:1.25}
+  .lf-mute{width:70px;height:70px;border-radius:50%;border:3px solid var(--ink);background:#fff;font-size:32px;box-shadow:0 4px 0 var(--ink);transition:background .2s}
+  .lf-mute.hot{background:var(--lime);animation:pulse .5s ease-in-out infinite}
+  .lf-appr{display:flex;flex-direction:column;gap:12px;justify-content:center;align-items:stretch;height:100%;padding:16px}
+  .lf-mock{font-size:66px;line-height:1;align-self:center}
+  .lf-tdone{opacity:.62}
   `;
   const styleEl = document.createElement("style");
   styleEl.textContent = css;
@@ -214,7 +272,10 @@
     function refill(fromEl) {
       clearTimeout(autoRefill);
       if (cards().length) return;
-      queue = o.items();
+      const q = o.items();
+      // Пустой источник — не крутим авто-перезаливку (иначе звуки по кругу)
+      if (!q.length) { if (fromEl) { FX.shake(fromEl); FX.toast(o.emptyMsg || "Пока пусто. Загляни позже", "🫠"); } return; }
+      queue = q;
       fill();
       FX.sound.success();
       FX.burst(fromEl || el, { emojis: ["✨", "🃏", "💥"], count: 12 });
@@ -293,111 +354,895 @@
   }
 
   /* ============================================================
-     1. VIBE JOB
+     1. VIBE JOB — поиск работы, отклики, собеседования, работа
      ============================================================ */
-  const JOBS = [
-    { co: "ООО «Синергия Плюс»", e: "🚀", title: "Junior-разработчик", sal: "от 250 000 ₽", perks: ["🍪 Печеньки", "🩺 ДМС*", "⏰ Гибкий график"], req: ["Опыт 5 лет в технологии, которой 2 года", "Готовность к вызовам (в 23:00)"], col: "c-yellow" },
-    { co: "Вайб-Логистик", e: "📦", title: "Менеджер по всему", sal: "до 180 000 ₽", perks: ["🤝 Дружный коллектив", "🍎 Фрукты по пятницам"], req: ["Дружный коллектив = переработки", "Стрессоустойчивость уровня «бог»"], col: "c-lime" },
-    { co: "Стартап «Нейрочайник»", e: "🫖", title: "Head of Everything", sal: "0,0001% доли", perks: ["📈 Опцион", "🛋️ Пуфики", "✨ Миссия"], req: ["Работа за идею (идея наша)", "Знание 12 языков программирования"], col: "c-pink" },
-    { co: "Банк «Вайб Капитал»", e: "🏦", title: "Аналитик данных", sal: "от 320 000 ₽*", perks: ["🏠 Удалёнка (в офисе)", "🏋️ Спортзал"], req: ["Высшее образование, лучше три", "Возраст до 25, опыт от 10 лет"], col: "c-sky" },
-    { co: "Кофейня «Пенка»", e: "☕", title: "Бариста-сторителлер", sal: "45 000 ₽ + чай", perks: ["☕ Кофе бесплатно (1 шт.)", "🧑‍🤝‍🧑 Молодая команда"], req: ["Рисовать лебедя на капучино", "Улыбаться 12 часов подряд"], col: "c-orange" },
-    { co: "Агентство «Креатив»", e: "🎨", title: "SMM-специалист", sal: "от 90 000 ₽", perks: ["🎨 Креативный офис", "😂 Мемы"], req: ["Тестовое: 3 рекламные кампании бесплатно", "Рилсы, сайты, логотипы и сварка"], col: "c-lilac" },
-    { co: "Маркетплейс «Всё»", e: "🛒", title: "Продакт-менеджер", sal: "от 400 000 ₽", perks: ["🎤 Митапы", "💈 Барбершоп", "📊 KPI"], req: ["Быть на созвонах 9 часов в день", "Любить таск-трекер как семью"], col: "c-mint" },
-    { co: "ИП Гвоздев", e: "🔨", title: "Директор (единственный сотрудник)", sal: "по договорённости", perks: ["🪜 Карьерный рост", "🕊️ Свобода"], req: ["Свой ноутбук, своя машина, своя зарплата", "Нацеленность на результат"], col: "c-coral" },
+  const TAX = 0.13;
+  const netOf = (g) => Math.round(g * (1 - TAX));
+  const plural = (n, a, b, c) => (n % 10 === 1 && n % 100 !== 11 ? a : n % 10 >= 2 && n % 10 <= 4 && (n % 100 < 10 || n % 100 >= 20) ? b : c);
+  const hm = (m) => { m = Math.max(1, Math.round(m)); return m < 60 ? `${m} мин` : `${Math.floor(m / 60)} ч${m % 60 ? " " + (m % 60) + " мин" : ""}`; };
+  const esc = (s) => Vibe.esc(s);
+
+  const VAC = [
+    { id: "v01", co: "Сосисочная №1", e: "🌭", title: "Промоутер в костюме хот-дога", sal: 35000, req: 0, col: "c-orange", perks: ["🌭 Костюм выдаём", "☀️ Работа на воздухе"], reqs: ["Не бояться детей", "Танцевать под «Кукарачу» 8 часов"] },
+    { id: "v02", co: "Алло-Банк", e: "🎧", title: "Оператор колл-центра", sal: 42000, req: 6, col: "c-sky", perks: ["🎧 Гарнитура (почти своя)", "📈 Бонус за каждое «нет»"], reqs: ["Говорить «ваш звонок очень важен» искренне", "Не плакать в эфире"] },
+    { id: "v03", co: "Вайб Маркет у дома", e: "🛒", title: "Кассир", sal: 45000, req: 4, col: "c-lime", perks: ["🥖 Скидка 3% на батон", "🧑‍🤝‍🧑 Дружный коллектив"], reqs: ["Спрашивать «пакет нужен?» 900 раз в день", "Мелочи нет — это аксиома"] },
+    { id: "v04", co: "Кофейня «Пенка»", e: "☕", title: "Бариста", sal: 48000, req: 10, col: "c-yellow", perks: ["☕ Кофе бесплатно (1 шт.)", "🎶 Свой плейлист (наш)"], reqs: ["Рисовать лебедя на капучино", "Улыбаться 12 часов подряд"] },
+    { id: "v05", co: "Вайб Доставка", e: "🛵", title: "Курьер", sal: 58000, req: 5, col: "c-pink", perks: ["🎒 Термосумка в подарок", "🌧️ Много свежего воздуха"], reqs: ["Ноги (2 шт.)", "Любить домофоны"] },
+    { id: "v06", co: "Агентство «Креатив и точка»", e: "📱", title: "SMM-специалист", sal: 72000, req: 28, col: "c-lilac", perks: ["😂 Мемы в рабочее время", "🎨 Креативный офис"], reqs: ["Тестовое: три кампании бесплатно", "Рилсы, сайты, логотипы и сварка"] },
+    { id: "v07", co: "ООО «Рога и Отчёты»", e: "🧾", title: "Бухгалтер", sal: 85000, req: 38, col: "c-mint", perks: ["🗓️ Отпуск вне отчётного периода", "🍰 Торт в день 1С"], reqs: ["Знать 1С лучше, чем себя", "Не спрашивать про вторую кассу"] },
+    { id: "v08", co: "Вайб-Логистик", e: "📦", title: "Менеджер по продажам", sal: 92000, req: 32, col: "c-coral", perks: ["💸 Процент с продаж*", "🤝 Нетворкинг"], reqs: ["Продать снег зимой", "*процент от оклада, оклад — минимальный"] },
+    { id: "v09", co: "Стартап «Нейрочайник»", e: "🫖", title: "Head of Everything", sal: 98000, req: 45, col: "c-pink", perks: ["📈 Опцион 0,0001%", "🛋️ Пуфики"], reqs: ["Делать всё", "Остальное тоже делать"] },
+    { id: "v10", co: "Студия «Пиксель-Перфект»", e: "🎨", title: "Дизайнер интерфейсов", sal: 115000, req: 50, col: "c-yellow", perks: ["🖥️ Два монитора", "🧃 Смузи по средам"], reqs: ["Сделать «как у Apple, но дешевле»", "Двигать кнопку на 1 px весь день"] },
+    { id: "v11", co: "ООО «Синергия Плюс»", e: "💻", title: "Junior-разработчик", sal: 125000, req: 56, col: "c-sky", perks: ["🩺 ДМС*", "⏰ Гибкий график (до 23:00)"], reqs: ["Опыт 5 лет в технологии, которой 2 года", "Чинить принтер"] },
+    { id: "v12", co: "Банк «Вайб Капитал»", e: "📊", title: "Аналитик данных", sal: 155000, req: 66, col: "c-mint", perks: ["🏠 Удалёнка (в офисе)", "🏋️ Спортзал на −2 этаже"], reqs: ["Высшее, лучше три", "Возраст до 25, опыт от 10 лет"] },
+    { id: "v13", co: "Маркетплейс «Всё»", e: "🚀", title: "Продакт-менеджер", sal: 185000, req: 76, col: "c-lime", perks: ["🎤 Митапы", "💈 Барбершоп"], reqs: ["Быть на созвонах 9 часов в день", "Любить таск-трекер как семью"] },
+    { id: "v14", co: "Корпорация Vibe", e: "💜", title: "Директор по вайбу", sal: 220000, req: 90, col: "c-grad", perks: ["💎 «Плюс Вайб» бесплатно", "🚁 Вертолётная площадка (не для тебя)"], reqs: ["Вайб", "Ещё больше вайба"] },
   ];
-  const JOB_LIKE = ["Отклик ушёл! HR уже открыл… вкладку с мемами.", "Резюме прочитано за 4 секунды. Это рекорд!", "Ты в шорт-листе из 3 400 человек 🔥", "Мы отправили твоё резюме. И твой номер. И твои лайки."];
-  const JOB_NOPE = ["Правильно. Там «семья», а у тебя уже есть одна.", "Скипнул. Они не узнают. Наверное.", "Заботик тоже не любит слово «многозадачность».", "Минус одна вакансия мечты. Их ещё 14 000."];
+  const vacById = (id) => VAC.find((v) => v.id === id) || VAC[0];
+  function vinfo(v) {
+    const o = Vibe.map.place("office:" + v.co), h = Vibe.map.place("home");
+    const p = Vibe.map.path(h, o);
+    return { o, district: o.district || "Сити", min: Vibe.map.minutes(p, "metro"), taxi: Vibe.map.minutes(p, "taxi"), km: Vibe.map.km(p) };
+  }
+
+  /* --- Резюме --- */
+  const SKILLS = [
+    { id: "prompt", t: "🤖 Промпт-инжиниринг", w: 7 },
+    { id: "so", t: "💻 Копировать со Stack Overflow", w: 7 },
+    { id: "excel", t: "📊 Делать вид в Excel", w: 6 },
+    { id: "eng", t: "🇬🇧 English (Duolingo, 3 дня)", w: 6 },
+    { id: "stress", t: "🧘 Стрессоустойчивость", w: 5 },
+    { id: "fb", t: "🫡 Принимать фидбек", w: 5 },
+    { id: "calls", t: "🎤 «Давайте созвонимся»", w: 4 },
+    { id: "drive", t: "🚗 Права категории B", w: 4 },
+    { id: "smile", t: "😁 Улыбаться 12 часов", w: 4 },
+    { id: "tiktok", t: "📱 Вести тикток", w: 3 },
+    { id: "memes", t: "🤡 Знание мемов", w: 1 },
+  ];
+  const MAX_SKILLS = 5;
+  const COURSE_PTS = { prod: 14, cats: 6, fin: 10, med: 4, code: 14, blog: 8 };
+  const BOOST_COST = 150;
+  function resume() {
+    const s = S();
+    const sk = st("life_skills", []).reduce((a, id) => a + ((SKILLS.find((x) => x.id === id) || {}).w || 0), 0);
+    const my = st("life_courses", { cats: 1, med: 2 });
+    let cr = 0;
+    Object.keys(my).forEach((id) => {
+      const c = COURSES.find((x) => x.id === id);
+      if (c) cr += my[id] >= c.les.length ? COURSE_PTS[id] || 8 : my[id] * 2;
+    });
+    const boost = st("life_boost", 0) * 6;
+    const exp = Math.min(15, ((s.stats || {}).jobs || 0) * 4 + ((s.job && s.job.level) || 0));
+    const base = 12;
+    return { base, sk, cr, boost, exp, total: Math.min(100, base + sk + cr + boost + exp) };
+  }
+  const chance = (v, extra = 0) => clamp(0.5 + (resume().total - v.req) / 50 + extra, 0.05, 0.93);
+  function fitBadge(v, r) {
+    const d = r - v.req;
+    const [t, c] = d >= 10 ? ["✅ Подходишь", "var(--lime)"] : d >= -10 ? ["🤞 Есть шанс", "var(--yellow)"] : ["🧗 Не дотягиваешь", "var(--coral)"];
+    return `<span class="badge" style="background:${c}">${t}${v.req ? ` · нужно ${v.req}%` : ""}</span>`;
+  }
+
+  /* --- Отклики --- */
+  const REJECT = [
+    "К сожалению, мы выбрали кандидата, который уже работает у нас. Это племянник директора.",
+    "Ваш опыт впечатляет, но у нас нет вакансии для таких впечатляющих.",
+    "Спасибо за отклик! Мы сохраним резюме в базе и никогда его не откроем.",
+    "Вы слишком квалифицированы. И недостаточно. Одновременно.",
+    "Наш ИИ-рекрутер решил, что у вас грустный шрифт в резюме.",
+    "Позиция закрыта. Её закрыли в 2022-м, но объявление очень старается.",
+    "Нам нужен человек с горящими глазами. На фото глаза не горят.",
+    "Мы ищем звезду. Вы — хорошая планета, но не звезда.",
+  ];
+  const ST_INFO = {
+    sent: { t: "Отправлено", e: "📨", c: "c-white", k: 1 },
+    seen: { t: "Просмотрено", e: "👀", c: "c-sky", k: 2 },
+    invite: { t: "Приглашение!", e: "🎉", c: "c-lime", k: 3 },
+    reject: { t: "Отказ", e: "🥀", c: "c-coral", k: 3, bad: true },
+    failed: { t: "Не прошёл", e: "🫠", c: "c-coral", k: 4, bad: true },
+    declined: { t: "Оффер отклонён", e: "🙅", c: "c-lilac", k: 4 },
+    hired: { t: "Нанят", e: "💼", c: "c-yellow", k: 4 },
+  };
+  const apps = () => st("life_apps", []);
+  function appStatus(a, now = Date.now()) {
+    if (a.stage) return a.stage;
+    if (now < a.seenAt) return "sent";
+    if (now < a.doneAt) return "seen";
+    return a.ok ? "invite" : "reject";
+  }
+  const activeStatus = (vid) => { const a = apps().find((x) => x.vid === vid); const s = a && appStatus(a); return s === "sent" || s === "seen" || s === "invite" ? s : null; };
+  function setStage(id, stage) {
+    Vibe.state.set({ life_apps: apps().map((x) => (x.id === id ? Object.assign({}, x, { stage, shown: stage }) : x)) });
+  }
+  function appExtra(a, s, v) {
+    const now = Date.now();
+    const re = `<button class="btn sm" data-reapply="${v.id}" style="margin-top:8px">Откликнуться ещё раз 🔁</button>`;
+    if (s === "sent") return `<div class="lf-eta">📨 Резюме летит к HR · просмотр через ~<b data-to="${a.seenAt}">${mmss((a.seenAt - now) / 1000)}</b></div>`;
+    if (s === "seen") return `<div class="lf-eta">👀 HR читает (уже 4-ю секунду) · ответ через ~<b data-to="${a.doneAt}">${mmss((a.doneAt - now) / 1000)}</b></div>`;
+    if (s === "invite") return `<button class="btn lime block lf-glow" data-iv="${a.id}" style="margin-top:10px">Пройти собеседование 🎤</button>`;
+    if (s === "reject") return `<div class="lf-note" style="margin-top:10px">🥀 ${esc(a.rej)}</div>${re}`;
+    if (s === "failed") return `<div class="lf-note" style="margin-top:10px">🫠 «Мы вам перезвоним». Не перезвонят.</div>${re}`;
+    if (s === "declined") return `<div class="lf-note" style="margin-top:10px">🙅 Ты отказался от оффера. HR до сих пор рассказывает об этом в курилке.</div>${re}`;
+    return `<div class="lf-note" style="margin-top:10px">💼 Оффер принят. Это была хорошая история.</div>`;
+  }
+  function appRow(a) {
+    const v = vacById(a.vid), s = appStatus(a), I = ST_INFO[s];
+    return `
+      <div class="card tight lf-app ${a.shown !== s ? "lf-new" : ""}" data-app="${a.id}">
+        <div class="lf-row" style="justify-content:flex-start;gap:10px">
+          <div class="lf-cpic ${v.col}" style="width:48px;height:48px;font-size:26px;border-radius:16px">${v.e}</div>
+          <div style="flex:1;min-width:0"><b style="font-size:14px;display:block;line-height:1.2">${v.title}</b><div class="muted" style="font-size:12px;font-weight:700">${esc(v.co)} · ${rub(v.sal)}</div></div>
+          <span class="lf-st ${I.c}">${I.e} ${I.t}</span>
+        </div>
+        <div class="lf-steps ${I.bad ? "bad" : ""}">${[1, 2, 3, 4].map((k) => `<span class="${k <= I.k ? "on" : ""}"></span>`).join("")}</div>
+        ${appExtra(a, s, v)}
+      </div>`;
+  }
+
+  /* --- Собеседование --- */
+  const QUIZ = [
+    { q: "Где вы видите себя через 5 лет?", a: [["На вашем месте", 0.5, "😬", "HR нервно смеётся и двигает стул подальше"], ["В отпуске", 0, "🏖️", "HR записал: «не мотивирован»"], ["Здесь же, но с ипотекой", 1, "🏠", "Идеально. Ипотечники не увольняются"]] },
+    { q: "Ваша главная слабость?", a: [["Перфекционизм", 0.5, "🙄", "Классика. Сегодня слышали 40 раз"], ["Слишком много работаю", 1, "🔥", "Мы это поддержим. Особенно в выходные"], ["Честность", 0, "😶", "…Спасибо, мы вам перезвоним"]] },
+    { q: "Почему ушли с прошлого места?", a: [["Хочу развиваться", 1, "🌱", "Ответ из учебника. Плюс балл"], ["Там не платили", 0.5, "💸", "Понимаем. У нас тоже бывает"], ["Уволили за мемы в общем чате", 0, "🤡", "HR уже ищет этот мем"]] },
+    { q: "Ваши зарплатные ожидания?", a: [["Сколько не жалко", 1, "🥹", "Нам не жалко немного"], ["Рыночные", 0.5, "📊", "Рынок у нас свой, внутренний"], ["Миллион и опцион", 0, "🤑", "HR поперхнулся кофе"]] },
+    { q: "Готовы к переработкам?", a: [["Это моя страсть", 1, "❤️‍🔥", "Подпиши здесь, здесь и в 23:00"], ["Только за доплату", 0.5, "🧾", "Смелое заявление. Записали"], ["Нет", 0, "🚪", "Дверь вон там. Шутка. Или нет"]] },
+    { q: "Расскажите о себе в трёх словах", a: [["Командный, гибкий, стрессоустойчивый", 1, "🤖", "Звучит как мы. Нравится"], ["Ленивый, но эффективный", 0.5, "🦥", "Хотя бы честно"], ["Я люблю пиццу", 0, "🍕", "Мы тоже. Но это собеседование"]] },
+    { q: "Что вы знаете о нашей компании?", a: [["Всё, я читал отзывы", 0, "😰", "Отзывы писали конкуренты!"], ["Вы лидер рынка", 1, "🏆", "Да! Какого — неважно"], ["Тут есть печеньки", 0.5, "🍪", "По пятницам. Строго по одной"]] },
+    { q: "Как справляетесь со стрессом?", a: [["Дышу и медитирую", 0.5, "🧘", "Медитация за 30 секунд — курс в Vibe Learn"], ["Работаю ещё больше", 1, "📈", "Идеальный кандидат"], ["Ухожу в отпуск", 0, "✈️", "Отпуск — это стресс для компании"]] },
+    { q: "Почему именно мы?", a: [["Вы мне снитесь", 0.5, "😳", "Нам тоже кто-то снится. Начальник"], ["Близко к дому", 0, "🏡", "А как же миссия?!"], ["Верю в вашу миссию", 1, "✨", "Мы сами в неё не до конца верим. Принято"]] },
+  ];
+
+  /* --- Рабочие задачи (мини-игры) --- */
+  const TASKS = [
+    { id: "mail", e: "📬", t: "Разбери почту", d: "Тапай письма, не трогай «СРОЧНО!!!»", dur: 10, bg: "c-sky" },
+    { id: "call", e: "📞", t: "Созвон", d: "Сними мьют, когда спросят тебя", dur: 10, bg: "c-lilac" },
+    { id: "report", e: "📊", t: "Отчёт", d: "Лови растущие цифры, падающие не трогай", dur: 9, bg: "c-lime" },
+    { id: "approve", e: "🎨", t: "Согласуй макет", d: "Жми быстрее, чем клиент передумает", dur: 8, bg: "c-pink" },
+  ];
+  const todayTasks = () => { const d = Vibe.game.info().day; return [0, 1, 2].map((i) => TASKS[(d + i * (1 + (d % 3))) % TASKS.length]); };
+
+  const GAMES = {
+    mail(area, G, ui) {
+      let good = 0, bad = 0;
+      const GOOD = ["Отчёт за квартал", "Созвон в 15:00", "Счёт на оплату", "Обед в пятницу?", "Новый тикет", "Доступ к VPN", "Отпуск согласован?"];
+      const SPAM = ["СРОЧНО!!!", "Re: Fwd: СРОЧНО!!!", "ВСЕМ!!! ВАЖНО", "Срочно!!! (нет)"];
+      const spawn = () => {
+        const spam = Math.random() < 0.33;
+        const b = document.createElement("button");
+        b.className = "lf-gi lf-mail" + (spam ? " spam" : "");
+        b.innerHTML = `<span>${spam ? "🔥" : "📧"}</span>${spam ? pick(SPAM) : pick(GOOD)}`;
+        b.style.left = rnd(3, 50) + "%";
+        b.style.top = rnd(3, 80) + "%";
+        area.appendChild(b);
+        const gone = () => { b.classList.add("out"); G.to(() => b.remove(), 260); };
+        b.addEventListener("pointerdown", (e) => {
+          e.preventDefault();
+          if (b.dataset.done) return;
+          b.dataset.done = 1;
+          if (spam) { bad++; FX.shake(b); FX.toast("Ты открыл «СРОЧНО!!!». Теперь ты в 14 чатах", "🔥", 1400); }
+          else { good++; FX.burst(b, { emojis: ["✅", "📬"], count: 5, spread: 50 }); }
+          gone();
+          ui(good - bad);
+        });
+        G.to(() => { if (!b.dataset.done) { b.dataset.done = 1; gone(); } }, 1750);
+      };
+      spawn();
+      G.every(spawn, 620);
+      return () => clamp((good - bad * 1.5) / 9);
+    },
+    call(area, G, ui) {
+      const me = S().name || (S().profile && S().profile.name) || "коллега";
+      area.innerHTML = `<div class="lf-call"><div class="lf-faces">${["👨‍💼", "👩‍💻", "🧔", "🐈"].map((f) => `<span>${f}</span>`).join("")}</div><div class="lf-says" data-says>Начальник рассказывает про синергию…</div><button class="lf-mute" data-mute>🔇</button></div>`;
+      const BLAH = ["…и поэтому синергия…", "…давайте возьмём в работу…", "…кто-нибудь пошарит экран?…", "…вас не слышно, вы на мьюте…", "…вернёмся к KPI…", "…это можно было письмом…"];
+      const mute = $(area, "[data-mute]"), says = $(area, "[data-says]");
+      let open = false, hits = 0, fails = 0, prompts = 0, winId = null;
+      const blah = G.every(() => { if (!open) says.textContent = pick(BLAH); }, 1300);
+      const schedule = () => G.to(ask, rnd(900, 1700));
+      function ask() {
+        prompts++; open = true;
+        says.textContent = `…а что думает ${me}? 👀`;
+        mute.classList.add("hot");
+        FX.bump(says);
+        winId = G.to(() => {
+          if (!open) return;
+          open = false; fails++;
+          mute.classList.remove("hot");
+          says.textContent = "…видимо, связь. Едем дальше 😐";
+          schedule();
+        }, 1350);
+      }
+      mute.addEventListener("pointerdown", (e) => {
+        e.preventDefault();
+        if (open) {
+          open = false; hits++;
+          G.stop(winId);
+          mute.classList.remove("hot");
+          mute.textContent = "🎙️";
+          says.textContent = pick(["«Полностью согласен с предыдущим оратором» 👏", "«Давайте синк после синка» 🔥", "«Я бы добавил ценности» ✨"]);
+          FX.burst(mute, { emojis: ["🎙️", "✨", "👏"], count: 8, spread: 70 });
+          G.to(() => { mute.textContent = "🔇"; }, 600);
+          ui(hits);
+          schedule();
+        } else {
+          fails++;
+          FX.shake(mute);
+          says.textContent = "Ты перебил начальника 😬";
+        }
+      });
+      schedule();
+      void blah;
+      return () => clamp(hits / Math.max(3, prompts) - fails * 0.12);
+    },
+    report(area, G, ui) {
+      let good = 0, bad = 0;
+      G.every(() => {
+        const up = Math.random() < 0.62;
+        const b = document.createElement("button");
+        b.className = "lf-gi lf-num " + (up ? "up" : "down");
+        b.textContent = up ? `📈 +${rnd(3, 40)}%` : `📉 −${rnd(3, 30)}%`;
+        b.style.left = rnd(3, 66) + "%";
+        b.style.top = "100%";
+        area.appendChild(b);
+        const anim = b.animate([{ transform: "translateY(0)" }, { transform: `translateY(-${area.clientHeight + 70}px)` }], { duration: rnd(2300, 3300), easing: "linear" });
+        anim.onfinish = () => b.remove();
+        b.addEventListener("pointerdown", (e) => {
+          e.preventDefault();
+          if (b.dataset.done) return;
+          b.dataset.done = 1;
+          if (up) { good++; FX.burst(b, { emojis: ["📈", "✨", "💹"], count: 6, spread: 55 }); }
+          else { bad++; FX.burst(b, { emojis: ["📉", "💀"], count: 5, spread: 50 }); FX.sound.error(); }
+          anim.cancel(); b.remove();
+          ui(good - bad);
+        });
+      }, 500);
+      return () => clamp((good - bad * 1.5) / 10);
+    },
+    approve(area, G, ui) {
+      area.innerHTML = `<div class="lf-appr"><div class="lf-mock emo" data-mock>🖼️</div><div class="progress"><i data-ap style="--p:0%;transition:width .12s linear"></i></div><button class="btn black xl block" data-tapme>Согласовать! 👆</button><div class="lf-says" data-says>Клиент смотрит макет…</div></div>`;
+      const CL = ["А можно логотип побольше?", "Сделайте, чтобы было «вау»", "Давайте синий, но красный", "Верните как в первой версии", "Шрифт какой-то грустный", "А если добавить котика?"];
+      const bar = $(area, "[data-ap]"), says = $(area, "[data-says]"), mock = $(area, "[data-mock]");
+      let v = 0, max = 0, taps = 0, done = false;
+      const draw = () => { bar.style.setProperty("--p", v + "%"); max = Math.max(max, v); };
+      $(area, "[data-tapme]").addEventListener("pointerdown", (e) => {
+        e.preventDefault();
+        if (done) return;
+        taps++;
+        v = Math.min(100, v + 5);
+        if (taps % 4 === 0) FX.bump(mock);
+        draw();
+        ui(Math.round(v));
+        if (v >= 100) {
+          done = true;
+          says.textContent = "СОГЛАСОВАНО ✅ (до завтра)";
+          mock.textContent = "🏆";
+          FX.burst(mock, { emojis: ["✅", "🎨", "✨", "🏆"], count: 18 });
+          FX.sound.success();
+        }
+      });
+      G.every(() => { if (!done) { v = Math.max(0, v - 1); draw(); } }, 100);
+      G.every(() => { if (done) return; says.textContent = pick(CL); FX.bump(says); v = Math.max(0, v - 8); draw(); }, 2100);
+      return () => (done ? 1 : clamp((max / 100) * 0.9));
+    },
+  };
+
+  const JOB_QUIPS = [
+    "Работай так, будто начальник смотрит. Он смотрит. Через камеру ноутбука.",
+    "3 задачи в день — и повышение не за горами. Горы, правда, высокие.",
+    "Премия начисляется с зарплатой 30-го. Если не уволишься до этого. Не увольняйся.",
+    "Не делаешь задачи 3 дня — эффективность тает. Как мороженое. Как мечты.",
+  ];
 
   Vibe.screen("job", {
     render() {
-      const applied = st("life_jobApplied", 0), res = st("life_jobResume", 64);
-      return `
-      ${Vibe.ui.head("Vibe Job", "Работа мечты · в моменте", Vibe.ui.vibikiPill())}
-      <div class="stagger">
-        <div class="card c-blue tap" style="padding:14px 16px">
-          <div class="lf-row"><b style="font-size:14px">Резюме прокачано на <span data-res>${res}</span>%</b><span class="emo wobble" style="font-size:26px">📄</span></div>
-          <div class="progress" style="margin-top:10px"><i data-resbar style="--p:${res}%"></i></div>
-          <div class="fine" style="color:rgba(255,255,255,.75)">Свайпай вакансии, чтобы прокачать. 100% недоступно никому, кроме сына директора.</div>
-        </div>
-        <div class="lf-row" style="margin-top:12px;gap:10px">
-          <div class="card tight c-yellow" style="flex:1"><div class="lf-mini">Мои отклики</div><div class="big-num" style="font-size:32px" data-applied data-val="${applied}">${fmt(applied)}</div></div>
-          <div class="card tight c-pink" style="flex:1"><div class="lf-mini">Ответили</div><div class="big-num" style="font-size:32px">0</div><div class="fine" style="margin-top:2px">Но смотрели! (бот)</div></div>
-        </div>
-        ${deckHtml(`<div style="font-size:64px" class="emo float">🫠</div><div class="display" style="font-size:22px">Вакансии кончились</div><div class="muted" style="font-size:13px">HR-ы пошли на обед. До пятницы.</div>`)}
-        ${actionsHtml({ sup: "📨" })}
-        <div class="fine" style="text-align:center">✕ — мимо · 📨 — супер-отклик с сопроводительным · ♥ — откликнуться</div>
-        ${zab("Свайпай вправо всё подряд. Так делают все, и мы называем это «рынок кандидата».")}
-        ${Vibe.ui.marquee(["Работа мечты", "Без опыта*", "Удалёнка (в офисе)", "Белая зарплата (частично)", "Молодой коллектив (как ты)"])}
-        <h2 class="sec">Навыки в тренде <small>by Vibe Learn</small></h2>
-        <div class="chips">${["🤖 Промпт-инжиниринг", "🧘 Не выгорать", "📊 Делать вид в Excel", "🎤 Говорить «давайте созвонимся»", "🫡 Принимать фидбек"].map((t) => `<button class="chip" data-act="skill">${t}</button>`).join("")}</div>
-        <div class="fine">*Vibe Job не гарантирует трудоустройство, ответ, обратную связь, зарплату и смысл. Вакансии собраны автоматически из лучших побуждений.</div>
-      </div>`;
+      return `${Vibe.ui.head("Vibe Job", S().job ? "Работа · карьера · премии" : "Поиск работы · в моменте", Vibe.ui.vibikiPill())}<div data-body></div>`;
     },
     mount(root) {
       const T = bag();
-      const appliedEl = $(root, "[data-applied]");
-      swipeDeck(root, {
-        bag: T,
-        yes: "ОТКЛИК!",
-        no: "МИМО",
-        sup: "С СОПРОВОДОМ 📨",
-        items: () => shuffle(JOBS),
-        card: (j) => `
-          <div class="lf-cardin">
-            <div class="lf-bigemo emo float">${j.e}</div>
-            <div><span class="badge" style="background:#fff">${j.co}</span></div>
-            <div class="grow"></div>
-            <div class="display" style="font-size:28px;max-width:88%">${j.title}</div>
-            <div class="big-num" style="font-size:32px">${j.sal}</div>
-            <div class="lf-pills">${j.perks.map((p) => `<span class="badge">${p}</span>`).join("")}</div>
-            <div class="lf-note">${j.req.map((r) => `<div>⚠️ ${r}</div>`).join("")}</div>
-          </div>`,
-        onSwipe(j, dir, el) {
-          if (dir === "nope") { say(root, pick(JOB_NOPE)); return; }
-          const n = st("life_jobApplied", 0) + 1;
-          let res = st("life_jobResume", 64);
-          const wasMax = res >= 99;
-          res = Math.min(99, res + (dir === "super" ? 5 : rnd(1, 3)));
-          Vibe.state.set({ life_jobApplied: n, life_jobResume: res });
-          FX.countTo(appliedEl, n);
-          FX.bump(appliedEl.parentElement);
-          $(root, "[data-res]").textContent = res;
-          $(root, "[data-resbar]").style.setProperty("--p", res + "%");
-          if (res >= 99 && !wasMax) FX.toast("99%! Остался 1%: фото в костюме на фоне Альп", "📸");
-          FX.sound.like();
-          FX.burst(el, { emojis: ["✅", "💼", "📄", "✨"], count: 12 });
-          Vibe.reward({ xp: 4 });
-          if (n % 5 === 0) Vibe.reward({ vibiki: 15, xp: 10, from: appliedEl });
-          say(root, pick(JOB_LIKE));
-          if (dir === "super" || Math.random() < 0.35) T.to(() => jobMatch(j), 480);
-        },
-      });
-      function jobMatch(j) {
-        FX.confetti();
-        Vibe.modal(`
-          <div class="lf-collide"><div class="lf-av a c-lime">😎</div><div class="hrt">🤝</div><div class="lf-av b ${j.col}">${j.e}</div></div>
-          <div class="display">Мэтч!</div>
-          <p>${j.co} посмотрели твоё резюме и поставили ему лайк. Работодатель ответит в течение 0–∞ рабочих дней.</p>
-          <div class="stack">
-            <button class="btn black block xl" data-wait>Ждать ответа ⏳</button>
-            <button class="btn block" data-close>Свайпать дальше</button>
+      const body = $(root, "[data-body]");
+      const maps = new Set(), sheetMaps = new Set();
+      let searching = false, tab = "vac", vmode = "list", filter = "all", first = true;
+      let lastDay = Vibe.game.info().day;
+      const killMaps = () => { maps.forEach((m) => m.destroy()); maps.clear(); };
+      const restaggerAll = (el) => $$(el, ".stagger").forEach(restagger);
+      function miniMap(el, set, pins, a, b, color) {
+        const m = Vibe.map.create(el, { pins, interactive: false, fit: [a, b] });
+        el.style.touchAction = "pan-y";
+        if (a && b) m.route(Vibe.map.path(a, b), color ? { color } : undefined);
+        set.add(m);
+        return m;
+      }
+
+      /* ---------- Отрисовка ---------- */
+      function paint() {
+        killMaps();
+        if (S().job && !searching) { body.innerHTML = dashHtml(); restaggerAll(body); mountDash(); }
+        else { body.innerHTML = searchHtml(); restaggerAll(body); paintPanel(); }
+      }
+      function searchHtml() {
+        const s = S();
+        const rw = Vibe.game.runway();
+        const top = s.job
+          ? `<div class="card c-sky"><div class="lf-row" style="gap:10px"><div style="flex:1;font-weight:800;font-size:13px">Ты работаешь в «${esc(s.job.company)}». Новый оффер заменит текущую работу — тихо, без отработки.</div><button class="btn sm black" data-act="myjob">← Работа</button></div></div>`
+          : `<div class="card lf-warn ${rw < 20 ? "c-coral" : "c-yellow"}">
+              <div class="lf-row"><div><div class="lf-mini" style="color:var(--ink)">⚠️ Без работы</div><div class="display" style="font-size:22px;margin-top:4px">Денег хватит на ${rw} ${plural(rw, "день", "дня", "дней")}</div></div><span class="emo wobble" style="font-size:46px">${rw < 20 ? "🫠" : "⏳"}</span></div>
+              <div class="fine" style="color:var(--ink);opacity:.75">Баланс ${rub(s.balance)}. Аренда, еда и ЖКХ списываются сами. 1 игровой день = 1 час реальной жизни.</div>
+            </div>`;
+        const inv = apps().filter((a) => appStatus(a) === "invite").length;
+        return `<div class="stagger">${top}
+          <div class="lf-tabs" style="margin-top:14px">${[["vac", "💼 Вакансии"], ["apps", "📨 Отклики"], ["cv", "📄 Резюме"]].map(([k, t]) => `<button class="${tab === k ? "on" : ""}" data-tab="${k}">${t}${k === "apps" ? ` <i class="lf-dot-n" data-invn ${inv ? "" : "hidden"}>${inv}</i>` : ""}</button>`).join("")}</div>
+          <div data-panel style="margin-top:14px"></div></div>`;
+      }
+      function paintPanel() {
+        const p = $(body, "[data-panel]");
+        if (!p) return;
+        p.innerHTML = tab === "vac" ? vacHtml() : tab === "apps" ? appsHtml() : cvHtml();
+        restaggerAll(p);
+        if (tab === "vac" && vmode === "quick") initDeck($(p, "[data-quick]"));
+      }
+
+      /* ---------- Вакансии ---------- */
+      const FILTERS = [["all", "Все"], ["lt60", "До 60к"], ["mid", "60–120к"], ["hi", "120к+"], ["near", "🏠 Рядом с домом"]];
+      function vacCard(v, inf, r) {
+        const a = activeStatus(v.id), here = S().job && S().job.company === v.co;
+        return `
+          <div class="card tap" data-vac="${v.id}" style="padding:12px">
+            <div class="lf-row" style="align-items:flex-start;justify-content:flex-start;gap:12px">
+              <div class="lf-cpic ${v.col}"><span class="emo wobble">${v.e}</span></div>
+              <div style="flex:1;min-width:0">
+                <b class="lf-vt">${v.title}</b>
+                <div class="muted" style="font-size:12px;font-weight:700">${esc(v.co)}</div>
+                <div class="price" style="font-size:20px;margin-top:4px">${rub(v.sal)}</div>
+              </div>
+            </div>
+            <div class="lf-pills" style="margin-top:10px"><span class="badge" style="background:var(--lilac)">📍 ${inf.district}</span><span class="badge" style="background:#fff">🚇 ${inf.min} мин</span>${fitBadge(v, r)}${here ? `<span class="badge" style="background:var(--yellow)">💼 Ты здесь</span>` : a ? `<span class="badge" style="background:var(--sky)">${ST_INFO[a].e} ${ST_INFO[a].t}</span>` : ""}</div>
+          </div>`;
+      }
+      function vacHtml() {
+        const r = resume().total;
+        let list = VAC.map((v) => ({ v, inf: vinfo(v) }));
+        if (filter === "lt60") list = list.filter((x) => x.v.sal < 60000);
+        if (filter === "mid") list = list.filter((x) => x.v.sal >= 60000 && x.v.sal <= 120000);
+        if (filter === "hi") list = list.filter((x) => x.v.sal > 120000);
+        if (filter === "near") list = list.slice().sort((a, b) => a.inf.min - b.inf.min).slice(0, 5);
+        const sw = `<div class="lf-tabs sm">${[["list", "📋 Список"], ["quick", "⚡ Быстрый поиск"]].map(([k, t]) => `<button class="${vmode === k ? "on" : ""}" data-vmode="${k}">${t}</button>`).join("")}</div>`;
+        if (vmode === "quick") return `${sw}
+          <div data-quick>
+            ${deckHtml(`<div style="font-size:64px" class="emo float">🫠</div><div class="display" style="font-size:22px">Вакансии кончились</div><div class="muted" style="font-size:13px">На всё, что было, ты уже откликнулся. Жди ответов во вкладке «Отклики».</div>`)}
+            ${actionsHtml({ sup: "📨" })}
+            <div class="fine" style="text-align:center">✕ — мимо · 📨 — с сопроводительным (+шанс) · ♥ — откликнуться</div>
+            ${zab("Свайпай вправо всё подряд. Мы называем это «рынок кандидата».")}
+          </div>`;
+        return `${sw}
+          <div class="chips" style="margin-top:10px">${FILTERS.map(([k, t]) => `<button class="chip ${filter === k ? "on" : ""}" data-filter="${k}">${t}</button>`).join("")}</div>
+          <div class="stack stagger" data-vlist style="margin-top:4px">${list.map((x) => vacCard(x.v, x.inf, r)).join("")}</div>
+          ${zab(r < 40 ? "Резюме слабовато. Добавь навыков во вкладке «Резюме» или пройди курс в Vibe Learn." : "С таким резюме можно целиться выше. Или хотя бы в бариста с амбициями.")}
+          <div class="fine">*Vibe Job не гарантирует ответ, обратную связь, зарплату и смысл. Зарплаты указаны до вычета НДФЛ 13%.</div>`;
+      }
+      function refreshVacCard(v) {
+        const el = $(body, `[data-vac="${v.id}"]`);
+        if (!el) return;
+        const tmp = document.createElement("div");
+        tmp.innerHTML = vacCard(v, vinfo(v), resume().total);
+        const n = tmp.firstElementChild;
+        n.style.animation = "none";
+        el.replaceWith(n);
+        FX.bump(n);
+      }
+      function initDeck(c) {
+        if (!c) return;
+        swipeDeck(c, {
+          bag: T,
+          yes: "ОТКЛИК!",
+          no: "МИМО",
+          sup: "С СОПРОВОДОМ 📨",
+          emptyMsg: "Новых вакансий нет. Дождись ответов",
+          items: () => shuffle(VAC.filter((v) => !activeStatus(v.id) && !(S().job && S().job.company === v.co))),
+          card: (v) => {
+            const inf = vinfo(v);
+            return `
+            <div class="lf-cardin">
+              <div class="lf-bigemo emo float">${v.e}</div>
+              <div><span class="badge" style="background:#fff">${esc(v.co)}</span></div>
+              <div class="grow"></div>
+              <div class="display" style="font-size:28px;max-width:88%">${v.title}</div>
+              <div class="big-num" style="font-size:32px">${rub(v.sal)}</div>
+              <div class="lf-pills"><span class="badge">📍 ${inf.district}</span><span class="badge">🚇 ${inf.min} мин</span>${fitBadge(v, resume().total)}</div>
+              <div class="lf-note">${v.reqs.map((x) => `<div>⚠️ ${x}</div>`).join("")}</div>
+            </div>`;
+          },
+          before(v, dir, el) { return dir === "nope" ? true : canApply(v, el); },
+          onSwipe(v, dir, el) {
+            if (dir === "nope") { say(c, pick(["Скипнул. Они не узнают. Наверное.", "Правильно. Там «семья», а у тебя уже есть одна.", "Минус одна вакансия мечты. Их ещё 14 000."])); return; }
+            apply(v, el, dir === "super");
+            say(c, pick(["Отклик ушёл! HR уже открыл… вкладку с мемами.", "Ты в шорт-листе из 3 400 человек 🔥", "Резюме прочитают за 6 секунд. Это рекорд!"]));
+          },
+        });
+      }
+      function canApply(v, from) {
+        if (S().job && S().job.company === v.co) { FX.shake(from); FX.toast("Ты уже здесь работаешь 🙃", "💼"); return false; }
+        if (activeStatus(v.id)) { FX.shake(from); FX.toast("Отклик уже висит. HR и так нервничает", "⏳"); return false; }
+        const active = apps().filter((a) => { const s = appStatus(a); return s === "sent" || s === "seen"; }).length;
+        if (active >= 6) { FX.shake(from); FX.toast("6 откликов ждут ответа. HR не успевают игнорировать больше", "📨", 3000); return false; }
+        return true;
+      }
+      function apply(v, from, sup) {
+        if (!canApply(v, from)) return false;
+        const now = Date.now();
+        const seenAt = now + rnd(60, 180) * 1000;
+        const doneAt = Math.max(seenAt + 45000, now + rnd(180, 480) * 1000);
+        const a = { id: "a" + now + rnd(10, 99), vid: v.id, at: now, seenAt, doneAt, ok: Math.random() < chance(v, sup ? 0.06 : 0), shown: "sent", rej: pick(REJECT) };
+        Vibe.state.set({ life_apps: [a, ...apps().filter((x) => x.vid !== v.id)].slice(0, 24), life_jobApplied: st("life_jobApplied", 0) + 1 });
+        Vibe.game.track("apply");
+        Vibe.reward({ xp: 4 });
+        FX.sound.like();
+        FX.burst(from, { emojis: ["📨", "💼", "✨"], count: 12 });
+        FX.toast(`Отклик в «${v.co}» отправлен. Ответ — через несколько минут`, "📨", 2400);
+        refreshVacCard(v);
+        return true;
+      }
+      function openVac(v) {
+        const inf = vinfo(v), r = resume().total, here = S().job && S().job.company === v.co, act = activeStatus(v.id);
+        const ch = chance(v);
+        const chW = ch > 0.75 ? "высокий 🔥" : ch > 0.45 ? "средний 🤞" : ch > 0.2 ? "так себе 😬" : "чудо 🙏";
+        let mp = null;
+        Vibe.ui.sheet(`
+          <div class="lf-photo ${v.col}" style="height:120px;display:flex;align-items:center;justify-content:center;font-size:76px"><span class="emo float">${v.e}</span><div class="sticker">${rnd(120, 3400)} откликов</div></div>
+          <div class="display" style="font-size:26px;margin-top:14px">${v.title}</div>
+          <div class="muted" style="font-weight:700;font-size:13px">${esc(v.co)} · 📍 ${inf.district}</div>
+          <div class="lf-row" style="margin-top:10px;align-items:flex-end">
+            <div><div class="big-num" style="font-size:32px">${rub(v.sal)}</div><div style="font-size:12px;font-weight:800">на руки ${rub(netOf(v.sal))} в месяц</div></div>
+            ${fitBadge(v, r)}
           </div>
-          <div class="fine">Лайк от работодателя не является офертой, обещанием, надеждой и поводом рассказать маме.</div>`, {
+          <div class="lf-pills" style="margin-top:10px">${v.perks.map((p) => `<span class="badge" style="background:var(--yellow)">${p}</span>`).join("")}</div>
+          <div class="lf-note" style="margin-top:10px">${v.reqs.map((x) => `<div>⚠️ ${x}</div>`).join("")}<div>📄 Резюме: нужно ${v.req}%, у тебя ${r}%</div></div>
+          <div class="lf-mini" style="margin:16px 0 8px">Дорога от дома · ${dec(inf.km)} км</div>
+          <div data-smap style="height:190px"></div>
+          <div class="grid2" style="margin-top:10px">
+            <div class="card tight flat c-sky"><div class="lf-mini" style="color:var(--ink)">🚇 Метро</div><div class="big-num" style="font-size:22px">${inf.min} мин</div></div>
+            <div class="card tight flat c-yellow"><div class="lf-mini">🚕 Такси</div><div class="big-num" style="font-size:22px">${inf.taxi} мин</div></div>
+          </div>
+          <div class="lf-row" style="margin:14px 2px 8px"><span class="lf-mini">Шанс на приглашение</span><b style="font-size:13px">${chW}</b></div>
+          <div class="progress" style="margin-bottom:14px"><i style="--p:${Math.round(ch * 100)}%"></i></div>
+          ${here ? `<button class="btn xl block" disabled>Ты здесь уже работаешь 💼</button>` : act ? `<button class="btn xl block" data-gotab="apps">${ST_INFO[act].e} ${ST_INFO[act].t} · к откликам</button>` : `<button class="btn black xl block" data-applyv>Откликнуться 📨</button>`}
+          <div class="fine">Зарплата до вычета НДФЛ 13%. Печеньки облагаются отдельно. Время в пути — в хорошую погоду и без пробок (не бывает).</div>`, {
+          onMount(sh, close) {
+            mp = miniMap($(sh, "[data-smap]"), sheetMaps, Vibe.map.basePins([Object.assign({}, inf.o, { id: "office", e: v.e, color: "#ff6bcb", pulse: true, label: "Офис" })]), Vibe.map.place("home"), inf.o);
+            const b = $(sh, "[data-applyv]");
+            if (b) b.addEventListener("click", () => { if (apply(v, b)) T.to(close, 350); });
+            const g = $(sh, "[data-gotab]");
+            if (g) g.addEventListener("click", () => { close(); tab = "apps"; paint(); });
+          },
+          onClose() { if (mp) { mp.destroy(); sheetMaps.delete(mp); } },
+        });
+      }
+
+      /* ---------- Отклики ---------- */
+      function appsHtml() {
+        const list = apps();
+        if (!list.length) return `<div class="card c-lilac" style="text-align:center"><div class="emo float" style="font-size:64px">📭</div><div class="display" style="font-size:22px;margin-top:6px">Откликов пока нет</div><div style="font-size:13px;font-weight:700;margin:6px 0 12px">HR сами не придут. Хотя иногда звонят с неизвестных номеров.</div><button class="btn black" data-tab="vac">Смотреть вакансии →</button></div>`;
+        return `<div class="lf-row" style="margin-bottom:10px"><span class="lf-mini">Всего откликов: ${fmt(st("life_jobApplied", 0))}</span><span class="lf-mini"><span class="lf-live"></span> вживую</span></div>
+          <div class="stack stagger" data-applist>${list.map(appRow).join("")}</div>
+          ${zab("HR смотрит резюме 6 секунд. Твоё — 4. Это хороший знак. Наверное.")}`;
+      }
+
+      /* ---------- Резюме ---------- */
+      const tierOf = (n) => (n >= 85 ? "Сын маминой подруги" : n >= 65 ? "Крепкий мидл" : n >= 40 ? "Подающий надежды" : n >= 20 ? "Стажёр с амбициями" : "Чистый лист");
+      const cvb = (R) => [["База", R.base], ["Навыки", R.sk], ["Курсы", R.cr], ["Прокачка", R.boost], ["Опыт", R.exp]].map(([t, n]) => `<span>${t}<b>+${n}</b></span>`).join("");
+      function cvHtml() {
+        const R = resume(), skills = st("life_skills", []), boosts = st("life_boost", 0), my = st("life_courses", { cats: 1, med: 2 });
+        return `<div class="stagger">
+          <div class="card c-blue">
+            <div class="lf-row"><div><div class="lf-mini" style="color:rgba(255,255,255,.8)">Сила резюме</div><div class="big-num" style="font-size:54px;margin-top:4px" data-cvn data-val="${R.total}">${R.total}%</div><b style="font-size:13px" data-tier>${tierOf(R.total)}</b></div><span class="emo float" style="font-size:70px">📄</span></div>
+            <div class="progress" style="margin-top:12px"><i data-cvbar style="--p:${R.total}%"></i></div>
+            <div class="lf-cvb" data-cvb>${cvb(R)}</div>
+          </div>
+          <h2 class="sec">Навыки <small data-skn>${skills.length}/${MAX_SKILLS} · HR дочитывает до пятого</small></h2>
+          <div class="lf-skills">${SKILLS.map((k) => `<button class="chip ${skills.includes(k.id) ? "on" : ""}" data-skill="${k.id}">${k.t} <small>+${k.w}</small></button>`).join("")}</div>
+          <h2 class="sec">Курсы <small>Vibe Learn · до +${Object.values(COURSE_PTS).reduce((a, b) => a + b, 0)}%</small></h2>
+          <div class="card" style="padding:2px 14px">${COURSES.map((c) => {
+            const d = my[c.id], own = d !== undefined, full = own && d >= c.les.length, pts = full ? COURSE_PTS[c.id] : own ? d * 2 : 0;
+            return `<div class="li"><div class="ic ${c.col}">${c.e}</div><div class="tx"><b>${c.short}</b><small>${full ? "✅ пройден" : own ? `${d}/${c.les.length} уроков` : `не куплен · до +${COURSE_PTS[c.id]}%`}</small></div><div class="amt ${pts ? "plus" : ""}">+${pts}%</div></div>`;
+          }).join("")}</div>
+          <button class="btn block" data-go="learn" style="margin-top:12px">Учиться в Vibe Learn 🎓</button>
+          <div class="card c-grad" style="margin-top:16px">
+            <div class="lf-row"><div><div class="display" style="font-size:20px">Прокачать резюме</div><div style="font-size:12px;font-weight:700;margin-top:4px">+6% за раз · осталось ${3 - boosts} из 3</div></div><span class="emo wobble" style="font-size:40px">✨</span></div>
+            <button class="btn yellow block" data-boost style="margin-top:12px" ${boosts >= 3 ? "disabled" : ""}>${boosts >= 3 ? "Резюме идеально. Почти" : `Прокачать · ${BOOST_COST} 🪙`}</button>
+          </div>
+          ${zab("Добавь «стрессоустойчивость». Её никто не проверяет — её проверяет жизнь.")}
+        </div>`;
+      }
+      function updateCv() {
+        const R = resume();
+        const n = $(body, "[data-cvn]");
+        if (!n) return;
+        FX.countTo(n, R.total, { fmt: (x) => x + "%", dur: 600 });
+        FX.bump(n);
+        $(body, "[data-cvbar]").style.setProperty("--p", R.total + "%");
+        $(body, "[data-tier]").textContent = tierOf(R.total);
+        $(body, "[data-cvb]").innerHTML = cvb(R);
+        $(body, "[data-skn]").textContent = `${st("life_skills", []).length}/${MAX_SKILLS} · HR дочитывает до пятого`;
+      }
+      function toggleSkill(ch) {
+        const id = ch.dataset.skill;
+        let skills = st("life_skills", []).slice();
+        if (skills.includes(id)) { skills = skills.filter((x) => x !== id); ch.classList.remove("on"); FX.sound.pop(); }
+        else {
+          if (skills.length >= MAX_SKILLS) { FX.shake(ch); FX.toast("Пять навыков максимум. Дальше HR не читает", "🙈"); return; }
+          skills.push(id);
+          ch.classList.add("on");
+          FX.burst(ch, { emojis: ["🧠", "✨", "📄"], count: 8, spread: 70 });
+        }
+        FX.bump(ch);
+        Vibe.state.set({ life_skills: skills });
+        updateCv();
+      }
+      function boost(btn) {
+        const n = st("life_boost", 0);
+        if (n >= 3) return;
+        if (S().vibiki < BOOST_COST) { FX.shake(btn); FX.toast(`Нужно ${BOOST_COST} вайбиков. Красота требует жертв`, "🥲"); return; }
+        Vibe.state.set({ vibiki: S().vibiki - BOOST_COST, life_boost: n + 1 });
+        Vibe.refreshCounters();
+        const lines = [["Добавляем слово «синергия»…", "Пишем «опыт в Google» (была экскурсия)…", "Фотошопим фото в костюме на фоне Альп…"], ["Меняем шрифт на «уверенный»…", "Добавляем «лидерские качества» (староста в 5 классе)…", "Убираем хобби «сон»…"], ["Ставим в резюме QR-код на тикток…", "Пишем «владею 1С» (видел логотип)…", "Пускаем по резюме блёстки ✨…"]][n];
+        const BT = bag();
+        Vibe.modal(`<div class="lf-scan"><div class="wobble" style="display:inline-block">${Vibe.zabotik(90, "wow")}</div><div class="display" style="font-size:24px;margin-top:6px">Прокачка…</div><p data-step style="min-height:20px;margin:8px 0 0">${lines[0]}</p><div class="progress"><i data-bar style="--p:0%"></i></div></div>`, {
+          sound: "pop",
+          onClose: () => { BT.clear(); if (tab === "cv") paintPanel(); },
           onMount(m, close) {
-            T.to(() => FX.burst($(m, ".hrt"), { emojis: ["💼", "🤝", "✨", "💸"], count: 16 }), 650);
-            $(m, "[data-wait]").addEventListener("click", (e) => {
-              Vibe.reward({ vibiki: 10, xp: 15, from: e.currentTarget });
+            let k = 0;
+            BT.every(() => {
+              k++;
+              const bar = $(m, "[data-bar]");
+              if (!bar) return;
+              bar.style.setProperty("--p", Math.min(100, Math.round((k / lines.length) * 100)) + "%");
+              if (k < lines.length) { const s = $(m, "[data-step]"); s.textContent = lines[k]; FX.bump(s); return; }
+              if (k > lines.length) return;
+              BT.to(() => {
+                m.innerHTML = `<div class="m-emo float">📄</div><div class="display">+6% к резюме!</div><p>Теперь ты на 6% привлекательнее для HR. И на 0% — для себя.</p><button class="btn black block" data-close>Огонь 🔥</button>`;
+                FX.burst($(m, ".m-emo"), { emojis: ["📄", "✨", "💼", "⭐"], count: 18 });
+                FX.sound.success();
+              }, 300);
+            }, 650);
+            void close;
+          },
+        });
+      }
+
+      /* ---------- Собеседование ---------- */
+      function interview(a) {
+        const v = vacById(a.vid);
+        const qs = shuffle(QUIZ).slice(0, 5);
+        const IT = bag();
+        let i = 0, score = 0, locked = false;
+        Vibe.modal(`<div data-ivbox></div>`, {
+          sound: "pop",
+          onClose: () => IT.clear(),
+          onMount(m, close) {
+            const box = $(m, "[data-ivbox]");
+            function q() {
+              const Q = qs[i], ans = shuffle(Q.a);
+              box.innerHTML = `
+                <div class="lf-row"><span class="badge" style="background:var(--yellow)">${v.e} ${esc(v.co)}</span><span class="badge" style="background:#fff">Вопрос ${i + 1}/${qs.length}</span></div>
+                <div class="lf-ivdots">${qs.map((_, k) => `<i class="${k < i ? "on" : k === i ? "now" : ""}"></i>`).join("")}</div>
+                <div class="lf-hr"><span class="emo float">🧑‍💼</span><div class="lf-bubble" style="font-size:15px">${Q.q}</div></div>
+                <div class="lf-quiz stagger">${ans.map((x, k) => `<button data-ans="${k}">${x[0]}</button>`).join("")}</div>
+                <div class="lf-react" data-react></div>`;
+              restagger($(box, ".lf-quiz"));
+              locked = false;
+              $$(box, "[data-ans]").forEach((b) => b.addEventListener("click", () => {
+                if (locked) return;
+                locked = true;
+                const x = ans[+b.dataset.ans];
+                score += x[1];
+                b.classList.add(x[1] >= 1 ? "good" : x[1] > 0 ? "mid" : "bad");
+                FX.bump(b);
+                FX.burst(b, { emojis: [x[2], "✨"], count: 10, spread: 90 });
+                if (x[1] >= 1) FX.sound.like(); else if (x[1] === 0) FX.sound.error();
+                const r = $(box, "[data-react]");
+                r.innerHTML = `<span class="emo" style="font-size:24px">${x[2]}</span> ${x[3]}`;
+                FX.bump(r);
+                IT.to(() => { i++; if (i < qs.length) q(); else result(); }, 1300);
+              }));
+            }
+            function result() {
+              const p = clamp(0.2 + (score / qs.length) * 0.7 + (resume().total - v.req) / 150, 0.05, 0.95);
+              box.innerHTML = `<div class="wobble" style="display:inline-block">${Vibe.zabotik(90, "wow")}</div><div class="display" style="font-size:24px;margin-top:8px">HR совещается…</div><p>Тебя обсуждают в курилке. Это хорошо. Наверное.</p><div class="typing" style="margin-bottom:6px"><span></span><span></span><span></span></div>`;
+              IT.to(() => (Math.random() < p ? offer() : fail()), 2100);
+            }
+            function fail() {
+              setStage(a.id, "failed");
+              box.innerHTML = `<div class="m-emo float">📞</div><div class="display" style="font-size:26px">Мы вам перезвоним</div><p>${pick(["Вы нам очень понравились, но кандидат с опытом 40 лет понравился больше.", "Решение отложено до конца квартала. Какого — не уточнили.", "Ваши ответы прекрасны. Вакансию отдали стажёру из соседнего отдела."])}</p><button class="btn black block" data-close>Ну и ладно 🥲</button><div class="fine">Совет: прокачай резюме и попробуй снова. Или в другом месте.</div>`;
+              FX.sound.error();
+              if (tab === "apps") paintPanel();
+            }
+            function offer() {
+              const low = Math.random() < 0.35;
+              let sal = low ? Math.round((v.sal * 0.85) / 1000) * 1000 : v.sal;
+              let bargained = false;
+              const draw = (msg) => {
+                const cur = S().job;
+                box.innerHTML = `<div class="m-emo float">📜</div><div class="display">Оффер!</div>
+                  <p data-om>${msg || (low && !bargained ? "Мы готовы предложить на 15% меньше, зато у нас печеньки 🍪" : `«${esc(v.co)}» хочет тебя в команду. Печеньки тоже есть.`)}</p>
+                  <div class="card flat c-lime tight" style="text-align:left;margin-bottom:14px">
+                    <div class="lf-mini" style="color:var(--ink)">${esc(v.title)}</div>
+                    <div class="big-num" style="font-size:34px" data-sal>${rub(sal)}</div>
+                    <div style="font-size:12px;font-weight:800">на руки ${rub(netOf(sal))} · аванс 15-го, зарплата 30-го</div>
+                  </div>
+                  ${cur ? `<div class="fine" style="margin:-6px 0 10px">Работа в «${esc(cur.company)}» закончится. Накопленная премия ${rub(cur.bonus || 0)} сгорит.</div>` : ""}
+                  <div class="stack">
+                    <button class="btn black xl block" data-accept>Принять оффер 🤝</button>
+                    ${low && !bargained ? `<button class="btn yellow block" data-bargain>Поторговаться 💪</button>` : ""}
+                    <button class="btn block" data-decline>Отказаться</button>
+                  </div>`;
+                $(box, "[data-accept]").addEventListener("click", accept);
+                $(box, "[data-decline]").addEventListener("click", () => { setStage(a.id, "declined"); close(); FX.toast("Ты отказал работодателю. Легенда", "😎"); if (tab === "apps") paintPanel(); });
+                const bg = $(box, "[data-bargain]");
+                if (bg) bg.addEventListener("click", () => {
+                  bargained = true;
+                  const r = Math.random();
+                  if (r < 0.55) { sal = v.sal; draw("HR сдался! «Ладно, полная сумма. Но печеньки — по одной»"); FX.burst($(box, "[data-sal]"), { emojis: ["💪", "💸", "✨"], count: 16 }); FX.sound.success(); }
+                  else if (r < 0.8) { draw("«Печеньки — это тоже деньги». Сумма не изменилась."); FX.shake($(box, "[data-sal]")); }
+                  else { setStage(a.id, "failed"); box.innerHTML = `<div class="m-emo float">🫢</div><div class="display" style="font-size:26px">Оффер отозван</div><p>HR обиделся и ушёл плакать в переговорку. Торговаться надо было мягче.</p><button class="btn black block" data-close>Урок усвоен</button>`; FX.sound.error(); if (tab === "apps") paintPanel(); }
+                });
+              };
+              draw();
+              FX.confetti({ count: 90, from: $(box, ".m-emo") });
+              FX.sound.success();
+            }
+            function accept() {
+              const sal = +$(box, "[data-sal]").textContent.replace(/\D/g, "");
+              Vibe.game.setJob({ company: v.co, title: v.title, salary: sal, emoji: v.e, color: v.col });
+              setStage(a.id, "hired");
               close();
-              FX.toast("Ожидание засчитано в стаж. Шутка. Не засчитано.", "⏳");
+              searching = false;
+              tab = "vac";
+              FX.confetti();
+              T.to(() => FX.confetti({ count: 80 }), 300);
+              paint();
+              root.scrollTop = 0;
+              const up = Vibe.game.upcoming(10).find((u) => u.t === "Аванс" || u.t === "Зарплата");
+              T.to(() => Vibe.modal(`<div class="m-emo float">${v.e}</div><div class="display">Ты принят!</div><p>${esc(Vibe.game.jobTitle(S().job))} в «${esc(v.co)}». ${up ? `${up.t} — через ${up.in} ${plural(up.in, "день", "дня", "дней")} (≈ ${hm(up.real)})` : "Зарплата скоро"}. А пока — 3 рабочие задачи в день, за каждую премия.</p><button class="btn black block" data-close>За работу 💼</button>`, { sound: "success" }), 700);
+            }
+            q();
+          },
+        });
+      }
+
+      /* ---------- Моя работа ---------- */
+      function dashHtml() {
+        const j = S().job;
+        const up = Vibe.game.upcoming(10).find((u) => u.t === "Аванс" || u.t === "Зарплата");
+        const home = Vibe.map.place("home"), work = Vibe.map.place("work");
+        const p = Vibe.map.path(home, work);
+        const left = Vibe.game.tasksLeft(), N = Vibe.game.TASKS_PER_DAY, done = N - left, tt = todayTasks();
+        const perf = Math.round(j.perf || 0);
+        return `<div class="stagger">
+          <div class="card ${j.color || "c-yellow"}" style="min-height:190px">
+            <div class="lf-bigemo emo float" style="font-size:100px">${j.emoji || "💼"}</div>
+            <span class="badge" style="background:#fff;position:relative">🏢 ${esc(j.company)}</span>
+            <div class="display" style="font-size:25px;margin-top:12px;max-width:72%;position:relative">${esc(Vibe.game.jobTitle(j))}</div>
+            <div style="margin-top:14px;position:relative">
+              <div class="lf-mini" style="color:inherit;opacity:.8">Оклад · уровень ${j.level || 2}</div>
+              <div class="big-num" style="font-size:32px">${rub(j.salary)}</div>
+              <div style="font-size:12px;font-weight:800">на руки ${rub(netOf(j.salary))} · 📍 ${esc(j.district || "")}</div>
+            </div>
+          </div>
+          <div class="grid2" style="margin-top:12px">
+            <div class="card tight c-lime"><div class="lf-mini" style="color:var(--ink)">${up ? up.t : "Зарплата"} через</div><div class="big-num" style="font-size:24px;margin:4px 0">${up ? `${up.in} ${plural(up.in, "день", "дня", "дней")}` : "—"}</div><div style="font-size:11px;font-weight:800">${up ? `≈ ${hm(up.real)} · +${rub(up.a)}` : ""}</div></div>
+            <div class="card tight c-yellow"><div class="lf-mini">Премия копится</div><div class="big-num" style="font-size:24px;margin:4px 0">${rub(j.bonus || 0)}</div><div style="font-size:11px;font-weight:800">придёт с зарплатой 30-го</div></div>
+          </div>
+          <div class="card" style="margin-top:12px">
+            <div class="lf-row"><b>🚀 До повышения</b><span class="big-num" style="font-size:20px">${perf}%</span></div>
+            <div class="progress" style="margin-top:10px;height:18px"><i data-perf="${perf}" style="--p:0%;background:var(--grad)"></i></div>
+            <div class="fine">Каждая задача даёт +12–22%. На 100% — повышение и оклад ×1,25. Не работаешь 3 дня — эффективность тает.</div>
+          </div>
+          <h2 class="sec">Рабочие задачи <small>${done}/${N} сегодня</small></h2>
+          <div class="stack">${tt.map((t, i) => {
+            const isDone = i < done, next = i === done;
+            return `<div class="card tight ${isDone ? "lf-tdone" : ""} ${next ? "tap lf-glow" : ""}" ${next ? `data-task="${t.id}"` : ""}>
+              <div class="lf-row" style="justify-content:flex-start;gap:12px">
+                <div class="lf-cpic ${t.bg}" style="width:52px;height:52px;font-size:28px;border-radius:16px"><span class="emo ${next ? "wobble" : ""}">${isDone ? "✅" : t.e}</span></div>
+                <div style="flex:1;min-width:0"><b style="font-size:15px">${t.t}</b><div class="muted" style="font-size:12px;font-weight:700">${isDone ? "Сделано. Начальник доволен (молча)" : t.d}</div></div>
+                ${next ? `<span class="btn black sm">▶ ${t.dur} с</span>` : isDone ? "" : `<span class="badge" style="background:#fff">⏳</span>`}
+              </div></div>`;
+          }).join("")}
+          ${left ? "" : `<div class="card c-lilac" style="text-align:center"><div class="emo float" style="font-size:48px">🌙</div><b style="display:block;margin-top:4px">Задачи на сегодня закончились</b><div style="font-size:13px;font-weight:700;margin-top:4px">Новые — завтра (через ~<span data-nextday>${hm(Vibe.game.realMinTo(Vibe.game.info().day + 1))}</span>)</div></div>`}
+          </div>
+          <h2 class="sec">Дорога на работу <small>${dec(Vibe.map.km(p))} км</small></h2>
+          <div data-jmap style="height:200px"></div>
+          <div class="grid2" style="margin-top:12px">
+            <div class="card tight c-sky"><div class="lf-mini" style="color:var(--ink)">🚇 Метро</div><div class="big-num" style="font-size:22px">${Vibe.map.minutes(p, "metro")} мин</div><div style="font-size:11px;font-weight:800">57 ₽ и немного локтей</div></div>
+            <div class="card tight c-yellow"><div class="lf-mini">🚕 Такси</div><div class="big-num" style="font-size:22px">${Vibe.map.minutes(p, "taxi")} мин</div><div style="font-size:11px;font-weight:800">если без пробок (нет)</div></div>
+          </div>
+          ${zab(pick(JOB_QUIPS), "smile")}
+          <div class="stack">
+            <button class="btn block" data-act="seek">🔎 Искать другую работу</button>
+            <button class="btn block" data-act="quit" style="background:var(--coral)">🚪 Уволиться</button>
+          </div>
+        </div>`;
+      }
+      function mountDash() {
+        const el = $(body, "[data-jmap]");
+        if (el) miniMap(el, maps, Vibe.map.basePins(), Vibe.map.place("home"), Vibe.map.place("work"));
+        const pb = $(body, "[data-perf]");
+        if (pb) T.to(() => pb.style.setProperty("--p", pb.dataset.perf + "%"), 350);
+      }
+      function runTask(type) {
+        const G = bag();
+        let finished = false, result = null;
+        Vibe.modal(`
+          <div class="lf-gtop"><b style="font-size:16px">${type.e} ${type.t}</b><span class="timer-pill">⏱ <span data-gt>${type.dur},0</span></span></div>
+          <div class="lf-tbar"><i data-gbar></i></div>
+          <div class="lf-game ${type.bg}" data-ga><div class="lf-cd" data-cd>3</div></div>
+          <div class="lf-row" style="margin-top:10px"><span class="lf-mini" style="text-align:left">${type.d}</span><b class="big-num" style="font-size:22px" data-gs>0</b></div>`, {
+          sound: "pop",
+          onClose() {
+            G.clear();
+            if (!finished) FX.toast("Задача брошена. Начальник видел 👀", "😬");
+          },
+          onMount(m, close) {
+            const area = $(m, "[data-ga]"), cd = $(m, "[data-cd]"), gs = $(m, "[data-gs]");
+            const ui = (n) => { gs.textContent = n; FX.bump(gs); };
+            let c = 3;
+            FX.sound.tick();
+            const cdi = G.every(() => {
+              c--;
+              if (c > 0) { cd.textContent = c; FX.bump(cd); FX.sound.tick(); return; }
+              G.stop(cdi);
+              cd.textContent = "Поехали!";
+              FX.bump(cd);
+              G.to(() => {
+                cd.remove();
+                result = GAMES[type.id](area, G, ui);
+                const t0 = performance.now(), dur = type.dur * 1000;
+                const tm = G.every(() => {
+                  const k = clamp((performance.now() - t0) / dur);
+                  $(m, "[data-gbar]").style.transform = `scaleX(${1 - k})`;
+                  $(m, "[data-gt]").textContent = dec(Math.max(0, (dur - (performance.now() - t0)) / 1000));
+                  if (k >= 1) {
+                    G.stop(tm);
+                    finished = true;
+                    const sc = result ? result() : 0;
+                    G.clear();
+                    close();
+                    finishTask(sc);
+                  }
+                }, 100);
+              }, 450);
+            }, 700);
+          },
+        });
+      }
+      function finishTask(score) {
+        const prev = (S().job && S().job.perf) || 0;
+        const res = Vibe.game.completeTask(score);
+        if (!res) { FX.toast("Задачи на сегодня закончились", "🌙"); paint(); return; }
+        paint();
+        if (res.promoted) { FX.burst({ x: innerWidth / 2, y: innerHeight / 2 }, { emojis: ["🚀", "💼", "✨"], count: 20 }); return; }
+        const g = score >= 0.8 ? ["🔥", "Огонь!", "Начальник поставил 👍 в чате"] : score >= 0.5 ? ["👍", "Норм", "Начальник прочитал и не ответил"] : ["🫠", "Ну такое", "Начальник: «давай обсудим на 1:1»"];
+        T.to(() => Vibe.modal(`
+          <div class="m-emo float">${g[0]}</div><div class="display">${g[1]}</div>
+          <div class="big-num" style="font-size:44px;margin:6px 0" data-sc>${Math.round(score * 100)}%</div>
+          <p>${g[2]}. Премия <b style="color:var(--ink)">+${rub(res.bonus)}</b> придёт с зарплатой 30-го.</p>
+          <div class="progress" style="margin:0 0 6px;height:16px"><i data-rp style="--p:${prev}%;background:var(--grad)"></i></div>
+          <div class="lf-mini" style="margin-bottom:14px">До повышения: ${res.perf}% из 100</div>
+          <button class="btn black block" data-close>Дальше 💼</button>`, {
+          sound: "success",
+          onMount(md) {
+            T.to(() => {
+              const i = $(md, "[data-rp]");
+              if (i) i.style.setProperty("--p", res.perf + "%");
+              FX.burst($(md, "[data-sc]"), { emojis: ["💵", "✨", "📈"], count: 14 });
+            }, 350);
+          },
+        }), 150);
+      }
+      function quit(btn) {
+        FX.bump(btn);
+        const j = S().job;
+        Vibe.modal(`<div class="m-emo float">🚪</div><div class="display" style="font-size:28px">Уволиться?</div><p>Из «${esc(j.company)}». Премия ${rub(j.bonus || 0)} сгорит, коллеги напишут «жаль 😢» и забудут через час. Без зарплаты денег хватит на ${Vibe.game.runway()} дн.</p>
+          <div class="stack"><button class="btn pink block" data-quityes>Да, ухожу красиво 🔥</button><button class="btn black block" data-close>Остаюсь</button></div>`, {
+          sound: "pop",
+          onMount(m, close) {
+            $(m, "[data-quityes]").addEventListener("click", () => {
+              close();
+              Vibe.game.quitJob();
+              searching = false;
+              tab = "vac";
+              paint();
+              root.scrollTop = 0;
+              FX.toast("Ты свободен. Как ветер. Без зарплаты", "🕊️", 3000);
+              FX.burst({ x: innerWidth / 2, y: innerHeight / 3 }, { emojis: ["🕊️", "📦", "💨"], count: 14 });
             });
           },
         });
       }
+
+      /* ---------- Живое обновление ---------- */
+      function tick() {
+        const list = apps(), now = Date.now();
+        let changed = false;
+        const away = { invite: 0, reject: 0 };
+        list.forEach((a) => {
+          const s = appStatus(a, now);
+          if (a.shown === s) return;
+          a.shown = s;
+          changed = true;
+          const v = vacById(a.vid);
+          if (first) { if (away[s] !== undefined) away[s]++; }
+          else if (s === "seen") FX.toast(`${v.co}: резюме просмотрено`, "👀", 2000);
+          else if (s === "invite") { FX.toast(`${v.co} зовёт на собеседование!`, "🎉", 3200); FX.sound.success(); }
+          else if (s === "reject") FX.toast(`${v.co}: отказ. Ничего, вакансий ещё 14 000`, "🥀", 2600);
+          const row = $(body, `[data-app="${a.id}"]`);
+          if (row) {
+            const tmp = document.createElement("div");
+            tmp.innerHTML = appRow(a);
+            const nr = tmp.firstElementChild;
+            row.replaceWith(nr);
+            const chip = $(nr, ".lf-st");
+            FX.bump(chip);
+            FX.burst(chip, { emojis: [ST_INFO[s].e, "✨"], count: s === "invite" ? 14 : 6, spread: 80 });
+          }
+        });
+        if (first && (away.invite || away.reject)) {
+          FX.toast(`Пока тебя не было: ${away.invite ? `🎉 приглашений — ${away.invite}` : ""}${away.invite && away.reject ? ", " : ""}${away.reject ? `🥀 отказов — ${away.reject}` : ""}`, "📨", 3200);
+          if (away.invite) FX.sound.success();
+        }
+        first = false;
+        if (changed) Vibe.state.set({ life_apps: list });
+        $$(body, "[data-to]").forEach((el) => (el.textContent = mmss((+el.dataset.to - now) / 1000)));
+        const inv = list.filter((a) => appStatus(a, now) === "invite").length;
+        const nEl = $(body, "[data-invn]");
+        if (nEl) { if (+nEl.textContent !== inv && inv) FX.bump(nEl); nEl.textContent = inv; nEl.hidden = !inv; }
+        const d = Vibe.game.info().day;
+        if (d !== lastDay) { lastDay = d; if (S().job && !searching) paint(); }
+        const nx = $(body, "[data-nextday]");
+        if (nx) nx.textContent = hm(Vibe.game.realMinTo(d + 1));
+      }
+      const offGame = Vibe.game.on(() => { if (S().job && !searching && !document.querySelector(".modal")) paint(); });
+
+      /* ---------- Клики ---------- */
       root.addEventListener("click", (e) => {
-        const s = e.target.closest("[data-act=skill]");
-        if (s) { s.classList.toggle("on"); FX.bump(s); FX.burst(s, { emojis: ["🧠", "✨"], count: 6, spread: 70 }); if (s.classList.contains("on")) FX.toast("Навык добавлен в резюме. Проверять никто не будет", "🧠"); }
+        const t = e.target;
+        const tb = t.closest("[data-tab]");
+        if (tb) {
+          tab = tb.dataset.tab;
+          $$(body, ".lf-tabs [data-tab]").forEach((x) => x.classList.toggle("on", x.dataset.tab === tab));
+          FX.bump(tb);
+          paintPanel();
+          return;
+        }
+        const vm = t.closest("[data-vmode]");
+        if (vm) { vmode = vm.dataset.vmode; FX.bump(vm); paintPanel(); return; }
+        const fl = t.closest("[data-filter]");
+        if (fl) { filter = fl.dataset.filter; FX.bump(fl); FX.sound.pop(); paintPanel(); return; }
+        const vc = t.closest("[data-vac]");
+        if (vc) { FX.bump(vc); openVac(vacById(vc.dataset.vac)); return; }
+        const iv = t.closest("[data-iv]");
+        if (iv) { const a = apps().find((x) => x.id === iv.dataset.iv); if (a && appStatus(a) === "invite") interview(a); return; }
+        const ra = t.closest("[data-reapply]");
+        if (ra) { if (apply(vacById(ra.dataset.reapply), ra)) paintPanel(); return; }
+        const sk = t.closest("[data-skill]");
+        if (sk) { toggleSkill(sk); return; }
+        const bs = t.closest("[data-boost]");
+        if (bs) { boost(bs); return; }
+        const tk = t.closest("[data-task]");
+        if (tk) {
+          if (!Vibe.game.tasksLeft()) { FX.shake(tk); return; }
+          FX.bump(tk);
+          runTask(TASKS.find((x) => x.id === tk.dataset.task));
+          return;
+        }
+        const ac = t.closest("[data-act]");
+        if (!ac) return;
+        if (ac.dataset.act === "myjob") { searching = false; paint(); root.scrollTop = 0; }
+        if (ac.dataset.act === "seek") { searching = true; tab = "vac"; paint(); root.scrollTop = 0; FX.toast("Тихий поиск включён. Начальник не узнает (узнает)", "🤫"); }
+        if (ac.dataset.act === "quit") quit(ac);
       });
-      return () => T.clear();
+
+      paint();
+      tick();
+      T.every(tick, 1000);
+      return () => { T.clear(); offGame(); killMaps(); sheetMaps.forEach((m) => m.destroy()); sheetMaps.clear(); };
     },
   });
 
@@ -525,53 +1370,85 @@
   }
 
   /* ============================================================
-     3. VIBE RENT
+     3. VIBE RENT — аренда и переезд
      ============================================================ */
   const FLATS = [
-    { id: "r1", t: "Студия 18 м²", sub: "«уютная», «компактная», «для одного (стоя)»", p: 42000, m: "Вайбовская · 7 мин*", tags: ["Студия", "У метро"], col: "c-pink", e: ["🛏️", "🪴", "🖼️", "🚽"], nodep: true, feat: ["Кухня, спальня и санузел — одно помещение", "Окна выходят на окна соседей", "Евроремонт 2007 года"] },
-    { id: "r2", t: "1-к, 34 м²", sub: "ЖК «Облака», 24 этаж", p: 58000, m: "Облачная · 12 мин", tags: ["1-к", "С котом"], col: "c-sky", e: ["🛋️", "🐈", "📺", "🌇"], feat: ["Можно с котом (кот хозяйки остаётся)", "Вид на другой ЖК", "Консьерж (иногда)"] },
-    { id: "r3", t: "2-к, 52 м²", sub: "сталинка, потолки 3,2 м", p: 79000, m: "Центральная · 3 мин", tags: ["2-к", "У метро"], col: "c-yellow", e: ["🛋️", "🕰️", "🪞", "📚"], nodep: true, feat: ["Хозяйка заходит полить цветы каждый день", "Ковёр на стене — исторический", "Шкаф-ценность (не открывать)"] },
-    { id: "r4", t: "Студия 22 м²", sub: "апартаменты, «почти квартира»", p: 47000, m: "Промзона · 25 мин", tags: ["Студия", "С котом"], col: "c-lime", e: ["🛏️", "🐈‍⬛", "💡", "🧺"], feat: ["Прописки нет, зато лофт", "Вид на завод (очень атмосферно)", "Котам можно, людям — по согласованию"] },
-    { id: "r5", t: "1-к, 40 м²", sub: "новостройка, белый бокс", p: 63000, m: "Вайбовская · 5 мин", tags: ["1-к", "У метро"], col: "c-lilac", e: ["📦", "💡", "🪑", "🧱"], nodep: true, feat: ["Мебель будет (в мечтах)", "Парк обещают в 2031", "Соседи делают ремонт до 2031"] },
-    { id: "r6", t: "2-к, 60 м²", sub: "с ремонтом от бабушки", p: 72000, m: "Садовая · 9 мин", tags: ["2-к", "С котом"], col: "c-orange", e: ["🛋️", "🧶", "🐈", "🫖"], feat: ["Сервант с хрусталём включён в аренду", "Кот бабушки — тоже", "Бабушка — нет (но звонит)"] },
-  ];
+    { id: "r0", key: "kommunalka", t: "Комната в коммуналке", sub: "12 м², соседи: 7 человек и попугай", p: 18000, emoji: "🚪", tags: ["Комната", "С котом"], col: "c-coral", e: ["🛏️", "🦜", "🧦", "🚪"], feat: ["Очередь в ванную — с 6:40", "Попугай знает пароль от Wi-Fi", "Холодильник общий, еда — тоже (неофициально)"] },
+    { id: "r1", key: "studio18", t: "Студия 18 м²", sub: "«уютная», «компактная», «для одного (стоя)»", p: 32000, emoji: "🛏️", tags: ["Студия"], col: "c-pink", e: ["🛏️", "🪴", "🖼️", "🚽"], nodep: true, feat: ["Кухня, спальня и санузел — одно помещение", "Окна выходят на окна соседей", "Евроремонт 2007 года"] },
+    { id: "r2", key: "studio22", t: "Студия 22 м²", sub: "апартаменты, «почти квартира»", p: 38000, emoji: "🛏️", tags: ["Студия", "С котом"], col: "c-lime", e: ["🛏️", "🐈‍⬛", "💡", "🧺"], feat: ["Прописки нет, зато лофт", "Вид на завод (очень атмосферно)", "Котам можно, людям — по согласованию"] },
+    { id: "r3", key: "studio28", t: "Студия 28 м²", sub: "ЖК «Облака», 24 этаж", p: 44000, emoji: "🌇", tags: ["Студия"], col: "c-sky", e: ["🛋️", "🌇", "📺", "🪟"], fee: 0.5, feat: ["Вид на другой ЖК", "Лифт приезжает за 6 минут", "Консьерж (иногда)"] },
+    { id: "r4", key: "one34", t: "1-к, 34 м²", sub: "хрущёвка с душой и ковром", p: 47000, emoji: "🚪", tags: ["1-к", "С котом"], col: "c-mint", e: ["🛋️", "🐈", "🕰️", "🪞"], feat: ["Кот хозяйки остаётся", "Ковёр на стене — исторический", "Газовая колонка с характером"] },
+    { id: "r5", key: "one40", t: "1-к, 40 м²", sub: "новостройка, белый бокс", p: 56000, emoji: "📦", tags: ["1-к"], col: "c-lilac", e: ["📦", "💡", "🪑", "🧱"], nodep: true, feat: ["Мебель будет (в мечтах)", "Парк обещают в 2031", "Соседи делают ремонт до 2031"] },
+    { id: "r6", key: "one45", t: "1-к, 45 м²", sub: "евроремонт, вид на парк (через ЖК)", p: 64000, emoji: "🛋️", tags: ["1-к", "С котом"], col: "c-yellow", e: ["🛋️", "🌳", "☕", "🖼️"], fee: 0.5, feat: ["Посудомойка! (сломана)", "Тёплый пол в коридоре", "Хозяин живёт в Дубае и пишет в 4 утра"] },
+    { id: "r7", key: "two52", t: "2-к, 52 м²", sub: "сталинка, потолки 3,2 м", p: 79000, emoji: "🕰️", tags: ["2-к"], col: "c-orange", e: ["🛋️", "🕰️", "🪞", "📚"], nodep: true, feat: ["Хозяйка заходит полить цветы каждый день", "Шкаф-ценность (не открывать)", "Эхо бесплатно"] },
+    { id: "r8", key: "two60", t: "2-к, 60 м²", sub: "с ремонтом от бабушки", p: 72000, emoji: "🧶", tags: ["2-к", "С котом"], col: "c-mint", e: ["🛋️", "🧶", "🐈", "🫖"], feat: ["Сервант с хрусталём включён", "Кот бабушки — тоже", "Бабушка — нет (но звонит)"] },
+    { id: "r9", key: "two75", t: "2-к, 75 м², бизнес-класс", sub: "консьерж, шлагбаум, амбиции", p: 108000, emoji: "🏙️", tags: ["2-к"], col: "c-sky", e: ["🛋️", "🍸", "🏙️", "🪴"], fee: 1, feat: ["Подземный паркинг (за отдельные 25 000 ₽)", "Фитнес во дворе", "Соседи здороваются по-английски"] },
+    { id: "r10", key: "penthouse", t: "Пентхаус 180 м²", sub: "панорама, терраса, сосед — депутат", p: 400000, emoji: "🏰", tags: ["Пентхаус"], col: "c-holo", e: ["🛋️", "🍾", "🌃", "🛁"], fee: 1, feat: ["Терраса с видом на твою прошлую жизнь", "Джакузи на крыше", "Лифт открывается прямо в гостиную"] },
+  ].map((f) => Object.assign(f, { watch: rnd(9, 48) }));
   const POS = [[8, 30, 62], [56, 10, 46], [36, 56, 52], [72, 58, 40]];
+  const isHere = (f) => { const h = S().home; return !!(h && !h.own && h.key === f.key); };
+  function flatInfo(f) {
+    const p = Vibe.map.place("flat:" + f.key), w = Vibe.map.place("work");
+    return { p, district: p.district || "Спальный", work: w ? Vibe.map.minutes(Vibe.map.path(p, w), "metro") : null };
+  }
+  const moveCost = (f) => { const fee = Math.round(f.p * (f.fee || 0)); return { first: f.p, dep: f.p, fee, total: f.p * 2 + fee }; };
+  function rentBlock(f) {
+    const s = S();
+    if (!s.job && f.p > 40000) return "Хозяйка просит справку о доходах. Без работы сдают только комнаты и студии до 40 000 ₽.";
+    if (s.job && f.p > netOf(s.job.salary) * 0.6) return `Хозяйка посчитала: аренда больше 60% твоей зарплаты (${rub(netOf(s.job.salary))} на руки). Говорит, «не потянешь».`;
+    return null;
+  }
   const photo = (f, h = 170, heart = true) => `
     <div class="lf-photo ${f.col}" style="height:${h}px">
       ${f.nodep ? `<div class="sticker">Без залога*</div>` : ""}
       ${heart ? `<button class="lf-heart" data-act="like" data-id="${f.id}"><span class="like ${(st("life_rentLiked", {}))[f.id] ? "on" : ""}">❤️</span></button>` : ""}
       ${f.e.map((x, i) => `<span class="e emo float d${i}" style="left:${POS[i][0]}%;top:${POS[i][1]}%;font-size:${POS[i][2]}px">${x}</span>`).join("")}
     </div>`;
-  const flatCard = (f) => `
-    <div class="card tap" data-act="open" data-id="${f.id}" style="padding:10px">
+  function flatCard(f) {
+    const inf = flatInfo(f), here = isHere(f);
+    return `
+    <div class="card tap" data-act="open" data-id="${f.id}" style="padding:10px${here ? ";background:var(--lime)" : ""}">
       ${photo(f)}
       <div style="padding:10px 4px 2px">
-        <div class="lf-row"><div class="big-num" style="font-size:26px">${rub(f.p)}<span style="font-family:var(--font);font-size:13px;font-weight:800">/мес</span></div><span class="badge" style="background:var(--yellow)">👀 ${rnd(12, 48)} смотрят</span></div>
+        <div class="lf-row"><div class="big-num" style="font-size:26px">${rub(f.p)}<span style="font-family:var(--font);font-size:13px;font-weight:800">/мес</span></div>${here ? `<span class="badge" style="background:#fff">🏠 Ты здесь</span>` : `<span class="badge" style="background:var(--yellow)">👀 ${f.watch} смотрят</span>`}</div>
         <b style="display:block;margin-top:6px;font-size:15px">${f.t}</b>
         <div class="muted" style="font-size:12px;font-weight:700">${f.sub}</div>
-        <div style="margin-top:6px;font-size:13px;font-weight:800">Ⓜ️ ${f.m}</div>
-        ${f.nodep ? `<div class="fine" style="margin-top:4px">*залог переименован в «страховой платёж»</div>` : ""}
+        <div class="lf-pills" style="margin-top:8px"><span class="badge" style="background:var(--lilac)">📍 ${inf.district}</span>${inf.work != null ? `<span class="badge" style="background:var(--sky)">💼 до работы ${inf.work} мин</span>` : ""}${f.fee ? `<span class="badge" style="background:var(--coral)">комиссия ${Math.round(f.fee * 100)}%</span>` : ""}</div>
       </div>
     </div>`;
+  }
+  function homeNow() {
+    const h = S().home;
+    if (!h) return `<div class="card c-coral"><div class="lf-row" style="justify-content:flex-start;gap:12px"><span class="emo wobble" style="font-size:42px">🛋️</span><div style="flex:1;min-width:0"><div class="lf-mini" style="color:var(--ink)">Ты живёшь</div><b style="display:block">У мамы на диване · 0 ₽/мес</b><div style="font-size:12px;font-weight:700">Мама намекает. Каждый день. Громко.</div></div></div></div>`;
+    return `<div class="card c-lime"><div class="lf-row" style="justify-content:flex-start;gap:12px"><span class="emo float" style="font-size:42px">${h.emoji || "🏠"}</span><div style="flex:1;min-width:0"><div class="lf-mini" style="color:var(--ink)">Ты живёшь</div><b style="display:block">${esc(h.title)}</b><div style="font-size:12px;font-weight:800">${h.own ? "своя квартира 🔑 · аренда 0 ₽" : `аренда ${rub(h.rent || 0)}/мес · списание 1-го`}${h.district ? " · 📍 " + h.district : ""}</div></div></div></div>`;
+  }
+  const RENT_CHIPS = [["lt40", "💸 До 40к"], ["Комната", "🚪 Комната"], ["Студия", "🛏️ Студия"], ["1-к", "🚪 1-к"], ["2-к", "🛋️ 2-к"], ["near", "💼 Рядом с работой"], ["С котом", "🐈 С котом"]];
 
   Vibe.screen("rent", {
     render() {
       return `
       ${Vibe.ui.head("Vibe Rent", "Квартиры без риелторов*", Vibe.ui.vibikiPill())}
       <div class="stagger">
+        <div data-homenow>${homeNow()}</div>
         ${Vibe.ui.hero({ title: "Сними жильё мечты", text: "Свободно 3 квартиры из 12 000. Успей!", emo: "🔑", color: "c-mint", sticker: "0% комиссии*" })}
-        <div class="chips" style="margin-top:14px">${["Студия", "1-к", "2-к", "У метро", "С котом"].map((t) => `<button class="chip" data-f="${t}">${{ "Студия": "🛏️", "1-к": "🚪", "2-к": "🛋️", "У метро": "Ⓜ️", "С котом": "🐈" }[t]} ${t}</button>`).join("")}</div>
+        <div class="chips" style="margin-top:14px">${RENT_CHIPS.map(([k, t]) => `<button class="chip" data-f="${k}">${t}</button>`).join("")}</div>
         <div class="stack stagger" data-list>${FLATS.map(flatCard).join("")}</div>
         ${zab("Совет от Заботика: говори хозяйке, что ты непьющий программист без кота. Работает в 100% случаев.")}
-        <div class="fine">*Без риелторов, но с «помощником хозяина». Комиссия 0%, сбор за ключи 100%. Фото квартир сделаны в лучшие дни квартир.</div>
+        <div class="fine">*Без риелторов, но с «помощником хозяина». Комиссия 0%, кроме тех, где не 0%. Фото сделаны в лучшие дни квартир.</div>
       </div>`;
     },
     mount(root) {
       const T = bag();
       const on = new Set();
       const listEl = $(root, "[data-list]");
+      const sheetMaps = new Set();
+      const viewed = new Set();
       function renderList() {
-        const arr = FLATS.filter((f) => [...on].every((t) => f.tags.includes(t)));
+        const arr = FLATS.filter((f) => [...on].every((t) => {
+          if (t === "lt40") return f.p <= 40000;
+          if (t === "near") { const i = flatInfo(f); return i.work != null && i.work <= 22; }
+          return f.tags.includes(t);
+        }));
         listEl.innerHTML = arr.length ? arr.map(flatCard).join("") : `<div class="card c-lilac" style="text-align:center"><div class="emo float" style="font-size:60px">🐈</div><div class="display" style="font-size:22px;margin-top:6px">Ничего не нашли</div><div style="font-size:13px;margin-top:6px;font-weight:700">С такими фильтрами не сдают. Но можно сдать кота.</div></div>`;
         restagger(listEl);
       }
@@ -579,6 +1456,7 @@
         const ch = e.target.closest("[data-f]");
         if (ch) {
           const t = ch.dataset.f;
+          if (t === "near" && !S().job && !on.has(t)) { FX.shake(ch); FX.toast("Сначала найди работу — потом выбирай, где рядом", "💼"); return; }
           on.has(t) ? on.delete(t) : on.add(t);
           ch.classList.toggle("on", on.has(t));
           FX.bump(ch);
@@ -593,8 +1471,7 @@
           const id = lk.dataset.id;
           liked[id] = !liked[id];
           Vibe.state.set({ life_rentLiked: liked });
-          const h = $(lk, ".like");
-          h.classList.toggle("on", liked[id]);
+          $(lk, ".like").classList.toggle("on", liked[id]);
           FX.bump(lk);
           if (liked[id]) { FX.sound.like(); FX.burst(lk, { emojis: ["❤️", "💖", "🏠"], count: 10, spread: 90 }); Vibe.reward({ xp: 2 }); }
           else FX.sound.pop();
@@ -605,66 +1482,76 @@
       });
 
       function openFlat(f) {
-        const total = f.p * 3;
+        const inf = flatInfo(f), c = moveCost(f), here = isHere(f), block = rentBlock(f), h = S().home;
+        let mp = null;
         Vibe.ui.sheet(`
-          ${photo(f, 190, false)}
-          <div class="lf-row" style="margin-top:14px"><div class="big-num" style="font-size:32px">${rub(f.p)}</div><span class="badge" style="background:var(--pink)">🔥 осталось 2 просмотра</span></div>
+          ${photo(f, 180, false)}
+          <div class="lf-row" style="margin-top:14px"><div class="big-num" style="font-size:32px">${rub(f.p)}<span style="font-family:var(--font);font-size:13px;font-weight:800">/мес</span></div><span class="badge" style="background:var(--pink)">🔥 осталось 2 просмотра</span></div>
           <div class="display" style="font-size:22px;margin-top:6px">${f.t}</div>
-          <div class="muted" style="font-size:13px;font-weight:700">${f.sub} · Ⓜ️ ${f.m}</div>
+          <div class="muted" style="font-size:13px;font-weight:700">${f.sub}</div>
+          <div class="lf-pills" style="margin-top:10px"><span class="badge" style="background:var(--lilac)">📍 ${inf.district}</span>${inf.work != null ? `<span class="badge" style="background:var(--sky)">💼 до работы ${inf.work} мин на метро</span>` : `<span class="badge" style="background:#fff">💼 работы пока нет</span>`}</div>
+          <div data-fmap style="height:190px;margin-top:12px"></div>
           <div class="card flat stagger" style="padding:2px 14px;margin-top:14px">
             ${f.feat.map((x) => `<div class="li"><div class="ic c-lime" style="width:36px;height:36px;font-size:16px">✅</div><div class="tx" style="font-size:13px;font-weight:700">${x}</div></div>`).join("")}
           </div>
           <div style="margin-top:14px">
-            <div class="lf-fee"><span>Аренда за месяц</span><span>${rub(f.p)}</span></div>
-            <div class="lf-fee"><span>Залог</span><span>0 ₽ 🎉</span></div>
-            <div class="lf-fee"><span>«Страховой платёж»*</span><span>${rub(f.p)}</span></div>
-            <div class="lf-fee"><span>Комиссия «за ключи»</span><span>${rub(f.p)}</span></div>
-            <div class="lf-total"><span class="display" style="font-size:18px">На заезд</span><span class="big-num">${rub(total)}</span></div>
+            <div class="lf-fee"><span>Первый месяц</span><span>${rub(c.first)}</span></div>
+            <div class="lf-fee"><span>${f.nodep ? "Залог 0 ₽ 🎉 · «Страховой платёж»*" : "Залог"}</span><span>${rub(c.dep)}</span></div>
+            ${c.fee ? `<div class="lf-fee"><span>Комиссия «помощника хозяина»</span><span>${rub(c.fee)}</span></div>` : ""}
+            <div class="lf-total"><span class="display" style="font-size:18px">На заезд</span><span class="big-num">${rub(c.total)}</span></div>
           </div>
-          <div data-step1><button class="btn black xl block" data-book>Записаться на просмотр 👀</button></div>
-          <div data-step2 hidden>
-            <div class="display" style="font-size:20px;margin:6px 0 10px">Выбери время</div>
-            <div class="lf-slots">${["Сегодня 19:00", "Сегодня 19:15", "Завтра 10:00", "Завтра 12:30", "Сб 14:00", "Прямо сейчас 🏃"].map((s) => `<button class="chip" data-slot="${s}">${s}</button>`).join("")}</div>
-            <div class="fine">В это же время квартиру смотрят ещё 14 человек. Это нормально, это рынок.</div>
-            <button class="btn lime xl block" data-confirm disabled style="margin-top:12px">Подтвердить ✓</button>
-          </div>
-          <div class="fine">*«Страховой платёж» — это не залог. Залог — это другое. Чем — мы сами не до конца понимаем.</div>`, {
+          ${h && h.own && !here ? `<div class="lf-note" style="margin-bottom:10px">🏠 У тебя своя квартира. Переедешь — будешь платить аренду, а ипотека никуда не денется.</div>` : ""}
+          ${block && !here ? `<div class="lf-note" style="margin-bottom:10px;background:var(--coral)">🙅‍♀️ ${block}</div>` : ""}
+          ${here ? `<button class="btn xl block" disabled>Ты уже здесь живёшь 🏠</button>` : `<button class="btn black xl block" data-move>Переехать · ${rub(c.total)} 🚚</button>`}
+          <button class="btn block" data-view style="margin-top:10px">Записаться на просмотр 👀</button>
+          <div class="fine">Дальше аренда ${rub(f.p)} списывается 1-го числа каждого месяца. *«Страховой платёж» — это не залог. Залог — это другое. Чем — мы сами не до конца понимаем.</div>`, {
           onMount(sh, close) {
-            let slot = null;
-            $(sh, "[data-book]").addEventListener("click", (e) => {
-              FX.bump(e.currentTarget);
-              $(sh, "[data-step1]").hidden = true;
-              const s2 = $(sh, "[data-step2]");
-              s2.hidden = false;
-              s2.querySelectorAll(".chip").forEach((c, i) => { c.style.animation = `pop-in .45s var(--spring) ${i * 50}ms both`; });
-              FX.sound.pop();
-              T.to(() => s2.scrollIntoView({ behavior: "smooth", block: "end" }), 60);
-            });
-            sh.addEventListener("click", (e) => {
-              const c = e.target.closest("[data-slot]");
-              if (!c) return;
-              slot = c.dataset.slot;
-              $$(sh, "[data-slot]").forEach((x) => x.classList.toggle("on", x === c));
-              FX.bump(c);
-              FX.sound.add();
-              $(sh, "[data-confirm]").disabled = false;
-            });
-            $(sh, "[data-confirm]").addEventListener("click", (e) => {
-              const from = e.currentTarget;
-              close();
-              FX.confetti();
-              Vibe.reward({ vibiki: 10, xp: 15, from });
-              Vibe.modal(`
-                <div class="m-emo float">🗝️</div>
-                <div class="display">Ты записан!</div>
-                <p>${slot}, ${f.t}. Ты 14-й в очереди. Возьми паспорт, справку о доходах и рекомендацию от прошлой хозяйки.</p>
-                <button class="btn black block" data-close>Иду смотреть 🏃</button>
-                <div class="fine">Хозяин может передумать, поднять цену или сдать квартиру своему племяннику. Это часть опыта.</div>`);
+            const el = $(sh, "[data-fmap]");
+            const home = Vibe.map.place("home"), work = Vibe.map.place("work");
+            const pin = Object.assign({}, inf.p, { id: "flat", e: f.emoji, color: "#ff6bcb", pulse: true, label: here ? "Ты здесь" : "Новая" });
+            mp = Vibe.map.create(el, { pins: Vibe.map.basePins([pin]), interactive: false, fit: [inf.p, home, work].filter(Boolean) });
+            el.style.touchAction = "pan-y";
+            if (work) mp.route(Vibe.map.path(inf.p, work), { color: "#3d7bff" });
+            sheetMaps.add(mp);
+            const mv = $(sh, "[data-move]");
+            if (mv) mv.addEventListener("click", () => move(f, mv, close));
+            $(sh, "[data-view]").addEventListener("click", (e) => {
+              const b = e.currentTarget;
+              if (viewed.has(f.id)) { FX.shake(b); FX.toast("Ты уже записан. Ты 14-й в очереди", "⏳"); return; }
+              viewed.add(f.id);
+              FX.bump(b);
+              FX.burst(b, { emojis: ["👀", "🗝️", "✨"], count: 10 });
+              b.textContent = `✓ ${pick(["Сегодня 19:15", "Завтра 10:00", "Сб 14:00"])} · ты 14-й`;
+              Vibe.reward({ xp: 10 });
+              FX.toast("Возьми паспорт, справку о доходах и рекомендацию от прошлой хозяйки", "🗝️", 3000);
             });
           },
+          onClose() { if (mp) { mp.destroy(); sheetMaps.delete(mp); } },
         });
       }
-      return () => T.clear();
+      function move(f, btn, close) {
+        if (isHere(f)) return;
+        const block = rentBlock(f);
+        if (block) { FX.shake(btn); FX.toast(block.split(". ")[0], "🙅‍♀️", 3200); return; }
+        const c = moveCost(f), inf = flatInfo(f);
+        const ok = Vibe.pay(c.total, { title: `Vibe Rent · заезд: ${f.t}`, emoji: "🔑", col: "c-mint", from: btn, cashback: 0.005 });
+        if (!ok) return;
+        Vibe.game.moveHome({ title: f.t, rent: f.p, emoji: f.emoji, key: f.key });
+        close();
+        $(root, "[data-homenow]").innerHTML = homeNow();
+        FX.bump($(root, "[data-homenow]"));
+        renderList();
+        FX.confetti();
+        T.to(() => FX.confetti({ count: 70 }), 350);
+        Vibe.modal(`
+          <div class="m-emo float">🚚</div>
+          <div class="display">Новоселье!</div>
+          <p>${f.t}, район «${inf.district}». Аренда ${rub(f.p)}/мес спишется 1-го числа${inf.work != null ? `. До работы ${inf.work} мин на метро` : ""}. Соседи уже стучат по батарее — приветствуют.</p>
+          <button class="btn black block" data-close>Распаковывать коробки 📦</button>
+          <div class="fine">Коробки распаковываются примерно 2 года. Последняя — никогда.</div>`, { sound: "levelup" });
+        T.to(() => FX.burst({ x: innerWidth / 2, y: innerHeight / 2 - 80 }, { emojis: ["📦", "🔑", "🏠", "✨"], count: 20 }), 300);
+      }
+      return () => { T.clear(); sheetMaps.forEach((m) => m.destroy()); sheetMaps.clear(); };
     },
   });
 
@@ -673,12 +1560,14 @@
      ============================================================ */
   const RATE = 0.189;
   const BUILDS = [
-    { n: "ЖК «Вайб Сити»", e: "🏙️", p: 12400000, d: "II кв. 2029*", col: "c-sky" },
-    { n: "ЖК «Уютный муравейник»", e: "🏢", p: 8900000, d: "«скоро»", col: "c-yellow" },
-    { n: "ЖК «Парк у кольцевой»", e: "🌳", p: 7300000, d: "когда-нибудь", col: "c-lime" },
-    { n: "Клубный дом «Элита»", e: "🏰", p: 29000000, d: "уже сдан (в аренду)", col: "c-lilac" },
-    { n: "ЖК «Студенческий»", e: "🏚️", p: 4100000, d: "IV кв. 2027", col: "c-coral" },
+    { key: "buy-student", n: "ЖК «Студенческий»", s: "Студия 21 м²", e: "🏚️", p: 4100000, d: "IV кв. 2027", col: "c-coral" },
+    { key: "buy-park", n: "ЖК «Парк у кольцевой»", s: "1-к, 38 м²", e: "🌳", p: 7300000, d: "сдан (почти)", col: "c-lime" },
+    { key: "buy-ant", n: "ЖК «Уютный муравейник»", s: "2-к, 54 м²", e: "🏢", p: 8900000, d: "«скоро»", col: "c-yellow" },
+    { key: "buy-city", n: "ЖК «Вайб Сити»", s: "3-к, 82 м²", e: "🏙️", p: 12400000, d: "II кв. 2029*", col: "c-sky" },
+    { key: "buy-elite", n: "Клубный дом «Элита»", s: "Пентхаус 160 м²", e: "🏰", p: 29000000, d: "уже сдан (в аренду)", col: "c-lilac" },
   ];
+  const mln = (n) => dec(n / 1e6, n % 1e6 ? 1 : 0) + " млн ₽";
+  const ownsKey = (k) => { const h = S().home; return !!(h && h.own && h.key === k); };
   function mortgage(price, down, years) {
     const L = price * (1 - down / 100), r = RATE / 12, n = years * 12;
     const P = (L * r) / (1 - Math.pow(1 + r, -n));
@@ -690,6 +1579,33 @@
       <div class="lf-row"><span class="lf-mini">${label}</span><b data-lbl="${k}"></b></div>
       <input type="range" data-r="${k}" min="${min}" max="${max}" step="${step}" value="${v}" style="--p:${((v - min) / (max - min)) * 100}%">
     </div>`;
+  function ownCard() {
+    const h = S().home;
+    if (!h || !h.own) return "";
+    const mort = (S().loans || []).filter((l) => l.name === "Ипотека");
+    const pay = mort.reduce((a, l) => a + l.monthly, 0);
+    return `<div class="card c-lime" style="margin-bottom:14px">
+      <div class="sticker" style="top:12px;right:12px">Твоя! 🔑</div>
+      <div class="lf-row" style="justify-content:flex-start;gap:12px;margin-top:6px"><span class="emo float" style="font-size:56px">${h.emoji || "🏠"}</span>
+      <div style="min-width:0;flex:1"><div class="lf-mini" style="color:var(--ink)">Своя квартира</div><b style="display:block;font-size:15px;line-height:1.2;margin-top:2px">${esc(h.title)}</b>
+      <div style="font-size:12px;font-weight:800;margin-top:4px">📍 ${esc(h.district || "город")} · ${mort.length ? `ипотека ${rub(pay)}/мес · осталось ${Math.max(...mort.map((l) => l.left))} платежей` : "без ипотеки, как король 👑"}</div></div></div>
+    </div>`;
+  }
+  const buildCard = (b, i) => {
+    const p = Vibe.map.place("flat:" + b.key), own = ownsKey(b.key);
+    return `
+    <div class="card tap" data-build="${i}" style="padding:12px${own ? ";background:var(--lime)" : ""}">
+      <div class="lf-row" style="justify-content:flex-start;gap:12px">
+        <div class="lf-cpic ${b.col}" style="width:78px;height:78px;font-size:44px"><span class="emo float d${i % 3}">${b.e}</span></div>
+        <div style="flex:1;min-width:0">
+          <b style="font-size:15px;display:block;line-height:1.2">${b.s}</b>
+          <div class="muted" style="font-size:12px;font-weight:700">${b.n} · 📍 ${p.district}</div>
+          <div class="price" style="margin-top:4px;font-size:20px">${mln(b.p)}</div>
+          <div style="font-size:11px;font-weight:800">${own ? "🔑 Это твоя квартира" : `сдача: ${b.d}`}</div>
+        </div>
+      </div>
+    </div>`;
+  };
 
   Vibe.screen("home-buy", {
     render() {
@@ -697,6 +1613,7 @@
       return `
       ${Vibe.ui.head("Vibe Home", "Ипотека на 30 лет счастья", Vibe.ui.vibikiPill())}
       <div class="stagger">
+        <div data-own>${ownCard()}</div>
         ${Vibe.ui.hero({ title: "Своя квартира. Почти", text: "Ипотека от 6%* — подпиши и мечтай", emo: "🏡", color: "c-yellow", sticker: "6%*" })}
         <div class="card" style="margin-top:14px" data-calc>
           <div class="lf-mini">Ежемесячный платёж</div>
@@ -711,40 +1628,39 @@
             <div style="font-weight:800;font-size:14px">Это <span data-ratio>${dec(m.ratio)}</span> такой же квартиры 🫠</div>
             <div class="lf-houses" data-houses style="margin-top:6px"></div>
           </div>
-          <button class="btn black xl block" data-approve style="margin-top:16px">Одобрить ✨ <span class="arrow">→</span></button>
-          <div class="fine">*6% — для тех, кто родился 29 февраля на Луне и работает в банке. Расчёт по ставке 18,9%. Ставка может измениться в зависимости от ключевой ставки, курса, погоды и настроения банка.</div>
+          <div class="lf-fee" style="margin-top:12px"><span>Нужна зарплата на руки от</span><b data-need></b></div>
+          <button class="btn black xl block" data-approve style="margin-top:12px">Проверить одобрение ✨ <span class="arrow">→</span></button>
+          <div class="fine">*6% — для тех, кто родился 29 февраля на Луне и работает в банке. Банк одобряет, если платёж не больше половины зарплаты. Ставка зависит от ключевой ставки, курса, погоды и настроения банка.</div>
         </div>
         ${zab("", "sly")}
-        <h2 class="sec">Новостройки <small>тапни → в калькулятор</small></h2>
-        <div class="hscroll">${BUILDS.map((b, i) => `
-          <div class="card tap lf-build" data-build="${i}">
-            <div class="pic ${b.col}"><span class="emo float d${i % 3}">${b.e}</span>${i % 2 ? "" : `<div class="sticker" style="top:8px;right:8px;font-size:11px">Осталось 2 кв.</div>`}</div>
-            <div class="body"><b style="font-size:14px">${b.n}</b><div class="muted" style="font-size:12px;font-weight:700">Сдача: ${b.d}</div><div class="price" style="margin-top:6px">от ${dec(b.p / 1e6)} млн ₽</div></div>
-          </div>`).join("")}</div>
-        <div class="fine">*Сроки сдачи ориентировочные. Ориентир — горизонт.</div>
+        <h2 class="sec">Купить квартиру <small>тапни, чтобы купить</small></h2>
+        <div class="stack" data-builds>${BUILDS.map(buildCard).join("")}</div>
+        <div class="fine">*Сроки сдачи ориентировочные. Ориентир — горизонт. Цены растут быстрее, чем ты копишь, — это нормально.</div>
       </div>`;
     },
     mount(root) {
       const T = bag();
       const R = {}; $$(root, "[data-r]").forEach((i) => (R[i.dataset.r] = i));
       const payEl = $(root, "[data-pay]"), overEl = $(root, "[data-over]");
+      const sheetMaps = new Set();
       let lastHouses = -1, debounce = null;
+      const cur = () => ({ price: +R.price.value, down: +R.down.value, years: +R.years.value });
       function update(animate = true) {
-        const price = +R.price.value, down = +R.down.value, years = +R.years.value;
+        const { price, down, years } = cur();
         Object.values(R).forEach(setRange);
         $(root, "[data-lbl=price]").textContent = rub(price);
         $(root, "[data-lbl=down]").textContent = `${down}% · ${dec((price * down) / 100 / 1e6, 2)} млн`;
-        $(root, "[data-lbl=years]").textContent = `${years} ${years % 10 === 1 && years !== 11 ? "год" : years % 10 >= 2 && years % 10 <= 4 && (years < 12 || years > 14) ? "года" : "лет"}`;
+        $(root, "[data-lbl=years]").textContent = `${years} ${plural(years, "год", "года", "лет")}`;
         const m = mortgage(price, down, years);
         $(root, "[data-ratio]").textContent = dec(m.ratio);
+        $(root, "[data-need]").textContent = rub(Math.ceil((m.P * 2) / 1000) * 1000);
         const nH = Math.max(1, Math.min(12, Math.round(m.ratio)));
         if (nH !== lastHouses) {
-          const hs = $(root, "[data-houses]");
-          hs.innerHTML = Array.from({ length: nH }, (_, i) => `<span style="animation-delay:${i * 40}ms">🏠</span>`).join("") + (m.ratio > 12 ? " …" : "");
+          $(root, "[data-houses]").innerHTML = Array.from({ length: nH }, (_, i) => `<span style="animation-delay:${i * 40}ms">🏠</span>`).join("") + (m.ratio > 12 ? " …" : "");
           lastHouses = nH;
         }
-        const age = 25 + years;
-        say(root, years >= 25 ? `К концу ипотеки тебе будет ${age}. Отличный возраст для новоселья! 🎂` : down >= 60 ? "Первый взнос 60%+? Ты точно не наш клиент. Уважаем." : `Всего ${years} лет — и квартира почти твоя. Почти — потому что ещё налог.`);
+        const s = S();
+        say(root, !s.job ? "Без работы банк даже калькулятор посчитает с осуждением. Сначала — Vibe Job." : years >= 25 ? `К концу ипотеки тебе будет ${25 + years}. Отличный возраст для новоселья! 🎂` : down >= 60 ? "Первый взнос 60%+? Ты точно не наш клиент. Уважаем." : `Всего ${years} ${plural(years, "год", "года", "лет")} — и квартира почти твоя. Почти — потому что ещё налог.`);
         if (!animate) return;
         clearTimeout(debounce);
         debounce = T.to(() => {
@@ -761,18 +1677,96 @@
           const bd = BUILDS[+b.dataset.build];
           R.price.value = Math.min(30000000, bd.p);
           update();
+          FX.bump(b);
           FX.burst(b, { emojis: [bd.e, "✨", "🔑"], count: 10 });
-          FX.toast(`${bd.n} — в калькуляторе`, bd.e);
-          $(root, "[data-calc]").scrollIntoView({ behavior: "smooth", block: "start" });
+          openBuild(bd);
           return;
         }
-        if (e.target.closest("[data-approve]")) approve(e.target.closest("[data-approve]"));
+        const ap = e.target.closest("[data-approve]");
+        if (ap) { FX.bump(ap); scoring(Object.assign(cur(), { b: null })); }
       });
 
-      function approve(btn) {
-        FX.bump(btn);
-        const m = mortgage(+R.price.value, +R.down.value, +R.years.value);
-        const steps = ["Проверяем кредитную историю…", "Смотрим, что ты лайкал в 2019…", "Считаем, сколько ты тратишь на кофе ☕", "Звоним маме…", "Сверяемся с гороскопом 🔮", "Советуемся с нейросетью…", "Почти готово…"];
+      function refresh() {
+        $(root, "[data-own]").innerHTML = ownCard();
+        const bl = $(root, "[data-builds]");
+        bl.innerHTML = BUILDS.map(buildCard).join("");
+        restagger(bl);
+      }
+
+      function openBuild(b) {
+        const { down, years } = cur();
+        const m = mortgage(b.p, down, years), downAmt = Math.round((b.p * down) / 100), s = S();
+        const fp = Vibe.map.place("flat:" + b.key), work = Vibe.map.place("work");
+        const own = ownsKey(b.key);
+        let mp = null;
+        Vibe.ui.sheet(`
+          <div class="lf-photo ${b.col}" style="height:130px;display:flex;align-items:center;justify-content:center;gap:10px;font-size:70px"><span class="emo float">${b.e}</span><span class="emo float d2" style="font-size:40px">🔑</span><div class="sticker">${own ? "Твоя!" : "Осталось 2 кв."}</div></div>
+          <div class="display" style="font-size:24px;margin-top:14px">${b.s}</div>
+          <div class="muted" style="font-size:13px;font-weight:700">${b.n} · 📍 ${fp.district} · сдача ${b.d}</div>
+          <div class="big-num" style="font-size:34px;margin-top:8px">${rub(b.p)}</div>
+          <div data-bmap style="height:180px;margin-top:12px"></div>
+          ${work ? `<div class="lf-pills" style="margin-top:10px"><span class="badge" style="background:var(--sky)">💼 до работы ${Vibe.map.minutes(Vibe.map.path(fp, work), "metro")} мин на метро</span></div>` : ""}
+          <div style="margin-top:14px">
+            <div class="lf-fee"><span>Первый взнос ${down}%</span><span>${rub(downAmt)}</span></div>
+            <div class="lf-fee"><span>Кредит на ${years} ${plural(years, "год", "года", "лет")} под 18,9%</span><span>${rub(m.L)}</span></div>
+            <div class="lf-fee"><span>Переплата банку</span><span>${rub(m.over)}</span></div>
+            <div class="lf-fee"><span>Нужна зарплата на руки от</span><span>${rub(Math.ceil((m.P * 2) / 1000) * 1000)}</span></div>
+            <div class="lf-total"><span class="display" style="font-size:18px">Платёж</span><span class="big-num">${rub(m.P)}/мес</span></div>
+          </div>
+          ${own ? `<button class="btn xl block" disabled>Это уже твоя квартира 🔑</button>` : `
+          <button class="btn black xl block" data-mort>Купить в ипотеку 🏦</button>
+          <button class="btn block" data-cash style="margin-top:10px" ${s.balance >= b.p ? "" : "disabled"}>${s.balance >= b.p ? `Купить сразу · ${mln(b.p)} 💰` : `Сразу не потянешь: не хватает ${rub(b.p - Math.max(0, s.balance))}`}</button>`}
+          <div class="fine">Взнос и срок — из калькулятора выше. После покупки аренда больше не списывается, а вот ипотека — каждый месяц, ${years} ${plural(years, "год", "года", "лет")}.</div>`, {
+          onMount(sh, close) {
+            const el = $(sh, "[data-bmap]");
+            const pin = Object.assign({}, fp, { id: "buy", e: b.e, color: "#ff6bcb", pulse: true, label: "Квартира" });
+            mp = Vibe.map.create(el, { pins: Vibe.map.basePins([pin]), interactive: false, fit: [fp, Vibe.map.place("home"), work].filter(Boolean) });
+            el.style.touchAction = "pan-y";
+            if (work) mp.route(Vibe.map.path(fp, work), { color: "#3d7bff" });
+            sheetMaps.add(mp);
+            const mb = $(sh, "[data-mort]");
+            if (mb) mb.addEventListener("click", () => {
+              FX.bump(mb);
+              if (S().balance < downAmt) { FX.shake(mb); FX.toast(`На первый взнос нужно ${rub(downAmt)}. Копи или уменьши взнос`, "🐷", 3000); return; }
+              close();
+              scoring({ price: b.p, down, years, b });
+            });
+            const cb = $(sh, "[data-cash]");
+            if (cb) cb.addEventListener("click", () => {
+              const ok = Vibe.pay(b.p, { title: `Покупка квартиры · ${b.n}`, emoji: "🏠", col: "c-yellow", from: cb, cashback: 0 });
+              if (!ok) return;
+              Vibe.game.buyHome({ title: `${b.s}, ${b.n}`, emoji: b.e, key: b.key });
+              close();
+              celebrate(b, null);
+            });
+          },
+          onClose() { if (mp) { mp.destroy(); sheetMaps.delete(mp); } },
+        });
+      }
+
+      function celebrate(b, m) {
+        refresh();
+        FX.confetti();
+        T.to(() => FX.confetti({ count: 120 }), 400);
+        Vibe.modal(`
+          <div class="m-emo float">🔑</div>
+          <div class="display">Ключи твои!</div>
+          <p>${b.s}, ${b.n}. ${m ? `Платёж ${rub(m.P)}/мес, каждый месяц, долго. Квартира твоя (частично — остальное у банка).` : "Без ипотеки. Банк в слезах, ты — в своей квартире."} Аренды больше нет.</p>
+          <button class="btn black block" data-close>Новоселье 🎉</button>
+          <div class="fine">Ремонт, мебель и шторы в стоимость не входят. Шторы — это вообще отдельная ипотека.</div>`, { sound: "levelup" });
+        T.to(() => FX.burst({ x: innerWidth / 2, y: innerHeight / 2 - 80 }, { emojis: ["🔑", "🏠", "🎉", "✨"], count: 24 }), 300);
+      }
+
+      // Скоринг банка: opt = { price, down, years, b } (b = null — только проверка)
+      function scoring(opt) {
+        const m = mortgage(opt.price, opt.down, opt.years);
+        const downAmt = Math.round((opt.price * opt.down) / 100);
+        const s = S();
+        let fail = null;
+        if (!s.job) fail = pick(["Банк не видит у тебя дохода. Даже нейросеть удивилась.", "Справка с места работы? А, места нет. Понятно.", "Скоринг показал: «безработный, но с амбициями». Амбиции в залог не берём."]);
+        else if (m.P > netOf(s.job.salary) * 0.5) fail = `Платёж ${rub(m.P)} — больше половины твоей зарплаты (${rub(netOf(s.job.salary))} на руки). Банк волнуется. За себя.`;
+        else if (s.balance < downAmt) fail = `На первый взнос нужно ${rub(downAmt)}, а на карте ${rub(Math.max(0, s.balance))}. Копилка плачет.`;
+        const steps = ["Проверяем кредитную историю…", "Смотрим, что ты лайкал в 2019…", "Считаем, сколько ты тратишь на кофе ☕", "Звоним работодателю…", "Звоним маме…", "Сверяемся с гороскопом 🔮", "Почти готово…"];
         Vibe.modal(`
           <div class="lf-scan">
             <div class="wobble" style="display:inline-block">${Vibe.zabotik(96, "wow")}</div>
@@ -786,40 +1780,56 @@
             let k = 0;
             const id = T.every(() => {
               k++;
-              const pct = Math.min(100, Math.round((k / steps.length) * 100));
               const bar = $(md, "[data-bar]");
               if (!bar) { T.stop(id); return; }
+              const pct = Math.min(fail ? 87 : 100, Math.round((k / steps.length) * 100));
               bar.style.setProperty("--p", pct + "%");
               $(md, "[data-pct]").textContent = pct + "%";
-              FX.sound.tick();
-              if (k < steps.length) { const s = $(md, "[data-step]"); s.textContent = steps[k]; FX.bump(s); return; }
+              if (k < steps.length) { const st0 = $(md, "[data-step]"); st0.textContent = steps[k]; FX.bump(st0); return; }
               T.stop(id);
               T.to(() => {
+                if (fail) {
+                  md.innerHTML = `
+                    <div class="m-emo float">🙅</div>
+                    <div class="display">Отказ</div>
+                    <p>${fail}</p>
+                    <div class="stack">${!s.job ? `<button class="btn black block" data-close data-go="job">Искать работу 💼</button>` : ""}<button class="btn block" data-close>Понятно 🥲</button></div>
+                    <div class="fine">Причина отказа не сообщается. Но мы сообщили. Мы же Vibe.</div>`;
+                  FX.shake($(md, ".m-emo"));
+                  return;
+                }
                 md.innerHTML = `
                   <div class="m-emo float">🏆</div>
-                  <div class="display">Предодобрено!</div>
+                  <div class="display">${opt.b ? "Одобрено!" : "Предодобрено!"}</div>
                   <div class="big-num" style="font-size:30px;margin-top:8px">${rub(m.L)}</div>
-                  <p>Платёж ${rub(m.P)}/мес. Банк уже любит тебя. Особенно на ${+R.years.value} лет вперёд.</p>
+                  <p>Платёж ${rub(m.P)}/мес на ${opt.years} ${plural(opt.years, "год", "года", "лет")}. ${opt.b ? `Первый взнос ${rub(downAmt)} спишется сейчас.` : "Выбери квартиру ниже — и ключи твои."}</p>
                   <div class="stack">
-                    <button class="btn grad xl block" data-take>Забрать ключи 🔑</button>
-                    <button class="btn block" data-close>Подумаю (не надо)</button>
+                    ${opt.b ? `<button class="btn grad xl block" data-take>Подписать и забрать ключи 🔑</button>` : ""}
+                    <button class="btn block" data-close>${opt.b ? "Подумаю (не надо)" : "Выбрать квартиру 🏠"}</button>
                   </div>
-                  <div class="fine">Предодобрение не означает одобрение. Одобрение не означает выдачу. Выдача не означает, что квартира ваша.</div>`;
-                FX.confetti();
+                  <div class="fine">Предодобрение не означает одобрение. Одобрение не означает, что квартира ваша. Но почти.</div>`;
+                FX.confetti({ count: 90 });
                 FX.sound.success();
                 FX.burst($(md, ".m-emo"), { emojis: ["🔑", "🏠", "✨", "💸"], count: 20 });
-                $(md, "[data-take]").addEventListener("click", (ev) => {
+                const tk = $(md, "[data-take]");
+                if (tk) tk.addEventListener("click", (ev) => {
+                  const b = opt.b, L = opt.price - downAmt;
+                  const ok = Vibe.pay(downAmt, { title: `Первый взнос · ${b.n}`, emoji: "🏠", col: "c-yellow", from: ev.currentTarget, cashback: 0 });
+                  if (!ok) return;
+                  Vibe.game.addLoan({ name: "Ипотека", amount: L, rate: RATE, months: opt.years * 12 });
+                  Vibe.game.tx("Оплата квартиры продавцу", -L, "🏠", "c-yellow");
+                  Vibe.game.buyHome({ title: `${b.s}, ${b.n}`, emoji: b.e, key: b.key });
                   Vibe.achieve("credit");
-                  Vibe.reward({ vibiki: 50, xp: 40, from: ev.currentTarget });
+                  Vibe.refreshCounters();
                   close();
-                  T.to(() => FX.toast("Подпиши 48 документов в приложении. Первый — согласие читать остальные", "📝", 3200), 700);
+                  celebrate(b, m);
                 });
               }, 450);
             }, 620);
           },
         });
       }
-      return () => T.clear();
+      return () => { T.clear(); sheetMaps.forEach((m) => m.destroy()); sheetMaps.clear(); };
     },
   });
 
@@ -1054,15 +2064,30 @@
         }
       });
 
+      // Урок — раз в несколько реальных минут: знания должны «улечься»
+      const LESSON_CD = 3 * 60 * 1000;
+      const cdLeft = (id) => Math.max(0, (st("life_lessonAt", {})[id] || 0) + LESSON_CD - Date.now());
+      let openSheet = null;
+      T.every(() => {
+        if (!openSheet || !document.body.contains(openSheet.sh)) { openSheet = null; return; }
+        const el = $(openSheet.sh, "[data-lcd]");
+        if (!el) return;
+        const left = cdLeft(openSheet.id);
+        if (left > 0) { el.textContent = mmss(left / 1000); return; }
+        $(openSheet.sh, "[data-les]").innerHTML = openSheet.lessons();
+        FX.bump($(openSheet.sh, "[data-les]"));
+      }, 1000);
+
       function openCourse(id) {
         const c = cById(id);
+        const pts = COURSE_PTS[id] || 8;
         const lessons = () => {
-          const done = myCourses()[id] || 0;
+          const done = myCourses()[id] || 0, left = cdLeft(id);
           return c.les.map((l, i) => `
             <div class="li">
               <div class="lf-chk ${i < done ? "done" : ""}">${i < done ? "✓" : i + 1}</div>
-              <div class="tx"><b style="white-space:normal">${l}</b><small>${i < done ? "пройдено" : i === done ? "доступно сейчас" : "🔒 после предыдущего"}</small></div>
-              ${i === done ? `<button class="btn lime sm lf-glow" data-lesson="${i}">+20 XP</button>` : ""}
+              <div class="tx"><b style="white-space:normal">${l}</b><small>${i < done ? "пройдено" : i === done ? (left ? "знания укладываются в голове…" : "доступно сейчас") : "🔒 после предыдущего"}</small></div>
+              ${i === done ? (left ? `<span class="timer-pill">⏳ <span data-lcd>${mmss(left / 1000)}</span></span>` : `<button class="btn lime sm lf-glow" data-lesson="${i}">+20 XP</button>`) : ""}
             </div>`).join("");
         };
         Vibe.ui.sheet(`
@@ -1071,14 +2096,16 @@
             <div><div class="display" style="font-size:22px">${c.t}</div><div class="muted" style="font-size:12px;font-weight:700">${c.by}</div></div>
           </div>
           <div class="progress" style="margin:16px 0 4px"><i data-cbar style="--p:${Math.round(((myCourses()[id] || 0) / c.les.length) * 100)}%"></i></div>
+          <div class="badge" style="background:var(--sky);margin-top:8px">📄 Пройдёшь курс — резюме в Vibe Job +${pts}%</div>
           <div class="card flat" style="padding:2px 14px;margin-top:10px" data-les>${lessons()}</div>
-          <div class="fine">Каждый урок длится 4 минуты, из них 3 — реклама других курсов.</div>`, {
+          <div class="fine">Новый урок открывается через 3 минуты после предыдущего. Каждый урок длится 4 минуты, из них 3 — реклама других курсов.</div>`, {
           onMount(sh, close) {
+            openSheet = { sh, id, lessons };
             sh.addEventListener("click", (e) => {
               const b = e.target.closest("[data-lesson]");
-              if (!b) return;
+              if (!b || cdLeft(id)) return;
               const done = (myCourses()[id] || 0) + 1;
-              Vibe.state.set({ life_courses: Object.assign({}, myCourses(), { [id]: done }) });
+              Vibe.state.set({ life_courses: Object.assign({}, myCourses(), { [id]: done }), life_lessonAt: Object.assign({}, st("life_lessonAt", {}), { [id]: Date.now() }) });
               FX.burst(b, { emojis: ["📚", "🧠", "✨", "⭐"], count: 16 });
               FX.sound.success();
               Vibe.reward({ vibiki: 5, xp: 20, from: b });
@@ -1092,14 +2119,15 @@
                   Vibe.modal(`
                     <div class="m-emo float">📜</div>
                     <div class="display">Сертификат!</div>
-                    <p>Курс «${c.t}» пройден. Повесь сертификат в рамочку и добавь в резюме в Vibe Job.</p>
-                    <button class="btn black block" data-close>Я эксперт 😎</button>
-                    <div class="fine">Сертификат государственного образца (образца нашего государства Vibe).</div>`);
+                    <p>Курс «${c.t}» пройден. Резюме в Vibe Job стало сильнее на <b style="color:var(--ink)">+${pts}%</b>. Повесь сертификат в рамочку — HR любят рамочки.</p>
+                    <div class="stack"><button class="btn black block" data-close data-go="job">В Vibe Job 💼</button><button class="btn block" data-close>Я эксперт 😎</button></div>
+                    <div class="fine">Сертификат государственного образца (образца нашего государства Vibe).</div>`, { sound: "levelup" });
                   Vibe.reward({ vibiki: 50, xp: 50 });
                 }, 600);
               }
             });
           },
+          onClose() { openSheet = null; },
         });
       }
       return () => T.clear();

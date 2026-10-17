@@ -135,7 +135,7 @@
       const need = Vibe.need(s.level);
       return `
       <div class="prof-hero c-grad">
-        <div class="prof-ava"><span class="emo float">😎</span></div>
+        <div class="prof-ava"><span class="emo float">${(s.profile && s.profile.avatar) || "😎"}</span></div>
         <div class="display" style="font-size:30px;margin-top:10px">${Vibe.esc(s.name)}</div>
         <div style="font-weight:800;opacity:.9">${s.plus ? "💎 Плюс Вайб" : "Обычный смертный"} · уровень <span data-level>${s.level}</span></div>
         <div class="progress" style="margin:14px 0 4px;background:rgba(255,255,255,.35)"><i data-xpbar style="--p:${Math.round((s.xp / need) * 100)}%"></i></div>
@@ -146,6 +146,18 @@
         <div class="card tight c-yellow stat"><span class="emo">🪙</span><b data-vibiki>${Vibe.fmt(s.vibiki)}</b><small>вайбиков</small></div>
         <div class="card tight c-orange stat"><span class="emo">🔥</span><b>${s.streak}</b><small>дней подряд</small></div>
         <div class="card tight c-mint stat"><span class="emo">🏆</span><b>${s.achievements.length}</b><small>ачивок</small></div>
+      </div>
+
+      <h2 class="sec">Моя жизнь <small>${Vibe.game.info().label}</small></h2>
+      <div class="card" style="padding:4px 16px">
+        ${[
+          ["⏳", "c-lilac", "Прожито в Vibe", `${Vibe.game.info().day} ${Vibe.game.plural(Vibe.game.info().day, "день", "дня", "дней")}`],
+          ["💼", "c-sky", "Работа", s.job ? `${Vibe.game.jobTitle(s.job)} · ${s.job.company}` : "Пока нет"],
+          ["🏠", "c-yellow", "Жильё", s.home ? `${s.home.title}${s.home.own ? " · своё!" : ` · ${Vibe.rub(s.home.rent)}/мес`}` : "—"],
+          ["💸", "c-lime", "Зарплат получено", String((s.stats || {}).salaries || 0)],
+          ["🏦", "c-pink", "Кредитов", String((s.loans || []).length)],
+          ["🎯", "c-orange", "Целей выполнено", `${(s.goalsDone || []).length} из ${Vibe.game.GOALS.length}`],
+        ].map(([e, c, t, d]) => `<div class="li"><div class="ic ${c}">${e}</div><div class="tx"><b>${t}</b><small>${Vibe.esc(d)}</small></div></div>`).join("")}
       </div>
 
       <h2 class="sec">Достижения <small>${s.achievements.length} из ${Vibe.ACH_LIST().length}</small></h2>
