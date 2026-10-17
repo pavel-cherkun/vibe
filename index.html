@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1">
+<meta name="theme-color" content="#fffbef">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="description" content="Vibe — супер-апп для всей жизни. Сатирическая игра.">
+<title>Vibe</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💜</text></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Dela+Gothic+One&family=Rubik+Wet+Paint&family=Manrope:wght@500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="app.css?v=3">
+</head>
+<body>
+<div id="app">
+  <div id="stack"></div>
+  <nav id="tabbar" class="hidden">
+    <div class="blob"></div>
+    <button class="tab" data-go="home" data-silent><span class="emo">🏠</span>Главная</button>
+    <button class="tab" data-go="pay" data-silent><span class="emo">💸</span>Платежи</button>
+    <button class="qr" data-go="qr" aria-label="Сканировать QR">
+      <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round"><path d="M4 8V5a1 1 0 0 1 1-1h3M16 4h3a1 1 0 0 1 1 1v3M20 16v3a1 1 0 0 1-1 1h-3M8 20H5a1 1 0 0 1-1-1v-3M7 12h10"/></svg>
+    </button>
+    <button class="tab" data-go="chats" data-silent><span class="emo">💬</span>Чаты</button>
+    <button class="tab" data-go="profile" data-silent><span class="emo">😎</span>Профиль</button>
+  </nav>
+</div>
+<div id="fx-layer"></div>
+<canvas id="confetti"></canvas>
+<div id="toast-root"></div>
+
+<script src="core.js?v=3"></script>
+<script src="fx.js?v=3"></script>
+<script src="mascot.js?v=3"></script>
+<script src="screen-home.js?v=3"></script>
+<script src="screen-pay.js?v=3"></script>
+<script src="screen-social.js?v=3"></script>
+<script src="screen-commerce.js?v=3"></script>
+<script src="screen-life.js?v=3"></script>
+<script src="screen-fun.js?v=3"></script>
+<script>Vibe.start();</script>
+</body>
+</html>

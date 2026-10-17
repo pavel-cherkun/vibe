@@ -1,0 +1,283 @@
+/* ============================================================
+   Главный экран Vibe
+   ============================================================ */
+(function () {
+  const S = () => Vibe.state.get();
+
+  const STORIES = [
+    { t: "Новое", e: "✨" }, { t: "Плюс", e: "💎" }, { t: "Концерты", e: "🎤" }, { t: "Кэшбек", e: "🤑" },
+    { t: "Заботик", e: "🤖" }, { t: "Ипотека", e: "🏠" }, { t: "Вакансии", e: "💼" },
+  ];
+
+  const BIG = [
+    { go: "pay", s: "Pay", ru: "Банк", e: "💳", c: "c-yellow" },
+    { go: "maps", s: "Maps", ru: "Карты и такси", e: "🚕", c: "c-sky" },
+    { go: "eat", s: "Eat", ru: "Готовая еда", e: "🍜", c: "c-pink", badge: "−30%" },
+    { go: "supermarket", s: "Supermarket", ru: "Продукты за 15 мин", e: "🥑", c: "c-lime" },
+  ];
+
+  const GRID = [
+    { go: "market", s: "Market", ru: "Маркетплейс", e: "🛍️", c: "c-pink" },
+    { go: "job", s: "Job", ru: "Работа", e: "💼", c: "c-blue" },
+    { go: "music", s: "Music", ru: "Музыка", e: "🎧", c: "c-violet" },
+    { go: "tickets", s: "Tickets", ru: "Концерты", e: "🎤", c: "c-orange", badge: "new" },
+    { go: "rent", s: "Rent", ru: "Аренда", e: "🔑", c: "c-mint" },
+    { go: "home-buy", s: "Home", ru: "Купить жильё", e: "🏠", c: "c-yellow" },
+    { go: "games", s: "Games", ru: "Игры", e: "🎮", c: "c-lime", badge: "🔥" },
+    { go: "drive", s: "Drive", ru: "Каршеринг", e: "🚗", c: "c-coral" },
+    { go: "clean", s: "Clean", ru: "Уборка", e: "🫧", c: "c-sky" },
+    { go: "health", s: "Health", ru: "Врачи, аптека", e: "💊", c: "c-white" },
+    { go: "match", s: "Match", ru: "Знакомства", e: "💘", c: "c-pink" },
+    { go: "travel", s: "Travel", ru: "Путешествия", e: "🏝️", c: "c-orange" },
+    { go: "learn", s: "Learn", ru: "Курсы", e: "🎓", c: "c-lilac" },
+    { go: "invest", s: "Invest", ru: "Инвестиции", e: "🚀", c: "c-black" },
+    { go: "pets", s: "Pets", ru: "Питомцы", e: "🐶", c: "c-yellow" },
+    { go: "all", s: "Ещё 14", ru: "Все сервисы", e: "🪐", c: "c-holo" },
+  ];
+
+  const FEED = [
+    { go: "tickets", k: "Vibe Tickets", t: "Концерт в пятницу. Осталось 2 билета", m: "от 3 900 ₽", e: "🎤", c: "c-orange" },
+    { go: "job", k: "Vibe Job", t: "Тебе подходит 14 вакансий. Одна — мечты", m: "от 180 000 ₽", e: "💼", c: "c-blue" },
+    { go: "music", k: "Vibe Music", t: "Твой вайб на вечер: лоу-фай для тревоги", m: "42 трека", e: "🎧", c: "c-violet" },
+    { go: "rent", k: "Vibe Rent", t: "Студия у метро. Без залога*", m: "54 000 ₽/мес", e: "🔑", c: "c-mint" },
+    { go: "match", k: "Vibe Match", t: "3 человека лайкнули тебя. Узнать кто — в Плюсе", m: "🔒 Плюс Вайб", e: "💘", c: "c-pink" },
+  ];
+
+  const ZAB_LINES = [
+    "Я заметил, что ты грустишь. Может, закажешь что-нибудь? 🍩",
+    "Твой кэшбек вырос на 0,01%. Отметим покупкой?",
+    "Ты сегодня ещё ничего не купил. Всё хорошо?",
+    "Говорят, деньги не главное. Но они у тебя есть 😉",
+    "Я подобрал тебе 37 предложений. Каждое — персональное.",
+  ];
+
+  function greeting() {
+    const h = new Date().getHours();
+    return h < 6 ? "Не спится" : h < 12 ? "Доброе утро" : h < 18 ? "Йо" : "Добрый вечер";
+  }
+
+  Vibe.screen("home", {
+    render() {
+      const s = S();
+      const xpP = Math.round((s.xp / Vibe.need(s.level)) * 100);
+      const lastEat = s.orders.find((o) => o.svc === "eat" && Date.now() - o.at < 30 * 60 * 1000);
+      return `
+      <div class="home-top">
+        <div class="logo home-logo">Vibe</div>
+        <div style="display:flex;gap:10px;align-items:center">
+          ${Vibe.ui.vibikiPill()}
+          <button class="icon-btn" data-act="bell" aria-label="Уведомления">🔔<span class="dot-count">99+</span></button>
+        </div>
+      </div>
+
+      <div class="hello card c-white tap" data-go="profile">
+        <div class="hello-ava c-lilac"><span class="emo">😎</span><span class="lvl" data-level>${s.level}</span></div>
+        <div style="flex:1;min-width:0">
+          <div class="display" style="font-size:22px">${greeting()}, ${Vibe.esc(s.name)}</div>
+          <div style="display:flex;align-items:center;gap:8px;margin-top:6px">
+            <div class="progress" style="flex:1"><i data-xpbar style="--p:${xpP}%"></i></div>
+            <span class="badge" style="background:var(--orange)">🔥 ${s.streak}</span>
+          </div>
+        </div>
+      </div>
+
+      <button class="field search tap" data-go="all" style="width:100%;margin:14px 0 16px;text-align:left">🔍 <span class="muted">Найди что угодно. Мы уже нашли тебя</span></button>
+
+      <div class="stories">
+        ${STORIES.map((st, i) => `
+          <button class="story ${s.seenStories[i] ? "seen" : ""}" data-act="story" data-i="${i}">
+            <span class="ring"><span class="in"><span class="emo">${st.e}</span></span></span>${st.t}
+          </button>`).join("")}
+      </div>
+
+      <div class="paycard c-yellow tap" data-go="pay">
+        <div class="pc-blob"></div>
+        <div style="display:flex;justify-content:space-between;align-items:center;position:relative">
+          <span class="badge c-black" style="color:#fff;border-color:#000">Vibe Pay</span>
+          <span style="font-weight:800">•• 4521</span>
+        </div>
+        <div class="big-num pc-bal" data-balance>${Vibe.rub(s.balance)}</div>
+        <div style="position:relative;font-weight:800;font-size:13px">Кэшбек: <span class="badge" style="background:#fff">🪙 <span data-vibiki>${Vibe.fmt(s.vibiki)}</span> вайбиков</span></div>
+        <div class="pc-actions">
+          <button data-act="transfer"><span>↗</span>Перевести</button>
+          <button data-act="topup"><span>＋</span>Пополнить</button>
+          <button data-go="qr"><span>▦</span>QR</button>
+          <button data-go="wheel"><span>🎡</span>Колесо</button>
+        </div>
+        <div class="emo pc-emo float">💳</div>
+      </div>
+
+      ${lastEat ? `
+      <button class="card tap live" data-go="eat-track" data-params='{"id":"${lastEat.id}"}'>
+        <div class="li-ic c-pink"><span class="emo wobble">🛵</span></div>
+        <div style="flex:1;text-align:left"><b>Vibe Eat · заказ в пути</b><small class="muted">Курьер уже рядом. Наверное</small><div class="progress" style="height:10px;margin-top:6px"><i style="--p:68%"></i></div></div>
+        <div class="big-num" style="font-size:18px">7 мин</div>
+      </button>` : `
+      <button class="card tap live c-lilac" data-go="wheel">
+        <div class="li-ic c-white"><span class="emo spin-slow">🎡</span></div>
+        <div style="flex:1;text-align:left"><b>Колесо вайба</b><small>Бесплатный спин каждый день. Крути!</small></div>
+        <span class="sticker" style="position:static;transform:rotate(6deg)">ГО</span>
+      </button>`}
+
+      <h2 class="sec">Главное <small>4 из 34</small></h2>
+      <div class="big-tiles stagger">
+        ${BIG.map((b) => `
+          <button class="bt ${b.c} tap" data-go="${b.go}">
+            ${b.badge ? `<span class="sticker" style="top:10px;right:10px;background:var(--lime)">${b.badge}</span>` : ""}
+            <span class="bt-name display" style="${b.s.length > 8 ? "font-size:18px" : ""}">${b.s}</span>
+            <small>${b.ru}</small>
+            <span class="emo bt-emo float d${Math.floor(Math.random() * 4)}">${b.e}</span>
+          </button>`).join("")}
+      </div>
+
+      ${Vibe.ui.marquee(["КЭШБЕК ДО 30%*", "ПРЕДОДОБРЕНО", "−50% НА ВСЁ", "ДОСТАВКА 0 ₽*", "ТЫ ЗАСЛУЖИЛ"])}
+
+      <div class="svc-grid stagger">
+        ${GRID.map((g) => `
+          <button class="svc" data-go="${g.go}">
+            <span class="svc-ic ${g.c}">${g.badge ? `<span class="dot-count" style="background:var(--lime);animation-delay:${Math.random() * 2}s">${g.badge}</span>` : ""}<span class="emo">${g.e}</span></span>
+            <b>${g.s}</b><small>${g.ru}</small>
+          </button>`).join("")}
+      </div>
+
+      <div class="card c-black promo">
+        <div class="badge" style="background:var(--lime)">⚡ Персонально для тебя</div>
+        <div class="display" style="font-size:30px;margin:12px 0 6px;color:var(--lime)">Предодобрено<br>500&nbsp;000&nbsp;₽</div>
+        <p style="color:#bdbac8;font-size:14px">Кредит на всё, о чём ты мечтал. Даже на то, о чём не мечтал.</p>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-top:16px">
+          <button class="btn lime" data-go="pay" data-params='{"credit":"1"}'>Забрать <span class="arrow">→</span></button>
+          <span class="timer-pill" style="background:var(--pink);color:var(--ink)" data-timer>02:00</span>
+        </div>
+        <div class="fine" style="color:#77748a">*Ставка от 0% в первые 3 дня, далее от 39,9% годовых. Страхование жизни, здоровья, настроения и вайба включено. Отказ от страховки — в отделении, которое работает по четвергам с 9:00 до 9:15.</div>
+        <div class="emo promo-emo float">🤑</div>
+      </div>
+
+      <button class="card c-holo plus-card tap" data-go="plus">
+        <div class="display" style="font-size:28px">Плюс Вайб</div>
+        <div style="font-weight:800;margin:6px 0 12px">${s.plus ? "Ты в Плюсе. Кэшбек ×2 💎" : "Кэшбек ×2, доставка 0 ₽, музыка без рекламы"}</div>
+        <span class="btn black sm">${s.plus ? "Управлять" : "Первый месяц за 1 ₽"}</span>
+        <div class="emo plus-emo wobble">💎</div>
+      </button>
+
+      <h2 class="sec">Для тебя <small>подобрано Заботиком</small></h2>
+      <div class="hscroll">
+        ${FEED.map((f) => `
+          <button class="card feed-card ${f.c} tap" data-go="${f.go}">
+            <div class="badge" style="background:#fff">${f.k}</div>
+            <b>${f.t}</b>
+            <div class="feed-bottom"><span>${f.m}</span><span class="emo float">${f.e}</span></div>
+          </button>`).join("")}
+      </div>
+
+      <button class="zab-bubble tap card" data-go="chat" data-params='{"id":"zabotik"}'>
+        ${Vibe.zabotik(60)}
+        <div class="zab-text"><b>Заботик</b><span data-zab>${ZAB_LINES[0]}</span></div>
+      </button>
+      `;
+    },
+
+    mount(root) {
+      let left = 120, zi = 0;
+      const timerEl = root.querySelector("[data-timer]");
+      const zabEl = root.querySelector("[data-zab]");
+      const iv = setInterval(() => {
+        left = left > 0 ? left - 1 : 120;
+        if (timerEl) timerEl.textContent = `${String(Math.floor(left / 60)).padStart(2, "0")}:${String(left % 60).padStart(2, "0")}`;
+        if (left === 120 && timerEl) { FX.bump(timerEl); }
+      }, 1000);
+      const zv = setInterval(() => {
+        zi = (zi + 1) % ZAB_LINES.length;
+        if (zabEl) { zabEl.textContent = ZAB_LINES[zi]; FX.bump(zabEl.parentElement); }
+      }, 6000);
+
+      root.addEventListener("click", (e) => {
+        const a = e.target.closest("[data-act]");
+        if (!a) return;
+        const act = a.dataset.act;
+        e.stopPropagation();
+        if (act === "story") {
+          const i = +a.dataset.i;
+          if (Vibe.openStories) Vibe.openStories(i);
+          else FX.toast("Сторис скоро", "📸");
+        }
+        if (act === "bell") {
+          FX.burst(a, { emojis: ["🔔", "💸", "📣", "🔥"], count: 10 });
+          Vibe.ui.sheet(`
+            <div class="display" style="font-size:28px;margin-bottom:12px">Уведомления <span class="badge" style="vertical-align:middle">99+</span></div>
+            <div class="stack stagger">
+              ${[
+                ["🤑", "c-lime", "Кредит предодобрен", "500 000 ₽ ждут тебя. Уже 3 минуты ждут."],
+                ["🍜", "c-pink", "Ты давно не заказывал рамен", "Целых 4 часа. Всё в порядке?"],
+                ["💎", "c-lilac", "Плюс Вайб", "Ты мог бы сэкономить 12 ₽ в этом месяце"],
+                ["🎡", "c-yellow", "Колесо вайба", "Спин сгорит через 02:00"],
+                ["📉", "c-coral", "Вайбкоин упал на 30%", "Отличный момент докупить!"],
+              ].map(([e, c, t, d]) => `<div class="card tight" style="display:flex;gap:12px;align-items:center"><div class="li-ic ${c}"><span class="emo">${e}</span></div><div><b>${t}</b><div class="muted" style="font-size:13px">${d}</div></div></div>`).join("")}
+            </div>
+            <button class="btn black block" style="margin-top:16px" data-close>Прочитать все (ещё 94)</button>`);
+        }
+        if (act === "transfer") Vibe.go("pay", { transfer: "1" });
+        if (act === "topup") {
+          Vibe.addMoney(5000, { title: "Пополнение с карты другого банка", emoji: "💸" });
+          FX.burst(a, { emojis: ["💸", "💵", "✨"], count: 14 });
+          FX.sound.coin();
+          FX.toast("+5 000 ₽ на счёте", "💸");
+        }
+      });
+
+      const onSeen = () => {
+        const s = S();
+        root.querySelectorAll(".story").forEach((el, i) => el.classList.toggle("seen", !!s.seenStories[i]));
+      };
+      window.addEventListener("vibe:stories-seen", onSeen);
+      return () => { clearInterval(iv); clearInterval(zv); window.removeEventListener("vibe:stories-seen", onSeen); };
+    },
+  });
+
+  // Стили главного экрана
+  const css = `
+  .home-top { display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; }
+  .home-logo { font-size:48px; color:var(--pink); -webkit-text-stroke:2px var(--ink); text-shadow:0 4px 0 var(--ink); transform:rotate(-4deg); animation: wobble 4s ease-in-out infinite; }
+  .hello { display:flex; gap:12px; align-items:center; padding:12px 14px; }
+  .hello-ava { width:58px; height:58px; border-radius:50%; border:var(--line); display:grid; place-items:center; font-size:32px; position:relative; flex:0 0 auto; }
+  .hello-ava .lvl { position:absolute; bottom:-6px; right:-6px; background:var(--lime); border:2px solid var(--ink); border-radius:999px; font-size:12px; font-weight:900; padding:1px 7px; }
+  .search { cursor:pointer; }
+  .stories { display:flex; gap:12px; overflow-x:auto; margin:0 -16px 18px; padding:2px 16px 4px; scrollbar-width:none; }
+  .stories::-webkit-scrollbar { display:none; }
+  .story { flex:0 0 auto; width:70px; display:flex; flex-direction:column; align-items:center; gap:6px; font-size:11px; font-weight:800; }
+  .story .ring { width:70px; height:70px; border-radius:50%; padding:4px; background:conic-gradient(var(--pink), var(--yellow), var(--lime), var(--sky), var(--violet), var(--pink)); animation: spin 4s linear infinite; display:block; }
+  .story .in { width:100%; height:100%; border-radius:50%; background:var(--paper); border:2.5px solid var(--ink); display:grid; place-items:center; font-size:28px; animation: spin 4s linear infinite reverse; }
+  .story.seen .ring { background:#d8d5e0; animation:none; } .story.seen .in { animation:none; }
+  .story:active .ring { transform:scale(.9); }
+  .paycard { border:var(--line); border-radius:32px; box-shadow:var(--shadow); padding:18px; position:relative; overflow:hidden; display:block; }
+  .pc-blob { position:absolute; width:220px; height:220px; right:-60px; top:-80px; border-radius:50%; background:var(--pink); border:var(--line); }
+  .pc-bal { font-size:40px; margin:14px 0 6px; position:relative; }
+  .pc-emo { position:absolute; right:18px; top:46px; font-size:64px; }
+  .pc-actions { display:grid; grid-template-columns:repeat(4,1fr); gap:8px; margin-top:16px; position:relative; }
+  .pc-actions button { background:var(--ink); color:#fff; border-radius:18px; padding:10px 0 8px; font-size:11px; font-weight:800; transition:transform .15s var(--spring); }
+  .pc-actions button:active { transform:scale(.9); }
+  .pc-actions span { display:block; font-size:20px; margin-bottom:2px; }
+  .live { margin-top:14px; display:flex; align-items:center; gap:12px; width:100%; padding:12px 14px; }
+  .live b { display:block; font-size:15px; } .live small { font-size:12px; font-weight:700; }
+  .li-ic { width:48px; height:48px; border-radius:16px; border:2px solid var(--ink); display:grid; place-items:center; font-size:24px; flex:0 0 auto; }
+  .big-tiles { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+  .bt { border:var(--line); border-radius:28px; box-shadow:var(--shadow); padding:16px 14px; min-height:132px; position:relative; overflow:hidden; text-align:left; display:flex; flex-direction:column; }
+  .bt-name { font-size:24px; } .bt small { font-weight:800; font-size:12px; opacity:.75; }
+  .bt-emo { position:absolute; right:6px; bottom:4px; font-size:58px; }
+  .svc-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:16px 6px; }
+  .svc { display:flex; flex-direction:column; align-items:center; text-align:center; gap:4px; }
+  .svc-ic { width:66px; height:66px; border-radius:22px; border:var(--line); box-shadow:var(--shadow-sm); display:grid; place-items:center; font-size:32px; position:relative; transition:transform .2s var(--spring), box-shadow .2s var(--spring); }
+  .svc:active .svc-ic { transform:translateY(3px) scale(.92) rotate(-6deg); box-shadow:none; }
+  .svc b { font-size:12px; font-weight:900; margin-top:4px; } .svc small { font-size:10px; font-weight:700; color:var(--muted); line-height:1.15; }
+  .promo { margin-top:26px; padding:20px; }
+  .promo-emo { position:absolute; right:12px; top:44px; font-size:60px; }
+  .plus-card { display:block; width:100%; text-align:left; margin-top:14px; padding:20px; }
+  .plus-emo { position:absolute; right:18px; top:18px; font-size:64px; }
+  .feed-card { width:220px; min-height:168px; text-align:left; display:flex; flex-direction:column; gap:10px; }
+  .feed-card b { font-size:17px; font-weight:900; line-height:1.2; flex:1; }
+  .feed-bottom { display:flex; justify-content:space-between; align-items:center; font-weight:800; font-size:13px; }
+  .feed-bottom .emo { font-size:36px; }
+  .zab-bubble { display:flex; gap:12px; align-items:center; width:100%; text-align:left; margin-top:18px; padding:12px 14px; }
+  .zab-text { flex:1; font-size:13px; font-weight:700; } .zab-text b { display:block; font-size:15px; }
+  `;
+  const st = document.createElement("style"); st.textContent = css; document.head.appendChild(st);
+})();
