@@ -362,23 +362,82 @@
   const hm = (m) => { m = Math.max(1, Math.round(m)); return m < 60 ? `${m} мин` : `${Math.floor(m / 60)} ч${m % 60 ? " " + (m % 60) + " мин" : ""}`; };
   const esc = (s) => Vibe.esc(s);
 
+  /* --- Общие связки с world.js: время, расписание, вещи --- */
+  const MON_G = ["ноября", "декабря", "января", "февраля", "марта", "апреля", "мая", "июня", "июля", "августа", "сентября", "октября"];
+  const MON_S = ["нояб", "дек", "янв", "февр", "март", "апр", "май", "июнь", "июль", "авг", "сент", "окт"];
+  const gToday = () => Vibe.game.info().day;
+  const domOf = (day) => (day % 30) + 1;
+  const monOf = (day) => Math.floor(day / 30) % 12;
+  const hh = (h, m = 0) => `${String(h).padStart(2, "0")}:${String(m || 0).padStart(2, "0")}`;
+  function whenStr(day, hour, min) {
+    const d = day - gToday();
+    const w = d === 0 ? "сегодня" : d === 1 ? "завтра" : d === 2 ? "послезавтра" : `${domOf(day)} ${MON_G[monOf(day)]}`;
+    return hour == null ? w : `${w} в ${hh(hour, min)}`;
+  }
+  const evById = (id) => (Vibe.sched ? Vibe.sched.list().find((x) => x.id === id) : null);
+  // Кнопка «Доехать» в Vibe Maps (params подхватит экран карты, если умеет)
+  const mapsBtn = (place, label = "Доехать 🚇", cls = "btn sm") => `<button class="${cls}" data-close data-go="maps" data-params='${JSON.stringify({ to: place })}'>${label}</button>`;
+  // Следующий рабочий слот: будни 10:00–17:00, не раньше чем через 2,5 игровых часа
+  function nextWorkSlot() {
+    let m = Math.ceil((Vibe.game.minutes() + 150) / 60) * 60;
+    for (let k = 0; k < 24 * 9; k++, m += 60) {
+      const d = Math.floor(m / 1440), h = Math.floor((m % 1440) / 60);
+      if (d % 7 < 5 && h >= 10 && h <= 17) return { day: d, hour: h };
+    }
+    return { day: gToday() + 1, hour: 11 };
+  }
+  // Вещи дома и их бонусы
+  const BONUS_E = { sleep: "😴 сон", mood: "🙂 настроение", energy: "⚡ энергия", health: "❤️ здоровье", look: "✨ внешность", steps: "👟 шаги" };
+  const bonusTxt = (b) => Object.entries(b || {}).filter(([, v]) => v).map(([k, v]) => `${BONUS_E[k] || k} +${v}`).join(" · ");
+  const homeItems = () => (Vibe.inv ? Vibe.inv.list("home") : []);
+  // Качество сна в жилье (та же шкала, что в body.js) + бонус вещей
+  function sleepPct(h) {
+    h = h || {};
+    let q = h.own ? 0.95 : !h.rent ? 0.5 : h.rent <= 20000 ? 0.58 : h.rent <= 45000 ? 0.74 : h.rent <= 90000 ? 0.86 : 0.97;
+    q += (Vibe.inv ? Vibe.inv.bonus("sleep") : 0) / 100;
+    return Math.round(clamp(q, 0.3, 1) * 100);
+  }
+  const sleepBadge = (h) => { const p = sleepPct(h); return `<span class="badge" style="background:${p >= 85 ? "var(--lime)" : p >= 70 ? "var(--yellow)" : "var(--coral)"}">😴 сон ${p}%</span>`; };
+  function thingsHtml(note) {
+    const it = homeItems();
+    if (!it.length) return `<div class="lf-note" style="margin-top:10px"><div>📦 Дома пусто: ни матраса, ни шторки. Вещи дают бонусы к сну и настроению.</div><button class="btn sm" data-close data-go="market" style="margin-top:6px;justify-self:start">Обставиться в Vibe Market 🛍️</button></div>`;
+    return `<div class="lf-note" style="margin-top:10px"><div class="lf-mini" style="color:var(--ink)">🛋️ Вещи дома · ${it.length}</div>${it.map((i) => `<div>${i.e || "📦"} ${esc(i.name)}${bonusTxt(i.bonus) ? ` <span class="muted">· ${bonusTxt(i.bonus)}</span>` : ""}</div>`).join("")}${note ? `<div class="muted">${note}</div>` : ""}</div>`;
+  }
+
   const VAC = [
     { id: "v01", co: "Сосисочная №1", e: "🌭", title: "Промоутер в костюме хот-дога", sal: 35000, req: 0, col: "c-orange", perks: ["🌭 Костюм выдаём", "☀️ Работа на воздухе"], reqs: ["Не бояться детей", "Танцевать под «Кукарачу» 8 часов"] },
     { id: "v02", co: "Алло-Банк", e: "🎧", title: "Оператор колл-центра", sal: 42000, req: 6, col: "c-sky", perks: ["🎧 Гарнитура (почти своя)", "📈 Бонус за каждое «нет»"], reqs: ["Говорить «ваш звонок очень важен» искренне", "Не плакать в эфире"] },
     { id: "v03", co: "Вайб Маркет у дома", e: "🛒", title: "Кассир", sal: 45000, req: 4, col: "c-lime", perks: ["🥖 Скидка 3% на батон", "🧑‍🤝‍🧑 Дружный коллектив"], reqs: ["Спрашивать «пакет нужен?» 900 раз в день", "Мелочи нет — это аксиома"] },
     { id: "v04", co: "Кофейня «Пенка»", e: "☕", title: "Бариста", sal: 48000, req: 10, col: "c-yellow", perks: ["☕ Кофе бесплатно (1 шт.)", "🎶 Свой плейлист (наш)"], reqs: ["Рисовать лебедя на капучино", "Улыбаться 12 часов подряд"] },
     { id: "v05", co: "Вайб Доставка", e: "🛵", title: "Курьер", sal: 58000, req: 5, col: "c-pink", perks: ["🎒 Термосумка в подарок", "🌧️ Много свежего воздуха"], reqs: ["Ноги (2 шт.)", "Любить домофоны"] },
-    { id: "v06", co: "Агентство «Креатив и точка»", e: "📱", title: "SMM-специалист", sal: 72000, req: 28, col: "c-lilac", perks: ["😂 Мемы в рабочее время", "🎨 Креативный офис"], reqs: ["Тестовое: три кампании бесплатно", "Рилсы, сайты, логотипы и сварка"] },
-    { id: "v07", co: "ООО «Рога и Отчёты»", e: "🧾", title: "Бухгалтер", sal: 85000, req: 38, col: "c-mint", perks: ["🗓️ Отпуск вне отчётного периода", "🍰 Торт в день 1С"], reqs: ["Знать 1С лучше, чем себя", "Не спрашивать про вторую кассу"] },
+    { id: "v06", co: "Агентство «Креатив и точка»", e: "📱", title: "SMM-специалист", sal: 72000, req: 28, needCourse: "blog", col: "c-lilac", perks: ["😂 Мемы в рабочее время", "🎨 Креативный офис"], reqs: ["Тестовое: три кампании бесплатно", "Рилсы, сайты, логотипы и сварка"] },
+    { id: "v07", co: "ООО «Рога и Отчёты»", e: "🧾", title: "Бухгалтер", sal: 85000, req: 38, needCourse: "fin", col: "c-mint", perks: ["🗓️ Отпуск вне отчётного периода", "🍰 Торт в день 1С"], reqs: ["Знать 1С лучше, чем себя", "Не спрашивать про вторую кассу"] },
     { id: "v08", co: "Вайб-Логистик", e: "📦", title: "Менеджер по продажам", sal: 92000, req: 32, col: "c-coral", perks: ["💸 Процент с продаж*", "🤝 Нетворкинг"], reqs: ["Продать снег зимой", "*процент от оклада, оклад — минимальный"] },
     { id: "v09", co: "Стартап «Нейрочайник»", e: "🫖", title: "Head of Everything", sal: 98000, req: 45, col: "c-pink", perks: ["📈 Опцион 0,0001%", "🛋️ Пуфики"], reqs: ["Делать всё", "Остальное тоже делать"] },
     { id: "v10", co: "Студия «Пиксель-Перфект»", e: "🎨", title: "Дизайнер интерфейсов", sal: 115000, req: 50, col: "c-yellow", perks: ["🖥️ Два монитора", "🧃 Смузи по средам"], reqs: ["Сделать «как у Apple, но дешевле»", "Двигать кнопку на 1 px весь день"] },
-    { id: "v11", co: "ООО «Синергия Плюс»", e: "💻", title: "Junior-разработчик", sal: 125000, req: 56, col: "c-sky", perks: ["🩺 ДМС*", "⏰ Гибкий график (до 23:00)"], reqs: ["Опыт 5 лет в технологии, которой 2 года", "Чинить принтер"] },
+    { id: "v11", co: "ООО «Синергия Плюс»", e: "💻", title: "Junior-разработчик", sal: 125000, req: 56, needCourse: "code", col: "c-sky", perks: ["🩺 ДМС*", "⏰ Гибкий график (до 23:00)"], reqs: ["Опыт 5 лет в технологии, которой 2 года", "Чинить принтер"] },
     { id: "v12", co: "Банк «Вайб Капитал»", e: "📊", title: "Аналитик данных", sal: 155000, req: 66, col: "c-mint", perks: ["🏠 Удалёнка (в офисе)", "🏋️ Спортзал на −2 этаже"], reqs: ["Высшее, лучше три", "Возраст до 25, опыт от 10 лет"] },
-    { id: "v13", co: "Маркетплейс «Всё»", e: "🚀", title: "Продакт-менеджер", sal: 185000, req: 76, col: "c-lime", perks: ["🎤 Митапы", "💈 Барбершоп"], reqs: ["Быть на созвонах 9 часов в день", "Любить таск-трекер как семью"] },
+    { id: "v13", co: "Маркетплейс «Всё»", e: "🚀", title: "Продакт-менеджер", sal: 185000, req: 76, needCourse: "prod", col: "c-lime", perks: ["🎤 Митапы", "💈 Барбершоп"], reqs: ["Быть на созвонах 9 часов в день", "Любить таск-трекер как семью"] },
     { id: "v14", co: "Корпорация Vibe", e: "💜", title: "Директор по вайбу", sal: 220000, req: 90, col: "c-grad", perks: ["💎 «Плюс Вайб» бесплатно", "🚁 Вертолётная площадка (не для тебя)"], reqs: ["Вайб", "Ещё больше вайба"] },
   ];
   const vacById = (id) => VAC.find((v) => v.id === id) || VAC[0];
+  // Курсы Vibe Learn → карьера: пройденный курс открывает вакансии и поднимает оклад сеньорам
+  const courseDone = (id) => { const c = COURSES.find((x) => x.id === id); return !!c && (st("life_courses", { cats: 1, med: 2 })[id] || 0) >= c.les.length; };
+  const doneCourses = () => COURSES.filter((c) => courseDone(c.id)).length;
+  const isSenior = (v) => v.req >= 50;
+  const salOf = (v) => (isSenior(v) ? Math.round((v.sal * (1 + 0.05 * Math.min(4, doneCourses()))) / 1000) * 1000 : v.sal);
+  const locked = (v) => !!v.needCourse && !courseDone(v.needCourse);
+  function courseBadge(v) {
+    const parts = [];
+    if (v.needCourse) {
+      const c = COURSES.find((x) => x.id === v.needCourse);
+      parts.push(locked(v)
+        ? `<span class="badge" style="background:var(--coral)">🔒 Нужен курс «${c.short}»</span>`
+        : `<span class="badge" style="background:var(--lime)">🎓 Открыто курсом «${c.short}»</span>`);
+    }
+    if (isSenior(v) && doneCourses()) parts.push(`<span class="badge" style="background:var(--yellow)">📈 +${Math.min(4, doneCourses()) * 5}% к окладу за курсы</span>`);
+    return parts.join("");
+  }
   function vinfo(v) {
     const o = Vibe.map.place("office:" + v.co), h = Vibe.map.place("home");
     const p = Vibe.map.path(h, o);
@@ -454,12 +513,48 @@
   function setStage(id, stage) {
     Vibe.state.set({ life_apps: apps().map((x) => (x.id === id ? Object.assign({}, x, { stage, shown: stage }) : x)) });
   }
+  /* --- Собеседование как событие календаря --- */
+  const lookPct = () => (Vibe.inv ? Vibe.inv.look() : 30);
+  const lookBonus = () => (lookPct() - 40) / 250; // 30% → −4%, 80% → +16%
+  const lookLine = () => {
+    const l = lookPct();
+    return `<div class="lf-row" style="margin-top:8px;gap:8px"><span style="font-size:12px;font-weight:800;line-height:1.25">✨ Внешность ${l}%${l < 60 ? " — оденься в Vibe Style" : " — HR уже впечатлён"}</span><button class="btn sm" data-close data-go="style">🧥 Style</button></div>`;
+  };
+  function ivBlock(a, v) {
+    const e = a.iv && evById(a.iv.ev);
+    const online = `<button class="btn sm" data-ivon="${a.id}">💻 Пройти онлайн (−20% к шансу)</button>`;
+    if (st("life_ivPending") === a.id || (e && e.status === "done")) return `<div class="lf-note" style="margin-top:10px;background:var(--lime)">🏢 Ты в офисе «${esc(v.co)}». HR машет из переговорки!</div><button class="btn lime block lf-glow" data-iv="${a.id}" data-mode="office" style="margin-top:8px">Зайти на собеседование 🎤</button>${lookLine()}`;
+    if (e && e.status === "planned") return `<div class="lf-note" style="margin-top:10px"><div>📅 Собеседование <b>${whenStr(e.day, e.hour)}</b> · офис «${esc(v.co)}»</div><div class="muted">Приезжай в офис через Vibe Maps — за час до начала и до конца встречи. Не придёшь — HR обидится.</div></div>
+      <div class="lf-row" style="margin-top:8px;justify-content:flex-start;gap:6px;flex-wrap:wrap">${mapsBtn("office:" + v.co, "Доехать в офис 🚇", "btn black sm")}${online}</div>${lookLine()}`;
+    return `<button class="btn lime block lf-glow" data-ivbook="${a.id}" style="margin-top:10px">Записаться на собеседование 📅</button><div style="margin-top:8px">${online}</div>${lookLine()}`;
+  }
+  function bookInterview(a) {
+    const v = vacById(a.vid), slot = nextWorkSlot();
+    const e = Vibe.sched.add({ kind: "interview", place: "office:" + v.co, day: slot.day, hour: slot.hour, dur: 90, title: `Собеседование · ${v.co}`, e: "🎤", go: "job", app: a.id });
+    Vibe.state.set({ life_apps: apps().map((x) => (x.id === a.id ? Object.assign({}, x, { iv: { ev: e.id } }) : x)) });
+    return e;
+  }
+  if (Vibe.sched) {
+    // Пришёл в офис → открываем собеседование в Vibe Job
+    Vibe.sched.on("interview", (e) => {
+      const a = apps().find((x) => x.id === e.app);
+      if (!a || appStatus(a) !== "invite") return;
+      Vibe.state.set({ life_ivPending: a.id });
+      setTimeout(() => { if (!(Vibe.current && Vibe.current.route && Vibe.current.route.name === "job")) Vibe.go("job"); }, 1400);
+    });
+    Vibe.sched.on("interview:missed", (e) => {
+      const a = apps().find((x) => x.id === e.app);
+      if (!a || appStatus(a) !== "invite") return;
+      Vibe.state.set({ life_apps: apps().map((x) => (x.id === a.id ? Object.assign({}, x, { stage: "reject", shown: "reject", iv: null, rej: "Ты не пришёл. HR обиделся и ушёл плакать в переговорку." }) : x)) });
+      FX.toast(`${vacById(a.vid).co}: ты не пришёл. HR обиделся`, "🥀", 3200);
+    });
+  }
   function appExtra(a, s, v) {
     const now = Date.now();
     const re = `<button class="btn sm" data-reapply="${v.id}" style="margin-top:8px">Откликнуться ещё раз 🔁</button>`;
     if (s === "sent") return `<div class="lf-eta">📨 Резюме летит к HR · просмотр через ~<b data-to="${a.seenAt}">${mmss((a.seenAt - now) / 1000)}</b></div>`;
     if (s === "seen") return `<div class="lf-eta">👀 HR читает (уже 4-ю секунду) · ответ через ~<b data-to="${a.doneAt}">${mmss((a.doneAt - now) / 1000)}</b></div>`;
-    if (s === "invite") return `<button class="btn lime block lf-glow" data-iv="${a.id}" style="margin-top:10px">Пройти собеседование 🎤</button>`;
+    if (s === "invite") return ivBlock(a, v);
     if (s === "reject") return `<div class="lf-note" style="margin-top:10px">🥀 ${esc(a.rej)}</div>${re}`;
     if (s === "failed") return `<div class="lf-note" style="margin-top:10px">🫠 «Мы вам перезвоним». Не перезвонят.</div>${re}`;
     if (s === "declined") return `<div class="lf-note" style="margin-top:10px">🙅 Ты отказался от оффера. HR до сих пор рассказывает об этом в курилке.</div>${re}`;
@@ -471,7 +566,7 @@
       <div class="card tight lf-app ${a.shown !== s ? "lf-new" : ""}" data-app="${a.id}">
         <div class="lf-row" style="justify-content:flex-start;gap:10px">
           <div class="lf-cpic ${v.col}" style="width:48px;height:48px;font-size:26px;border-radius:16px">${v.e}</div>
-          <div style="flex:1;min-width:0"><b style="font-size:14px;display:block;line-height:1.2">${v.title}</b><div class="muted" style="font-size:12px;font-weight:700">${esc(v.co)} · ${rub(v.sal)}</div></div>
+          <div style="flex:1;min-width:0"><b style="font-size:14px;display:block;line-height:1.2">${v.title}</b><div class="muted" style="font-size:12px;font-weight:700">${esc(v.co)} · ${rub(salOf(v))}</div></div>
           <span class="lf-st ${I.c}">${I.e} ${I.t}</span>
         </div>
         <div class="lf-steps ${I.bad ? "bad" : ""}">${[1, 2, 3, 4].map((k) => `<span class="${k <= I.k ? "on" : ""}"></span>`).join("")}</div>
@@ -641,7 +736,7 @@
       const body = $(root, "[data-body]");
       const maps = new Set(), sheetMaps = new Set();
       let searching = false, tab = "vac", vmode = "list", filter = "all", first = true;
-      let lastDay = Vibe.game.info().day;
+      let lastDay = Vibe.game.info().day, lastWork = null;
       const killMaps = () => { maps.forEach((m) => m.destroy()); maps.clear(); };
       const restaggerAll = (el) => $$(el, ".stagger").forEach(restagger);
       function miniMap(el, set, pins, a, b, color) {
@@ -691,18 +786,18 @@
               <div style="flex:1;min-width:0">
                 <b class="lf-vt">${v.title}</b>
                 <div class="muted" style="font-size:12px;font-weight:700">${esc(v.co)}</div>
-                <div class="price" style="font-size:20px;margin-top:4px">${rub(v.sal)}</div>
+                <div class="price" style="font-size:20px;margin-top:4px">${rub(salOf(v))}</div>
               </div>
             </div>
-            <div class="lf-pills" style="margin-top:10px"><span class="badge" style="background:var(--lilac)">📍 ${inf.district}</span><span class="badge" style="background:#fff">🚇 ${inf.min} мин</span>${fitBadge(v, r)}${here ? `<span class="badge" style="background:var(--yellow)">💼 Ты здесь</span>` : a ? `<span class="badge" style="background:var(--sky)">${ST_INFO[a].e} ${ST_INFO[a].t}</span>` : ""}</div>
+            <div class="lf-pills" style="margin-top:10px"><span class="badge" style="background:var(--lilac)">📍 ${inf.district}</span><span class="badge" style="background:#fff">🚇 ${inf.min} мин</span>${fitBadge(v, r)}${courseBadge(v)}${here ? `<span class="badge" style="background:var(--yellow)">💼 Ты здесь</span>` : a ? `<span class="badge" style="background:var(--sky)">${ST_INFO[a].e} ${ST_INFO[a].t}</span>` : ""}</div>
           </div>`;
       }
       function vacHtml() {
         const r = resume().total;
         let list = VAC.map((v) => ({ v, inf: vinfo(v) }));
-        if (filter === "lt60") list = list.filter((x) => x.v.sal < 60000);
-        if (filter === "mid") list = list.filter((x) => x.v.sal >= 60000 && x.v.sal <= 120000);
-        if (filter === "hi") list = list.filter((x) => x.v.sal > 120000);
+        if (filter === "lt60") list = list.filter((x) => salOf(x.v) < 60000);
+        if (filter === "mid") list = list.filter((x) => salOf(x.v) >= 60000 && salOf(x.v) <= 120000);
+        if (filter === "hi") list = list.filter((x) => salOf(x.v) > 120000);
         if (filter === "near") list = list.slice().sort((a, b) => a.inf.min - b.inf.min).slice(0, 5);
         const sw = `<div class="lf-tabs sm">${[["list", "📋 Список"], ["quick", "⚡ Быстрый поиск"]].map(([k, t]) => `<button class="${vmode === k ? "on" : ""}" data-vmode="${k}">${t}</button>`).join("")}</div>`;
         if (vmode === "quick") return `${sw}
@@ -736,7 +831,7 @@
           no: "МИМО",
           sup: "С СОПРОВОДОМ 📨",
           emptyMsg: "Новых вакансий нет. Дождись ответов",
-          items: () => shuffle(VAC.filter((v) => !activeStatus(v.id) && !(S().job && S().job.company === v.co))),
+          items: () => shuffle(VAC.filter((v) => !locked(v) && !activeStatus(v.id) && !(S().job && S().job.company === v.co))),
           card: (v) => {
             const inf = vinfo(v);
             return `
@@ -745,8 +840,8 @@
               <div><span class="badge" style="background:#fff">${esc(v.co)}</span></div>
               <div class="grow"></div>
               <div class="display" style="font-size:28px;max-width:88%">${v.title}</div>
-              <div class="big-num" style="font-size:32px">${rub(v.sal)}</div>
-              <div class="lf-pills"><span class="badge">📍 ${inf.district}</span><span class="badge">🚇 ${inf.min} мин</span>${fitBadge(v, resume().total)}</div>
+              <div class="big-num" style="font-size:32px">${rub(salOf(v))}</div>
+              <div class="lf-pills"><span class="badge">📍 ${inf.district}</span><span class="badge">🚇 ${inf.min} мин</span>${fitBadge(v, resume().total)}${courseBadge(v)}</div>
               <div class="lf-note">${v.reqs.map((x) => `<div>⚠️ ${x}</div>`).join("")}</div>
             </div>`;
           },
@@ -761,6 +856,7 @@
       function canApply(v, from) {
         if (S().job && S().job.company === v.co) { FX.shake(from); FX.toast("Ты уже здесь работаешь 🙃", "💼"); return false; }
         if (activeStatus(v.id)) { FX.shake(from); FX.toast("Отклик уже висит. HR и так нервничает", "⏳"); return false; }
+        if (locked(v)) { FX.shake(from); FX.toast(`Без курса «${COURSES.find((c) => c.id === v.needCourse).short}» резюме даже не откроют. Vibe Learn ждёт`, "🎓", 3000); return false; }
         const active = apps().filter((a) => { const s = appStatus(a); return s === "sent" || s === "seen"; }).length;
         if (active >= 6) { FX.shake(from); FX.toast("6 откликов ждут ответа. HR не успевают игнорировать больше", "📨", 3000); return false; }
         return true;
@@ -790,10 +886,10 @@
           <div class="display" style="font-size:26px;margin-top:14px">${v.title}</div>
           <div class="muted" style="font-weight:700;font-size:13px">${esc(v.co)} · 📍 ${inf.district}</div>
           <div class="lf-row" style="margin-top:10px;align-items:flex-end">
-            <div><div class="big-num" style="font-size:32px">${rub(v.sal)}</div><div style="font-size:12px;font-weight:800">на руки ${rub(netOf(v.sal))} в месяц</div></div>
+            <div><div class="big-num" style="font-size:32px">${rub(salOf(v))}</div><div style="font-size:12px;font-weight:800">на руки ${rub(netOf(salOf(v)))} в месяц</div></div>
             ${fitBadge(v, r)}
           </div>
-          <div class="lf-pills" style="margin-top:10px">${v.perks.map((p) => `<span class="badge" style="background:var(--yellow)">${p}</span>`).join("")}</div>
+          <div class="lf-pills" style="margin-top:10px">${v.perks.map((p) => `<span class="badge" style="background:var(--yellow)">${p}</span>`).join("")}${courseBadge(v)}</div>
           <div class="lf-note" style="margin-top:10px">${v.reqs.map((x) => `<div>⚠️ ${x}</div>`).join("")}<div>📄 Резюме: нужно ${v.req}%, у тебя ${r}%</div></div>
           <div class="lf-mini" style="margin:16px 0 8px">Дорога от дома · ${dec(inf.km)} км</div>
           <div data-smap style="height:190px"></div>
@@ -803,7 +899,7 @@
           </div>
           <div class="lf-row" style="margin:14px 2px 8px"><span class="lf-mini">Шанс на приглашение</span><b style="font-size:13px">${chW}</b></div>
           <div class="progress" style="margin-bottom:14px"><i style="--p:${Math.round(ch * 100)}%"></i></div>
-          ${here ? `<button class="btn xl block" disabled>Ты здесь уже работаешь 💼</button>` : act ? `<button class="btn xl block" data-gotab="apps">${ST_INFO[act].e} ${ST_INFO[act].t} · к откликам</button>` : `<button class="btn black xl block" data-applyv>Откликнуться 📨</button>`}
+          ${here ? `<button class="btn xl block" disabled>Ты здесь уже работаешь 💼</button>` : locked(v) && !act ? `<button class="btn yellow xl block" data-close data-go="learn">🔒 Сначала курс «${COURSES.find((c) => c.id === v.needCourse).short}» →</button>` : act ? `<button class="btn xl block" data-gotab="apps">${ST_INFO[act].e} ${ST_INFO[act].t} · к откликам</button>` : `<button class="btn black xl block" data-applyv>Откликнуться 📨</button>`}
           <div class="fine">Зарплата до вычета НДФЛ 13%. Печеньки облагаются отдельно. Время в пути — в хорошую погоду и без пробок (не бывает).</div>`, {
           onMount(sh, close) {
             mp = miniMap($(sh, "[data-smap]"), sheetMaps, Vibe.map.basePins([Object.assign({}, inf.o, { id: "office", e: v.e, color: "#ff6bcb", pulse: true, label: "Офис" })]), Vibe.map.place("home"), inf.o);
@@ -908,8 +1004,9 @@
       }
 
       /* ---------- Собеседование ---------- */
-      function interview(a) {
+      function interview(a, mode = "office") {
         const v = vacById(a.vid);
+        if (st("life_ivPending") === a.id) Vibe.state.set({ life_ivPending: null });
         const qs = shuffle(QUIZ).slice(0, 5);
         const IT = bag();
         let i = 0, score = 0, locked = false;
@@ -922,6 +1019,7 @@
               const Q = qs[i], ans = shuffle(Q.a);
               box.innerHTML = `
                 <div class="lf-row"><span class="badge" style="background:var(--yellow)">${v.e} ${esc(v.co)}</span><span class="badge" style="background:#fff">Вопрос ${i + 1}/${qs.length}</span></div>
+                <div class="lf-pills" style="margin-top:6px;justify-content:center"><span class="badge" style="background:${mode === "online" ? "var(--sky)" : "var(--lime)"}">${mode === "online" ? "💻 Онлайн · −20% к шансу" : "🏢 Очно · +5% к шансу"}</span><span class="badge" style="background:var(--pink)">✨ Внешность ${lookPct()}%</span></div>
                 <div class="lf-ivdots">${qs.map((_, k) => `<i class="${k < i ? "on" : k === i ? "now" : ""}"></i>`).join("")}</div>
                 <div class="lf-hr"><span class="emo float">🧑‍💼</span><div class="lf-bubble" style="font-size:15px">${Q.q}</div></div>
                 <div class="lf-quiz stagger">${ans.map((x, k) => `<button data-ans="${k}">${x[0]}</button>`).join("")}</div>
@@ -944,7 +1042,7 @@
               }));
             }
             function result() {
-              const p = clamp(0.2 + (score / qs.length) * 0.7 + (resume().total - v.req) / 150, 0.05, 0.95);
+              const p = clamp(0.2 + (score / qs.length) * 0.7 + (resume().total - v.req) / 150 + lookBonus() + (mode === "office" ? 0.05 : 0), 0.05, 0.95) * (mode === "online" ? 0.8 : 1);
               box.innerHTML = `<div class="wobble" style="display:inline-block">${Vibe.zabotik(90, "wow")}</div><div class="display" style="font-size:24px;margin-top:8px">HR совещается…</div><p>Тебя обсуждают в курилке. Это хорошо. Наверное.</p><div class="typing" style="margin-bottom:6px"><span></span><span></span><span></span></div>`;
               IT.to(() => (Math.random() < p ? offer() : fail()), 2100);
             }
@@ -956,7 +1054,7 @@
             }
             function offer() {
               const low = Math.random() < 0.35;
-              let sal = low ? Math.round((v.sal * 0.85) / 1000) * 1000 : v.sal;
+              let sal = low ? Math.round((salOf(v) * 0.85) / 1000) * 1000 : salOf(v);
               let bargained = false;
               const draw = (msg) => {
                 const cur = S().job;
@@ -979,7 +1077,7 @@
                 if (bg) bg.addEventListener("click", () => {
                   bargained = true;
                   const r = Math.random();
-                  if (r < 0.55) { sal = v.sal; draw("HR сдался! «Ладно, полная сумма. Но печеньки — по одной»"); FX.burst($(box, "[data-sal]"), { emojis: ["💪", "💸", "✨"], count: 16 }); FX.sound.success(); }
+                  if (r < 0.55) { sal = salOf(v); draw("HR сдался! «Ладно, полная сумма. Но печеньки — по одной»"); FX.burst($(box, "[data-sal]"), { emojis: ["💪", "💸", "✨"], count: 16 }); FX.sound.success(); }
                   else if (r < 0.8) { draw("«Печеньки — это тоже деньги». Сумма не изменилась."); FX.shake($(box, "[data-sal]")); }
                   else { setStage(a.id, "failed"); box.innerHTML = `<div class="m-emo float">🫢</div><div class="display" style="font-size:26px">Оффер отозван</div><p>HR обиделся и ушёл плакать в переговорку. Торговаться надо было мягче.</p><button class="btn black block" data-close>Урок усвоен</button>`; FX.sound.error(); if (tab === "apps") paintPanel(); }
                 });
@@ -1008,6 +1106,19 @@
       }
 
       /* ---------- Моя работа ---------- */
+      // Офис или удалёнка + почему сейчас нельзя работать
+      function workStatusHtml(can, inOffice) {
+        const loc = inOffice
+          ? `<div class="card tight c-lime" style="margin-top:12px"><div class="lf-row"><div><b style="font-size:15px">📍 Ты в офисе ×1,15</b><div style="font-size:12px;font-weight:700">Начальник видит тебя. Продуктивность растёт от страха</div></div><span class="emo float" style="font-size:36px">🏢</span></div></div>`
+          : `<div class="card tight c-sky" style="margin-top:12px"><div class="lf-row"><div style="min-width:0"><b style="font-size:15px">🏠 Удалёнка ×0,9</b><div style="font-size:12px;font-weight:700">Работаешь в пижаме. Задачи дают на 10% меньше</div></div>${mapsBtn("work", "В офис 🚇", "btn black sm")}</div></div>`;
+        if (can.ok) return loc;
+        const weekend = Vibe.game.info().day % 7 >= 5;
+        return `${loc}<div class="card c-coral" style="margin-top:12px">
+            <div class="lf-row"><div style="min-width:0"><div class="lf-mini" style="color:var(--ink)">${weekend ? "🛋️ Выходной" : "⏰ Не рабочее время"}</div><b style="display:block;font-size:15px;margin-top:4px;line-height:1.25">${esc(can.why || "Сейчас работать нельзя")}</b></div><span class="emo wobble" style="font-size:40px">${weekend ? "🏖️" : "🌙"}</span></div>
+            <div style="font-size:12px;font-weight:700;margin-top:6px">Рабочие задачи — по будням с 9:00 до 19:00. А деньги нужны всегда.</div>
+            <button class="btn black block" data-go="gig" style="margin-top:10px">🚲 Подработка в Vibe Gig</button>
+          </div>`;
+      }
       function dashHtml() {
         const j = S().job;
         const up = Vibe.game.upcoming(10).find((u) => u.t === "Аванс" || u.t === "Зарплата");
@@ -1015,6 +1126,7 @@
         const p = Vibe.map.path(home, work);
         const left = Vibe.game.tasksLeft(), N = Vibe.game.TASKS_PER_DAY, done = N - left, tt = todayTasks();
         const perf = Math.round(j.perf || 0);
+        const can = Vibe.work ? Vibe.work.can() : { ok: true }, inOffice = !!(Vibe.work && Vibe.work.atOffice());
         return `<div class="stagger">
           <div class="card ${j.color || "c-yellow"}" style="min-height:190px">
             <div class="lf-bigemo emo float" style="font-size:100px">${j.emoji || "💼"}</div>
@@ -1035,14 +1147,15 @@
             <div class="progress" style="margin-top:10px;height:18px"><i data-perf="${perf}" style="--p:0%;background:var(--grad)"></i></div>
             <div class="fine">Каждая задача даёт +12–22%. На 100% — повышение и оклад ×1,25. Не работаешь 3 дня — эффективность тает.</div>
           </div>
+          ${workStatusHtml(can, inOffice)}
           <h2 class="sec">Рабочие задачи <small>${done}/${N} сегодня</small></h2>
           <div class="stack">${tt.map((t, i) => {
-            const isDone = i < done, next = i === done;
+            const isDone = i < done, next = i === done && can.ok;
             return `<div class="card tight ${isDone ? "lf-tdone" : ""} ${next ? "tap lf-glow" : ""}" ${next ? `data-task="${t.id}"` : ""}>
               <div class="lf-row" style="justify-content:flex-start;gap:12px">
                 <div class="lf-cpic ${t.bg}" style="width:52px;height:52px;font-size:28px;border-radius:16px"><span class="emo ${next ? "wobble" : ""}">${isDone ? "✅" : t.e}</span></div>
                 <div style="flex:1;min-width:0"><b style="font-size:15px">${t.t}</b><div class="muted" style="font-size:12px;font-weight:700">${isDone ? "Сделано. Начальник доволен (молча)" : t.d}</div></div>
-                ${next ? `<span class="btn black sm">▶ ${t.dur} с</span>` : isDone ? "" : `<span class="badge" style="background:#fff">⏳</span>`}
+                ${next ? `<span class="btn black sm">▶ ${t.dur} с</span>` : isDone ? "" : `<span class="badge" style="background:#fff">${i === done ? "🔒" : "⏳"}</span>`}
               </div></div>`;
           }).join("")}
           ${left ? "" : `<div class="card c-lilac" style="text-align:center"><div class="emo float" style="font-size:48px">🌙</div><b style="display:block;margin-top:4px">Задачи на сегодня закончились</b><div style="font-size:13px;font-weight:700;margin-top:4px">Новые — завтра (через ~<span data-nextday>${hm(Vibe.game.realMinTo(Vibe.game.info().day + 1))}</span>)</div></div>`}
@@ -1118,13 +1231,14 @@
         if (!res) { FX.toast("Задачи на сегодня закончились", "🌙"); paint(); return; }
         paint();
         if (res.promoted) { FX.burst({ x: innerWidth / 2, y: innerHeight / 2 }, { emojis: ["🚀", "💼", "✨"], count: 20 }); return; }
+        const where = Vibe.work && Vibe.work.atOffice() ? "📍 Офис ×1,15" : "🏠 Удалёнка ×0,9";
         const g = score >= 0.8 ? ["🔥", "Огонь!", "Начальник поставил 👍 в чате"] : score >= 0.5 ? ["👍", "Норм", "Начальник прочитал и не ответил"] : ["🫠", "Ну такое", "Начальник: «давай обсудим на 1:1»"];
         T.to(() => Vibe.modal(`
           <div class="m-emo float">${g[0]}</div><div class="display">${g[1]}</div>
           <div class="big-num" style="font-size:44px;margin:6px 0" data-sc>${Math.round(score * 100)}%</div>
           <p>${g[2]}. Премия <b style="color:var(--ink)">+${rub(res.bonus)}</b> придёт с зарплатой 30-го.</p>
           <div class="progress" style="margin:0 0 6px;height:16px"><i data-rp style="--p:${prev}%;background:var(--grad)"></i></div>
-          <div class="lf-mini" style="margin-bottom:14px">До повышения: ${res.perf}% из 100</div>
+          <div class="lf-mini" style="margin-bottom:14px">До повышения: ${res.perf}% из 100 · ${where}</div>
           <button class="btn black block" data-close>Дальше 💼</button>`, {
           sound: "success",
           onMount(md) {
@@ -1197,6 +1311,20 @@
         if (d !== lastDay) { lastDay = d; if (S().job && !searching) paint(); }
         const nx = $(body, "[data-nextday]");
         if (nx) nx.textContent = hm(Vibe.game.realMinTo(d + 1));
+        // Пришёл в офис на собеседование (сработал Vibe.sched) → сразу в переговорку
+        const pend = st("life_ivPending");
+        if (pend && !document.querySelector(".modal, .sheet")) {
+          const a = apps().find((x) => x.id === pend);
+          if (!a || appStatus(a) !== "invite") { Vibe.state.set({ life_ivPending: null }); return; }
+          if (S().job) searching = true;
+          tab = "apps";
+          paint();
+          FX.toast(`Ты в офисе «${vacById(a.vid).co}». HR уже ждёт`, "🏢", 2400);
+          interview(a, "office");
+        }
+        // Рабочие часы начались/кончились, переехал в офис — перерисуем дашборд
+        const wk = S().job ? `${Vibe.work ? Vibe.work.can().ok : 1}|${Vibe.work ? Vibe.work.atOffice() : 0}` : "";
+        if (wk !== lastWork) { const was = lastWork; lastWork = wk; if (was !== null && S().job && !searching && !document.querySelector(".modal")) paint(); }
       }
       const offGame = Vibe.game.on(() => { if (S().job && !searching && !document.querySelector(".modal")) paint(); });
 
@@ -1218,7 +1346,29 @@
         const vc = t.closest("[data-vac]");
         if (vc) { FX.bump(vc); openVac(vacById(vc.dataset.vac)); return; }
         const iv = t.closest("[data-iv]");
-        if (iv) { const a = apps().find((x) => x.id === iv.dataset.iv); if (a && appStatus(a) === "invite") interview(a); return; }
+        if (iv) { const a = apps().find((x) => x.id === iv.dataset.iv); if (a && appStatus(a) === "invite") interview(a, iv.dataset.mode || "office"); return; }
+        const ion = t.closest("[data-ivon]");
+        if (ion) {
+          const a = apps().find((x) => x.id === ion.dataset.ivon);
+          if (!a || appStatus(a) !== "invite") return;
+          if (a.iv && a.iv.ev) { const ev = evById(a.iv.ev); if (ev && ev.status === "planned") Vibe.sched.remove(ev.id); }
+          FX.bump(ion);
+          interview(a, "online");
+          return;
+        }
+        const ibk = t.closest("[data-ivbook]");
+        if (ibk) {
+          const a = apps().find((x) => x.id === ibk.dataset.ivbook);
+          if (!a || appStatus(a) !== "invite" || !Vibe.sched) return;
+          const ev = bookInterview(a);
+          FX.bump(ibk);
+          FX.burst(ibk, { emojis: ["📅", "🎤", "✨"], count: 14 });
+          FX.sound.success();
+          Vibe.reward({ xp: 5 });
+          FX.toast(`Записан: ${whenStr(ev.day, ev.hour)}. Офис «${vacById(a.vid).co}» — доберись через Vibe Maps`, "📅", 3400);
+          paintPanel();
+          return;
+        }
         const ra = t.closest("[data-reapply]");
         if (ra) { if (apply(vacById(ra.dataset.reapply), ra)) paintPanel(); return; }
         const sk = t.closest("[data-skill]");
@@ -1228,6 +1378,8 @@
         const tk = t.closest("[data-task]");
         if (tk) {
           if (!Vibe.game.tasksLeft()) { FX.shake(tk); return; }
+          const can = Vibe.work ? Vibe.work.can() : { ok: true };
+          if (!can.ok) { FX.shake(tk); FX.toast(can.why, "⏰", 2800); paint(); return; }
           FX.bump(tk);
           runTask(TASKS.find((x) => x.id === tk.dataset.task));
           return;
@@ -1262,6 +1414,83 @@
   const ONLINE = ["🟢 онлайн", "был(а) 3 мин назад", "🟢 печатает кому-то", "был(а) вчера в 4:20"];
   const MATCH_LINES = ["Совместимость 87%. Считали по цвету аватарки.", "Свайп вправо — это почти свидание. В 2026-м засчитывается.", "Заботик одобряет. Заботик одобряет всех.", "Ещё 3 свайпа — и алгоритм покажет тебе бывшую."];
 
+  /* --- Мэтч → свидание → отношения (Vibe.sched + Vibe.people) --- */
+  const pidOf = (m) => m.pid || "m_" + Math.max(0, PEOPLE.findIndex((p) => p.n === m.n));
+  const DATE_PLACES = [
+    { k: "park", e: "🌳", t: "Прогулка в парке", sub: "бесплатно и романтично (комары тоже)" },
+    { k: "restaurant:2", e: "🍝", t: "Ужин в ресторане", sub: "счёт пополам — это тоже близость" },
+    { k: "restaurant:5", e: "🍣", t: "Суши-бар", sub: "палочки выдают на входе" },
+    { k: "club", e: "🎤", t: "Клуб", sub: "громко, зато можно не разговаривать" },
+  ];
+  const placeTitle = (k) => (DATE_PLACES.find((x) => x.k === k) || { t: "Встреча" }).t;
+  function dateSlots() {
+    const i = Vibe.game.info(), d0 = i.day, out = [];
+    if (i.hour < 17) out.push({ day: d0, hour: 19 });
+    out.push({ day: d0 + 1, hour: 19 }, { day: d0 + 2, hour: 20 });
+    let w = d0 + 1;
+    while (w % 7 < 5) w++;
+    out.push({ day: w, hour: 15 });
+    const seen = new Set();
+    return out.filter((x) => { const k = x.day * 24 + x.hour; if (seen.has(k)) return false; seen.add(k); return true; }).slice(0, 4);
+  }
+  const dateOf = (pid) => (Vibe.sched ? Vibe.sched.upcoming(30).find((e) => e.kind === "date" && e.pid === pid) : null);
+  function askPartner(id) {
+    const p = Vibe.people.get(id);
+    if (!p || p.kind === "partner") return;
+    const cur = Vibe.people.partner();
+    Vibe.modal(`
+      <div class="lf-collide"><div class="lf-av a c-lime">😎</div><div class="hrt">💍</div><div class="lf-av b c-pink">${p.e}</div></div>
+      <div class="display" style="font-size:30px">Встречаться?</div>
+      <p>${esc(p.n)}: ${p.dates || 3} свидания, отношения ${Math.round(p.rel || 0)}/100. Пора менять статус в профиле.${cur ? ` Правда, есть ещё ${esc(cur.n)}… Сложно.` : ""}</p>
+      <div class="stack"><button class="btn grad xl block" data-yes>Да! Встречаемся 💘</button><button class="btn block" data-no>Давай останемся друзьями</button></div>
+      <div class="fine">Vibe Match не несёт ответственности за знакомство с мамой. Мама — несёт.</div>`, {
+      sound: "like",
+      onMount(m, close) {
+        m.querySelector("[data-yes]").addEventListener("click", () => {
+          if (cur && cur.id !== id) { Vibe.people.set(cur.id, { kind: "friend" }); Vibe.people.rel(cur.id, -30); }
+          Vibe.people.set(id, { kind: "partner" });
+          Vibe.people.rel(id, 10);
+          close();
+          FX.confetti();
+          setTimeout(() => FX.confetti({ count: 80 }), 300);
+          Vibe.reward({ vibiki: 30, xp: 40 });
+          Vibe.modal(`<div class="m-emo float">💑</div><div class="display">Вы пара!</div><p>${esc(p.n)} теперь в «Моих людях» с сердечком. Отношения надо поддерживать — свиданиями, звонками и не «ок» в ответ.</p><div class="stack"><button class="btn black block" data-close data-go="people">Мои люди 🫂</button><button class="btn block" data-close>Ура 🥰</button></div>`, { sound: "levelup" });
+        });
+        m.querySelector("[data-no]").addEventListener("click", () => { Vibe.people.rel(id, -5); close(); FX.toast(`${p.n} сказал(а) «ок». Просто «ок».`, "🫠", 2800); });
+      },
+    });
+  }
+  if (Vibe.sched && Vibe.people) {
+    Vibe.sched.on("date", (e) => {
+      if (!e.pid) return;
+      Vibe.people.add(e.pid, { n: e.pn, e: e.pe, kind: "friend" });
+      Vibe.people.rel(e.pid, 15);
+      const p = Vibe.people.get(e.pid);
+      const n = (p.dates || 0) + 1;
+      Vibe.people.set(e.pid, { dates: n, lastDate: e.day });
+      setTimeout(() => {
+        if (n >= 3 && p.kind !== "partner") askPartner(e.pid);
+        else FX.toast(`${p.n}: отношения ${Math.round(p.rel)}/100 · свиданий ${n}${n < 3 ? ` · до «встречаться?» ещё ${3 - n}` : ""}`, "💘", 3200);
+      }, 2600);
+    });
+    Vibe.sched.on("date:missed", (e) => {
+      if (!e.pid) return;
+      Vibe.people.add(e.pid, { n: e.pn, e: e.pe, kind: "friend" });
+      Vibe.people.rel(e.pid, -20);
+      setTimeout(() => FX.toast(`${e.pn} ждал(а) тебя ${placeTitle(e.place).toLowerCase()}. Отношения −20. Тебя заблокировали в сердечке`, "💔", 3600), 1400);
+    });
+  }
+  function datesHtml() {
+    const list = Vibe.sched ? Vibe.sched.upcoming(30).filter((e) => e.kind === "date") : [];
+    if (!list.length) return "";
+    return `<h2 class="sec">Свидания <small>${list.length}</small></h2><div class="stack">${list.map((e) => `
+      <div class="card tight c-pink">
+        <div class="lf-row" style="justify-content:flex-start;gap:10px"><div class="lf-cpic c-white" style="width:48px;height:48px;font-size:28px;border-radius:16px">${e.pe || "💘"}</div>
+          <div style="flex:1;min-width:0"><b style="display:block;font-size:14px">${esc(e.title)}</b><div style="font-size:12px;font-weight:800">${whenStr(e.day, e.hour)} · ${placeTitle(e.place)}</div></div>
+          ${mapsBtn(e.place, "Доехать 🚇", "btn black sm")}</div>
+      </div>`).join("")}</div>`;
+  }
+
   Vibe.screen("match", {
     render() {
       const ms = st("life_matches", []);
@@ -1278,6 +1507,10 @@
         ${zab(pick(MATCH_LINES), "smile")}
         <h2 class="sec">Твои мэтчи <small data-mcount>${ms.length}</small></h2>
         <div class="hscroll" data-mlist>${matchList(ms)}</div>
+        <div data-dates>${datesHtml()}</div>
+        <div class="card c-lilac tap" data-go="people" style="margin-top:12px">
+          <div class="lf-row"><div><div class="display" style="font-size:20px">Мои люди 🫂</div><div style="font-size:12px;font-weight:800;margin-top:4px">${(() => { const pr = Vibe.people && Vibe.people.partner(); return pr ? `${pr.e} ${esc(pr.n)} — твой человек 💘` : "Друзья, семья и те, с кем было 3 свидания"; })()}</div></div><span class="emo float" style="font-size:40px">💞</span></div>
+        </div>
         <div class="card c-grad tap" data-act="plus" style="margin-top:10px">
           <div class="lf-row"><div><div class="display" style="font-size:22px">Узнай, кто тебя лайкнул</div><div style="font-size:13px;margin-top:4px;font-weight:700">Всего 990 ₽/нед · первые 3 дня 1 ₽</div></div><span class="emo pulse" style="font-size:46px">🔒</span></div>
         </div>
@@ -1326,7 +1559,7 @@
       });
 
       function itsAMatch(p) {
-        const ms = [{ e: p.e, n: p.n, col: p.col }, ...st("life_matches", []).filter((m) => m.n !== p.n)].slice(0, 12);
+        const ms = [{ e: p.e, n: p.n, col: p.col, pid: "m_" + PEOPLE.indexOf(p) }, ...st("life_matches", []).filter((m) => m.n !== p.n)].slice(0, 12);
         Vibe.state.set({ life_matches: ms });
         const list = $(root, "[data-mlist]");
         list.innerHTML = matchList(ms);
@@ -1340,12 +1573,14 @@
           <p>Вы с ${p.n} лайкнули друг друга. Совместимость ${rnd(91, 99)}%*</p>
           <div class="stack">
             <button class="btn grad block xl" data-write>Написать 💬</button>
+            <button class="btn pink block" data-dateask>Позвать на свидание 🌹</button>
             <button class="btn block" data-close>Свайпать дальше</button>
           </div>
           <div class="fine">*по знаку зодиака вашего банка</div>`, {
           sound: "like",
           onMount(m, close) {
             T.to(() => { FX.sound.success(); FX.burst($(m, ".hrt"), { emojis: ["❤️", "💖", "💘", "💕", "✨"], count: 24, spread: 170 }); }, 650);
+            $(m, "[data-dateask]").addEventListener("click", () => { close(); T.to(() => openMatch(ms[0]), 260); });
             $(m, "[data-write]").addEventListener("click", () => {
               close();
               FX.toast(`Отправлено: «привет, как дела» 🙈`, "💬");
@@ -1355,11 +1590,57 @@
           },
         });
       }
+      function refreshDates() { const d = $(root, "[data-dates]"); if (d) d.innerHTML = datesHtml(); }
+      // Карточка мэтча: отношения, свидания, «встречаться?»
+      function openMatch(m) {
+        const pid = pidOf(m), pp = Vibe.people ? Vibe.people.get(pid) : null, up = dateOf(pid);
+        let place = DATE_PLACES[0].k, slot = 0;
+        const slots = dateSlots();
+        const rel = pp ? Math.round(pp.rel || 0) : null, dates = (pp && pp.dates) || 0;
+        const status = pp && pp.kind === "partner" ? "💑 Вы пара" : dates ? `💘 Свиданий: ${dates}` : "✨ Новый мэтч";
+        Vibe.ui.sheet(`
+          <div class="lf-row" style="justify-content:flex-start;gap:14px">
+            <div class="lf-av ${m.col}" style="width:84px;height:84px;font-size:46px">${m.e}</div>
+            <div style="min-width:0"><div class="display" style="font-size:26px">${esc(m.n)}</div><span class="badge" style="background:var(--pink)">${status}</span></div>
+          </div>
+          ${rel != null ? `<div class="lf-row" style="margin-top:14px"><span class="lf-mini">Отношения</span><b>${rel}/100</b></div><div class="progress" style="margin-top:6px"><i style="--p:${rel}%;background:var(--grad)"></i></div>` : `<div class="lf-note" style="margin-top:14px">💬 Пока вы только лайкнули друг друга. Первое свидание добавит ${esc(m.n)} в «Моих людей».</div>`}
+          ${up ? `<div class="card flat c-lime tight" style="margin-top:14px"><div class="lf-mini" style="color:var(--ink)">📅 Свидание назначено</div><b style="display:block;margin-top:2px">${whenStr(up.day, up.hour)} · ${placeTitle(up.place)}</b><div style="font-size:12px;font-weight:700;margin-top:2px">Приезжай вовремя: опоздание больше чем на 2 часа = отношения −20</div><div style="margin-top:10px">${mapsBtn(up.place, "Доехать 🚇", "btn black block")}</div></div>` : `
+          <div class="lf-mini" style="margin:16px 0 8px">Куда позовём?</div>
+          <div class="lf-sector" data-dplace>${DATE_PLACES.map((x, i) => `<button class="${i ? "" : "on"}" data-dp="${x.k}"><span>${x.e} ${x.t}<small>${x.sub}</small></span></button>`).join("")}</div>
+          <div class="lf-mini" style="margin:14px 0 8px">Когда?</div>
+          <div class="lf-slots">${slots.map((x, i) => `<button class="chip ${i ? "" : "on"}" data-ds="${i}">${whenStr(x.day, x.hour)}</button>`).join("")}</div>
+          <button class="btn grad xl block" data-dgo style="margin-top:14px">Позвать на свидание 🌹</button>`}
+          ${dates >= 3 && pp && pp.kind !== "partner" ? `<button class="btn pink block" data-dpartner style="margin-top:10px">Встречаться? 💍</button>` : ""}
+          <button class="btn block" data-close data-go="people" style="margin-top:10px">Мои люди 🫂</button>
+          <div class="fine">Свидание попадёт в календарь. Доберись до места через Vibe Maps — иначе ${esc(m.n)} обидится. Сильно.</div>`, {
+          onMount(sh, close) {
+            sh.addEventListener("click", (e) => {
+              const dp = e.target.closest("[data-dp]");
+              if (dp) { place = dp.dataset.dp; $$(sh, "[data-dp]").forEach((x) => x.classList.toggle("on", x === dp)); FX.sound.pop(); return; }
+              const ds = e.target.closest("[data-ds]");
+              if (ds) { slot = +ds.dataset.ds; $$(sh, "[data-ds]").forEach((x) => x.classList.toggle("on", x === ds)); FX.bump(ds); FX.sound.pop(); return; }
+              if (e.target.closest("[data-dpartner]")) { close(); T.to(() => askPartner(pid), 260); return; }
+              const go = e.target.closest("[data-dgo]");
+              if (go && Vibe.sched) {
+                const sl = slots[slot];
+                Vibe.sched.add({ kind: "date", place, day: sl.day, hour: sl.hour, dur: 120, title: `Свидание с ${m.n}`, e: "💘", go: "match", pid, pn: m.n, pe: m.e });
+                FX.burst(go, { emojis: ["🌹", "💘", "✨", m.e], count: 18 });
+                FX.sound.like();
+                Vibe.reward({ xp: 8 });
+                close();
+                refreshDates();
+                restagger($(root, "[data-dates] .stack"));
+                FX.toast(`${m.n}: «давай!» 🥰 ${whenStr(sl.day, sl.hour)}, ${placeTitle(place).toLowerCase()}. Уже в календаре`, "🌹", 3400);
+              }
+            });
+          },
+        });
+      }
       root.addEventListener("click", (e) => {
         const a = e.target.closest("[data-act]");
         if (!a) return;
         if (a.dataset.act === "plus") { FX.shake(a); FX.toast("Тебя лайкнули 99+ человек. Возможно. Узнай за 990 ₽", "🔒"); }
-        if (a.dataset.act === "mm") { FX.bump(a); FX.toast(`${a.dataset.n} в сети. Но не для тебя (шутка)`, "💌"); }
+        if (a.dataset.act === "mm") { FX.bump(a); const m = st("life_matches", []).find((x) => x.n === a.dataset.n); if (m) openMatch(m); }
       });
       return () => T.clear();
     },
@@ -1413,14 +1694,14 @@
         <div class="lf-row"><div class="big-num" style="font-size:26px">${rub(f.p)}<span style="font-family:var(--font);font-size:13px;font-weight:800">/мес</span></div>${here ? `<span class="badge" style="background:#fff">🏠 Ты здесь</span>` : `<span class="badge" style="background:var(--yellow)">👀 ${f.watch} смотрят</span>`}</div>
         <b style="display:block;margin-top:6px;font-size:15px">${f.t}</b>
         <div class="muted" style="font-size:12px;font-weight:700">${f.sub}</div>
-        <div class="lf-pills" style="margin-top:8px"><span class="badge" style="background:var(--lilac)">📍 ${inf.district}</span>${inf.work != null ? `<span class="badge" style="background:var(--sky)">💼 до работы ${inf.work} мин</span>` : ""}${f.fee ? `<span class="badge" style="background:var(--coral)">комиссия ${Math.round(f.fee * 100)}%</span>` : ""}</div>
+        <div class="lf-pills" style="margin-top:8px"><span class="badge" style="background:var(--lilac)">📍 ${inf.district}</span>${inf.work != null ? `<span class="badge" style="background:var(--sky)">💼 до работы ${inf.work} мин</span>` : ""}${f.fee ? `<span class="badge" style="background:var(--coral)">комиссия ${Math.round(f.fee * 100)}%</span>` : ""}${sleepBadge({ rent: f.p })}</div>
       </div>
     </div>`;
   }
   function homeNow() {
     const h = S().home;
-    if (!h) return `<div class="card c-coral"><div class="lf-row" style="justify-content:flex-start;gap:12px"><span class="emo wobble" style="font-size:42px">🛋️</span><div style="flex:1;min-width:0"><div class="lf-mini" style="color:var(--ink)">Ты живёшь</div><b style="display:block">У мамы на диване · 0 ₽/мес</b><div style="font-size:12px;font-weight:700">Мама намекает. Каждый день. Громко.</div></div></div></div>`;
-    return `<div class="card c-lime"><div class="lf-row" style="justify-content:flex-start;gap:12px"><span class="emo float" style="font-size:42px">${h.emoji || "🏠"}</span><div style="flex:1;min-width:0"><div class="lf-mini" style="color:var(--ink)">Ты живёшь</div><b style="display:block">${esc(h.title)}</b><div style="font-size:12px;font-weight:800">${h.own ? "своя квартира 🔑 · аренда 0 ₽" : `аренда ${rub(h.rent || 0)}/мес · списание 1-го`}${h.district ? " · 📍 " + h.district : ""}</div></div></div></div>`;
+    if (!h) return `<div class="card c-coral"><div class="lf-row" style="justify-content:flex-start;gap:12px"><span class="emo wobble" style="font-size:42px">🛋️</span><div style="flex:1;min-width:0"><div class="lf-mini" style="color:var(--ink)">Ты живёшь</div><b style="display:block">У мамы на диване · 0 ₽/мес</b><div style="font-size:12px;font-weight:700">Мама намекает. Каждый день. Громко.</div><div class="lf-pills" style="margin-top:6px">${sleepBadge(null)}</div></div></div>${thingsHtml()}</div>`;
+    return `<div class="card c-lime"><div class="lf-row" style="justify-content:flex-start;gap:12px"><span class="emo float" style="font-size:42px">${h.emoji || "🏠"}</span><div style="flex:1;min-width:0"><div class="lf-mini" style="color:var(--ink)">Ты живёшь</div><b style="display:block">${esc(h.title)}</b><div style="font-size:12px;font-weight:800">${h.own ? "своя квартира 🔑 · аренда 0 ₽" : `аренда ${rub(h.rent || 0)}/мес · списание 1-го`}${h.district ? " · 📍 " + h.district : ""}</div><div class="lf-pills" style="margin-top:6px">${sleepBadge(h)}</div></div></div>${thingsHtml()}</div>`;
   }
   const RENT_CHIPS = [["lt40", "💸 До 40к"], ["Комната", "🚪 Комната"], ["Студия", "🛏️ Студия"], ["1-к", "🚪 1-к"], ["2-к", "🛋️ 2-к"], ["near", "💼 Рядом с работой"], ["С котом", "🐈 С котом"]];
 
@@ -1490,6 +1771,7 @@
           <div class="display" style="font-size:22px;margin-top:6px">${f.t}</div>
           <div class="muted" style="font-size:13px;font-weight:700">${f.sub}</div>
           <div class="lf-pills" style="margin-top:10px"><span class="badge" style="background:var(--lilac)">📍 ${inf.district}</span>${inf.work != null ? `<span class="badge" style="background:var(--sky)">💼 до работы ${inf.work} мин на метро</span>` : `<span class="badge" style="background:#fff">💼 работы пока нет</span>`}</div>
+          <div class="lf-note" style="margin-top:10px"><div>😴 <b>Сон здесь ${sleepPct({ rent: f.p })}%</b> · сейчас ${sleepPct(S().home)}%${homeItems().length ? ` · вещи дают +${Vibe.inv.bonus("sleep")}%` : ""}</div><div class="muted">${sleepPct({ rent: f.p }) > sleepPct(S().home) ? "Тут высыпаешься лучше — продуктивность скажет спасибо" : sleepPct({ rent: f.p }) < sleepPct(S().home) ? "Спать будешь хуже. Сосед Валера уже настраивает колонку" : "Спать будешь так же. Стабильность"}</div></div>
           <div data-fmap style="height:190px;margin-top:12px"></div>
           <div class="card flat stagger" style="padding:2px 14px;margin-top:14px">
             ${f.feat.map((x) => `<div class="li"><div class="ic c-lime" style="width:36px;height:36px;font-size:16px">✅</div><div class="tx" style="font-size:13px;font-weight:700">${x}</div></div>`).join("")}
@@ -1500,6 +1782,7 @@
             ${c.fee ? `<div class="lf-fee"><span>Комиссия «помощника хозяина»</span><span>${rub(c.fee)}</span></div>` : ""}
             <div class="lf-total"><span class="display" style="font-size:18px">На заезд</span><span class="big-num">${rub(c.total)}</span></div>
           </div>
+          ${homeItems().length && !here ? thingsHtml("🚚 Всё переедет с тобой — грузчики аккуратные (почти)") + `<div style="height:10px"></div>` : ""}
           ${h && h.own && !here ? `<div class="lf-note" style="margin-bottom:10px">🏠 У тебя своя квартира. Переедешь — будешь платить аренду, а ипотека никуда не денется.</div>` : ""}
           ${block && !here ? `<div class="lf-note" style="margin-bottom:10px;background:var(--coral)">🙅‍♀️ ${block}</div>` : ""}
           ${here ? `<button class="btn xl block" disabled>Ты уже здесь живёшь 🏠</button>` : `<button class="btn black xl block" data-move>Переехать · ${rub(c.total)} 🚚</button>`}
@@ -1546,7 +1829,7 @@
         Vibe.modal(`
           <div class="m-emo float">🚚</div>
           <div class="display">Новоселье!</div>
-          <p>${f.t}, район «${inf.district}». Аренда ${rub(f.p)}/мес спишется 1-го числа${inf.work != null ? `. До работы ${inf.work} мин на метро` : ""}. Соседи уже стучат по батарее — приветствуют.</p>
+          <p>${f.t}, район «${inf.district}». Аренда ${rub(f.p)}/мес спишется 1-го числа${inf.work != null ? `. До работы ${inf.work} мин на метро` : ""}. Соседи уже стучат по батарее — приветствуют.${homeItems().length ? ` Вещи переехали: ${homeItems().map((i) => i.e || "📦").join(" ")}.` : ""} Сон здесь — ${sleepPct(S().home)}%.</p>
           <button class="btn black block" data-close>Распаковывать коробки 📦</button>
           <div class="fine">Коробки распаковываются примерно 2 года. Последняя — никогда.</div>`, { sound: "levelup" });
         T.to(() => FX.burst({ x: innerWidth / 2, y: innerHeight / 2 - 80 }, { emojis: ["📦", "🔑", "🏠", "✨"], count: 20 }), 300);
@@ -1588,7 +1871,8 @@
       <div class="sticker" style="top:12px;right:12px">Твоя! 🔑</div>
       <div class="lf-row" style="justify-content:flex-start;gap:12px;margin-top:6px"><span class="emo float" style="font-size:56px">${h.emoji || "🏠"}</span>
       <div style="min-width:0;flex:1"><div class="lf-mini" style="color:var(--ink)">Своя квартира</div><b style="display:block;font-size:15px;line-height:1.2;margin-top:2px">${esc(h.title)}</b>
-      <div style="font-size:12px;font-weight:800;margin-top:4px">📍 ${esc(h.district || "город")} · ${mort.length ? `ипотека ${rub(pay)}/мес · осталось ${Math.max(...mort.map((l) => l.left))} платежей` : "без ипотеки, как король 👑"}</div></div></div>
+      <div style="font-size:12px;font-weight:800;margin-top:4px">📍 ${esc(h.district || "город")} · ${mort.length ? `ипотека ${rub(pay)}/мес · осталось ${Math.max(...mort.map((l) => l.left))} платежей` : "без ипотеки, как король 👑"}</div><div class="lf-pills" style="margin-top:6px">${sleepBadge(h)}</div></div></div>
+      ${thingsHtml()}
     </div>`;
   }
   const buildCard = (b, i) => {
@@ -1602,6 +1886,7 @@
           <div class="muted" style="font-size:12px;font-weight:700">${b.n} · 📍 ${p.district}</div>
           <div class="price" style="margin-top:4px;font-size:20px">${mln(b.p)}</div>
           <div style="font-size:11px;font-weight:800">${own ? "🔑 Это твоя квартира" : `сдача: ${b.d}`}</div>
+          <div class="lf-pills" style="margin-top:4px">${sleepBadge({ own: true })}</div>
         </div>
       </div>
     </div>`;
@@ -1704,6 +1989,8 @@
           <div class="display" style="font-size:24px;margin-top:14px">${b.s}</div>
           <div class="muted" style="font-size:13px;font-weight:700">${b.n} · 📍 ${fp.district} · сдача ${b.d}</div>
           <div class="big-num" style="font-size:34px;margin-top:8px">${rub(b.p)}</div>
+          <div class="lf-note" style="margin-top:10px"><div>😴 <b>Сон в своей квартире ${sleepPct({ own: true })}%</b> · сейчас ${sleepPct(S().home)}%</div><div class="muted">Никто не стучит в стену. Кроме банка — раз в месяц.</div></div>
+          ${homeItems().length ? thingsHtml("🚚 Вещи переедут с тобой") : ""}
           <div data-bmap style="height:180px;margin-top:12px"></div>
           ${work ? `<div class="lf-pills" style="margin-top:10px"><span class="badge" style="background:var(--sky)">💼 до работы ${Vibe.map.minutes(Vibe.map.path(fp, work), "metro")} мин на метро</span></div>` : ""}
           <div style="margin-top:14px">
@@ -1751,7 +2038,7 @@
         Vibe.modal(`
           <div class="m-emo float">🔑</div>
           <div class="display">Ключи твои!</div>
-          <p>${b.s}, ${b.n}. ${m ? `Платёж ${rub(m.P)}/мес, каждый месяц, долго. Квартира твоя (частично — остальное у банка).` : "Без ипотеки. Банк в слезах, ты — в своей квартире."} Аренды больше нет.</p>
+          <p>${b.s}, ${b.n}. ${m ? `Платёж ${rub(m.P)}/мес, каждый месяц, долго. Квартира твоя (частично — остальное у банка).` : "Без ипотеки. Банк в слезах, ты — в своей квартире."} Аренды больше нет. Сон теперь ${sleepPct(S().home)}%${homeItems().length ? `, вещи уже на месте: ${homeItems().map((i) => i.e || "📦").join(" ")}` : ""}.</p>
           <button class="btn black block" data-close>Новоселье 🎉</button>
           <div class="fine">Ремонт, мебель и шторы в стоимость не входят. Шторы — это вообще отдельная ипотека.</div>`, { sound: "levelup" });
         T.to(() => FX.burst({ x: innerWidth / 2, y: innerHeight / 2 - 80 }, { emojis: ["🔑", "🏠", "🎉", "✨"], count: 24 }), 300);
@@ -1851,6 +2138,23 @@
     { id: "d6", to: "Дача", f: "🏡", e: "🥒", n: 30, p: 4990, col: "c-mint", note: "электричка + рассада" },
   ];
   const ALL_TRIPS = HOT.concat(DEST);
+  if (Vibe.sched) {
+    // Доехал до аэроэкспресса → отпуск засчитан: тело отдыхает на 100%
+    Vibe.sched.on("travel", () => {
+      if (Vibe.body) Vibe.body.effect("travel");
+      Vibe.state.set({ life_tripsDone: st("life_tripsDone", 0) + 1 });
+      setTimeout(() => FX.burst({ x: innerWidth / 2, y: innerHeight / 3 }, { emojis: ["✈️", "🌴", "☀️", "🏖️"], count: 20 }), 600);
+    });
+    Vibe.sched.on("travel:missed", (e) => setTimeout(() => FX.toast(`Самолёт улетел без тебя. ${e.title.replace("Аэроэкспресс → ", "")} передаёт привет`, "🛫", 3200), 1400));
+  }
+  function tripHtml() {
+    const up = Vibe.sched ? Vibe.sched.upcoming(20).find((e) => e.kind === "travel") : null;
+    if (!up) return "";
+    return `<div class="card c-lime" style="margin-top:12px">
+      <div class="lf-row"><div style="min-width:0"><div class="lf-mini" style="color:var(--ink)">🧳 Твой вылет</div><b style="display:block;font-size:15px;margin-top:2px">${esc(up.title)}</b><div style="font-size:12px;font-weight:800">${whenStr(up.day, up.hour)} · Ⓜ️ м. Сити</div></div><span class="emo float" style="font-size:40px">✈️</span></div>
+      <div style="margin-top:10px">${mapsBtn("metro2", "Доехать до аэроэкспресса 🚇", "btn black block")}</div>
+    </div>`;
+  }
 
   Vibe.screen("travel", {
     render() {
@@ -1858,6 +2162,7 @@
       ${Vibe.ui.head("Vibe Travel", "Улетай от проблем (они догонят)", Vibe.ui.vibikiPill())}
       <div class="stagger">
         ${Vibe.ui.hero({ title: "Туры, которые горят", text: `Смотрят сейчас: <b data-watch>48</b> человек`, emo: "✈️", color: "c-sky", sticker: "−70%*" })}
+        ${tripHtml()}
         <h2 class="sec">🔥 Горящие <small>таймеры честные*</small></h2>
         <div class="hscroll">${HOT.map((h) => `
           <div class="card tap lf-hot" data-trip="${h.id}">
@@ -1908,7 +2213,9 @@
 
       function book(tr, card) {
         FX.bump(card);
-        const DATES = [["24–31 окт", 1], ["1–8 нояб", 1], ["15–22 нояб", 0.9], ["Новый год", 3]];
+        // Вылет — по игровому календарю: [подпись, множитель цены, через сколько дней]
+        const ny = ((60 - (gToday() % 360)) + 360) % 360 || 360;
+        const DATES = [1, 3, 7].map((off, i) => [whenStr(gToday() + off).replace(/^./, (x) => x.toUpperCase()), i === 2 ? 0.9 : 1, off]).concat([["Новый год", 3, ny]]);
         let mult = 1, people = 2, dIdx = 0;
         const calc = () => {
           const base = Math.round(tr.p * people * mult);
@@ -1974,12 +2281,15 @@
                 if (!ok) return;
                 close();
                 FX.confetti();
+                // Вылет — событие в календаре: аэроэкспресс от м. Сити
+                const day = gToday() + DATES[dIdx][2];
+                const se = Vibe.sched ? Vibe.sched.add({ kind: "travel", place: "metro2", day, hour: 9, dur: 240, title: `Аэроэкспресс → ${tr.to}`, e: "✈️", go: "travel", price: c.total }) : null;
                 Vibe.state.set({ life_trips: (st("life_trips", 0) || 0) + 1 });
                 Vibe.modal(`
                   <div class="m-emo float">🧳</div>
                   <div class="display">Чемоданы собраны!</div>
-                  <p>${tr.to}, ${DATES[dIdx][0]}, ${people} чел. Билеты придут в чат за 3 часа до вылета. Или за 3 минуты.</p>
-                  <button class="btn black block" data-close>Скорее бы 🌴</button>
+                  <p>${tr.to}, ${people} чел. Аэроэкспресс ${whenStr(day, 9)} от м. Сити — уже в календаре. Опоздаешь больше чем на 4 часа — тур сгорит.</p>
+                  <div class="stack">${se ? mapsBtn("metro2", "Маршрут до аэроэкспресса 🚇", "btn black block") : ""}<button class="btn block" data-close>Скорее бы 🌴</button></div>
                   <div class="fine">Возврат средств возможен только эмоциональный.</div>`);
                 T.to(() => FX.burst({ x: innerWidth / 2, y: innerHeight / 2 - 80 }, { emojis: ["✈️", "🌴", "☀️", "🏖️"], count: 20 }), 300);
               }
@@ -2096,14 +2406,18 @@
             <div><div class="display" style="font-size:22px">${c.t}</div><div class="muted" style="font-size:12px;font-weight:700">${c.by}</div></div>
           </div>
           <div class="progress" style="margin:16px 0 4px"><i data-cbar style="--p:${Math.round(((myCourses()[id] || 0) / c.les.length) * 100)}%"></i></div>
-          <div class="badge" style="background:var(--sky);margin-top:8px">📄 Пройдёшь курс — резюме в Vibe Job +${pts}%</div>
+          <div class="badge" style="background:var(--sky);margin-top:8px">📄 Пройдёшь курс — резюме в Vibe Job +${pts}%</div>${opensHtml(c)}
           <div class="card flat" style="padding:2px 14px;margin-top:10px" data-les>${lessons()}</div>
-          <div class="fine">Новый урок открывается через 3 минуты после предыдущего. Каждый урок длится 4 минуты, из них 3 — реклама других курсов.</div>`, {
+          <div class="fine">Новый урок открывается через 3 минуты после предыдущего. Каждый урок длится 4 минуты, из них 3 — реклама других курсов. Урок съедает 5% энергии: знания тяжёлые.</div>`, {
           onMount(sh, close) {
             openSheet = { sh, id, lessons };
             sh.addEventListener("click", (e) => {
               const b = e.target.closest("[data-lesson]");
               if (!b || cdLeft(id)) return;
+              const bd = Vibe.body ? Vibe.body.get() : null;
+              if (bd && bd.sleeping) { FX.shake(b); FX.toast("Ты спишь. Учиться во сне — это другой курс (платный)", "😴", 2800); return; }
+              if (bd && bd.energy < 8) { FX.shake(b); FX.toast(`Энергия ${Math.round(bd.energy)}%. Мозг в режиме энергосбережения — поешь или поспи`, "🪫", 3000); return; }
+              if (Vibe.body) Vibe.body.effect("study");
               const done = (myCourses()[id] || 0) + 1;
               Vibe.state.set({ life_courses: Object.assign({}, myCourses(), { [id]: done }), life_lessonAt: Object.assign({}, st("life_lessonAt", {}), { [id]: Date.now() }) });
               FX.burst(b, { emojis: ["📚", "🧠", "✨", "⭐"], count: 16 });
@@ -2119,7 +2433,7 @@
                   Vibe.modal(`
                     <div class="m-emo float">📜</div>
                     <div class="display">Сертификат!</div>
-                    <p>Курс «${c.t}» пройден. Резюме в Vibe Job стало сильнее на <b style="color:var(--ink)">+${pts}%</b>. Повесь сертификат в рамочку — HR любят рамочки.</p>
+                    <p>Курс «${c.t}» пройден. Резюме в Vibe Job стало сильнее на <b style="color:var(--ink)">+${pts}%</b>.${opensTxt(c)} Повесь сертификат в рамочку — HR любят рамочки.</p>
                     <div class="stack"><button class="btn black block" data-close data-go="job">В Vibe Job 💼</button><button class="btn block" data-close>Я эксперт 😎</button></div>
                     <div class="fine">Сертификат государственного образца (образца нашего государства Vibe).</div>`, { sound: "levelup" });
                   Vibe.reward({ vibiki: 50, xp: 50 });
@@ -2133,6 +2447,18 @@
       return () => T.clear();
     },
   });
+  // Курс → карьера: какие вакансии открывает и что даёт сеньорам
+  function opensHtml(c) {
+    const vs = VAC.filter((v) => v.needCourse === c.id);
+    const done = courseDone(c.id);
+    const rows = vs.map((v) => `<span class="badge" style="background:${done ? "var(--lime)" : "#fff"}">${done ? "🔓" : "🔒"} ${v.e} ${v.title} · ${rub(salOf(v))}</span>`);
+    rows.push(`<span class="badge" style="background:var(--yellow)">📈 +5% к окладу сеньор-вакансий</span>`);
+    return `<div class="lf-pills" style="margin-top:8px">${rows.join("")}</div>`;
+  }
+  function opensTxt(c) {
+    const vs = VAC.filter((v) => v.needCourse === c.id);
+    return `${vs.length ? ` Открыта вакансия: ${vs.map((v) => `«${v.title}»`).join(", ")}.` : ""} Оклады сеньор-вакансий выросли на 5%.`;
+  }
   function courseCard(c) {
     const own = myCourses()[c.id] !== undefined;
     return `
@@ -2142,6 +2468,7 @@
           <div style="flex:1;min-width:0"><b style="font-size:15px;line-height:1.2;display:block">${c.t}</b><div class="muted" style="font-size:12px;font-weight:700;margin-top:2px">${c.by}</div></div>
         </div>
         <div class="lf-pills" style="margin-top:10px"><span class="badge" style="background:var(--yellow)">⭐ 4,9 (отзывы мамы)</span><span class="badge" style="background:var(--sky)">⏱ ${c.dur}</span><span class="badge">${c.badge}</span></div>
+        ${opensHtml(c)}
         <div class="lf-row" style="margin-top:12px">
           <div><div class="price" style="font-size:20px">${rub(c.p)}</div><div class="old-price">${rub(c.old)}</div></div>
           <div style="display:flex;gap:6px">
@@ -2162,6 +2489,7 @@
     { id: "c5", e: "🛻", m: "Пикап «Дачник»", cls: "Грузовой", fuel: 9, ppm: 18.9, dist: "14 мин", col: "c-orange", x: 58, y: 84 },
   ];
   const START_FEE = 300;
+  const myCarHtml = () => { const cars = Vibe.inv ? Vibe.inv.list("car") : []; return cars.length ? `${cars[0].e || "🚗"} Своя: ${esc(cars[0].name)}` : "Купить свою машину →"; };
 
   Vibe.screen("drive", {
     render() {
@@ -2193,6 +2521,9 @@
               <button class="btn black sm" data-reserve="${c.id}">Забронировать</button>
             </div>
           </div>`).join("")}</div>
+        <div class="card c-sky tap" data-go="auto" style="margin-top:14px">
+          <div class="lf-row"><div style="min-width:0"><div class="display" style="font-size:20px">${myCarHtml()}</div><div style="font-size:12px;font-weight:800;margin-top:4px">Vibe Auto · кредит одобрен заранее (тобой — нет)</div></div><span class="emo wobble" style="font-size:44px">🚙</span></div>
+        </div>
         ${zab("Перед поездкой сфотографируй машину со всех сторон. Царапины, которых нет на фото, — твои.")}
         <div class="fine">Тариф «Время летит»: в приложении 1 секунда = 1 минута поездки. Мойка, бензин и чувство вины оплачиваются отдельно.</div>
       </div>`;
@@ -2290,14 +2621,16 @@
         const ok = Vibe.pay(total, { title: `Vibe Drive · ${car.m}`, emoji: car.e, col: car.col, from: btn });
         if (!ok) return;
         const c = car, m = mins;
+        // Каршеринг вместо метро — ноги отдыхают, энергия бережётся
+        if (Vibe.body) Vibe.body.effect("taxi");
         toList();
         FX.confetti();
         Vibe.modal(`
           <div class="m-emo float">🏁</div>
           <div class="display">Приехали!</div>
           <div class="big-num" style="font-size:32px;margin-top:8px">${rub(total)}</div>
-          <p>${c.m} · ${m} мин · ${dec(m * 0.7)} км. Спасибо, что выбрали Vibe Drive и не выбрали метро.</p>
-          <button class="btn black block" data-close>Огонь 🔥</button>
+          <p>${c.m} · ${m} мин · ${dec(m * 0.7)} км. Спасибо, что выбрали Vibe Drive и не выбрали метро. Энергия сбережена ⚡</p>
+          <div class="stack"><button class="btn black block" data-close>Огонь 🔥</button><button class="btn block" data-close data-go="auto">🚙 Купить свою машину</button></div>
           <div class="fine">Мойка, бензин и царапина на бампере (не ваша, но кто докажет) будут списаны позже.</div>`);
       }
       root.addEventListener("click", (e) => {
@@ -2463,13 +2796,34 @@
     { n: "Балкон", k: 0.7, sub: "видно только звук" },
   ];
   const CATS = ["Все", "Концерты", "Стендап", "Театр", "Спорт", "Фестивали"];
+  // Афиша живёт по игровому календарю: даты считаются от «сегодня»
+  const EV_OFF = { e1: 9, e2: 1, e3: 2, e4: 4, e5: 3, e6: 5, e7: 7 };
+  EVENTS.forEach((ev) => Object.defineProperties(ev, {
+    day: { get: () => gToday() + (EV_OFF[ev.id] || 3), configurable: true },
+    d: { get: () => String(domOf(ev.day)), configurable: true },
+    mo: { get: () => MON_S[monOf(ev.day)], configurable: true },
+  }));
+  // Статус билета по событию в расписании: planned / done / missed
+  const tkState = (t) => { const e = t && t.sid ? evById(t.sid) : null; return e ? e.status : t && t.sid ? "missed" : "old"; };
+  const TK_LBL = { planned: ["🚇 едем", "var(--lime)"], done: ["✅ был", "var(--sky)"], missed: ["🔥 сгорел", "var(--coral)"], old: ["🎟️ архив", "#fff"] };
+  function nextConcertHtml(ts) {
+    const up = ts.map((t) => ({ t, e: t.sid ? evById(t.sid) : null })).filter((x) => x.e && x.e.status === "planned").sort((a, b) => Vibe.sched.startMin(a.e) - Vibe.sched.startMin(b.e))[0];
+    if (!up) return "";
+    const live = Vibe.sched.active("club").some((x) => x.id === up.e.id);
+    return `<div class="card ${live ? "c-lime lf-glow" : "c-yellow"}" style="margin-top:10px">
+      <div class="lf-row"><div style="min-width:0"><div class="lf-mini" style="color:var(--ink)">${live ? "🔴 Уже пускают!" : "🎶 Ближайший концерт"}</div><b style="display:block;font-size:15px;margin-top:2px">${up.t.e} ${Vibe.esc(up.t.t)}</b><div style="font-size:12px;font-weight:800">${whenStr(up.e.day, up.e.hour)} · 🎤 Клуб · ×${up.t.qty}</div></div><span class="emo float" style="font-size:40px">🎟️</span></div>
+      <div style="margin-top:10px">${mapsBtn("club", "Доехать на концерт 🚇", "btn black block")}</div>
+      <div class="fine" style="color:var(--ink);opacity:.7;margin-top:6px">Не приедешь к 21:00 — билет сгорит вместе с сервисным сбором.</div>
+    </div>`;
+  }
   const myTicketsHtml = (ts) => ts.length ? `
     <h2 class="sec">Мои билеты <small>${ts.length}</small></h2>
-    <div class="hscroll stagger">${ts.map((t, i) => `
-      <button class="lf-mt tap" data-myt="${i}">
-        <div class="a ${t.col === "c-holo" ? "c-holo" : t.col}"><b>${Vibe.esc(t.t)}</b><small style="color:inherit;opacity:.8">${t.d} ${t.mo} · ${Vibe.esc(t.sector)}</small></div>
+    ${nextConcertHtml(ts)}
+    <div class="hscroll stagger" style="margin-top:10px">${ts.map((t, i) => { const L = TK_LBL[tkState(t)]; return `
+      <button class="lf-mt tap" data-myt="${i}" style="${tkState(t) === "missed" ? "opacity:.6" : ""}">
+        <div class="a ${t.col === "c-holo" ? "c-holo" : t.col}"><b>${Vibe.esc(t.t)}</b><small style="color:inherit;opacity:.8">${t.d} ${t.mo} · ${Vibe.esc(t.sector)}</small><span class="badge" style="background:${L[1]};margin-top:4px;font-size:10px;padding:2px 6px">${L[0]}</span></div>
         <div class="q">🎟️</div>
-      </button>`).join("")}</div>` : "";
+      </button>`; }).join("")}</div>` : "";
   const evRow = (ev) => `
     <div class="card tap tight" data-ev="${ev.id}">
       <div class="lf-row" style="justify-content:flex-start;gap:12px">
@@ -2577,7 +2931,10 @@
                 const c = calc();
                 const ok = Vibe.pay(c.total, { title: `Vibe Tickets · ${ev.t}`, emoji: ev.e, col: ev.col === "c-holo" ? "c-pink" : ev.col, from: p });
                 if (!ok) return;
-                const t = { e: ev.e, t: ev.t, d: ev.d, mo: ev.mo, place: ev.place, sector: SECTORS[sec].n, qty, col: ev.col, code: rnd(100000, 999999) };
+                // Концерт — событие в календаре: доехать до клуба к 20:00, иначе билет сгорит
+                const day = ev.day;
+                const se = Vibe.sched ? Vibe.sched.add({ kind: "concert", place: "club", day, hour: 20, dur: 180, title: ev.t, e: ev.e, go: "tickets", price: c.total }) : null;
+                const t = { e: ev.e, t: ev.t, d: ev.d, mo: ev.mo, day, sid: se ? se.id : null, place: ev.place, sector: SECTORS[sec].n, qty, col: ev.col, code: rnd(100000, 999999) };
                 Vibe.state.set({ life_tickets: [t, ...st("life_tickets", [])].slice(0, 12) });
                 const my = $(root, "[data-my]");
                 my.innerHTML = myTicketsHtml(st("life_tickets", []));
@@ -2597,8 +2954,8 @@
             <div class="h r"><div><div style="font-size:28px">🎟️</div>ВХОД<br>№${t.code}</div></div>
           </div>
           <div class="display">Билеты твои!</div>
-          <p>Корешок оторван — назад дороги нет. Билеты уже в «Моих билетах» и в чате.</p>
-          <button class="btn black block" data-close>Иду тусить 🕺</button>`, {
+          <p>Корешок оторван — назад дороги нет. Концерт ${t.day != null ? whenStr(t.day, 20) : ""} в клубе — уже в календаре. Не приедешь — билет сгорит.</p>
+          <div class="stack">${t.sid ? mapsBtn("club", "Доехать на концерт 🚇", "btn black block") : ""}<button class="btn block" data-close>Иду тусить 🕺</button></div>`, {
           onMount(m) {
             T.to(() => {
               const tk = $(m, "[data-tk]");
@@ -2627,8 +2984,9 @@
           <div class="display" style="font-size:24px">${t.e} ${Vibe.esc(t.t)}</div>
           <p style="margin:6px 0 4px">${t.d} ${t.mo} · ${Vibe.esc(t.place || "")} · ${Vibe.esc(t.sector)} · ×${t.qty}</p>
           <div class="lf-qr">${cells}</div>
-          <div class="badge" style="background:var(--lime)">№${t.code}</div>
-          <button class="btn black block" data-close style="margin-top:14px">Готово</button>
+          <div class="badge" style="background:${TK_LBL[tkState(t)][1]}">№${t.code} · ${TK_LBL[tkState(t)][0]}</div>
+          ${tkState(t) === "planned" ? `<div style="margin-top:14px">${mapsBtn("club", "Доехать на концерт 🚇", "btn black block")}</div>` : tkState(t) === "missed" ? `<p style="margin:10px 0 0">Ты не доехал. Билет сгорел, сервисный сбор — тоже. Охранник грустит.</p>` : ""}
+          <button class="btn ${tkState(t) === "planned" ? "" : "black "}block" data-close style="margin-top:10px">Готово</button>
           <div class="fine">Сделай яркость экрана на максимум. Охранник всё равно попросит распечатку.</div>`, { sound: "pop" });
       }
       return () => T.clear();

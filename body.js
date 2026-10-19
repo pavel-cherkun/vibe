@@ -39,6 +39,8 @@
     else if (h.rent <= 90000) { q = 0.86; why = "Нормальная квартира: тихо, темно, хорошо"; e = "🏡"; }
     else { q = 0.97; why = "Шумоизоляция уровня бог. Кровать умнее тебя"; e = "🏰"; }
     if (b.cleanUntil > dayOf(nowMin())) { q += 0.05; why += ". Чистота после уборки помогает"; }
+    const invSleep = Vibe.inv ? Vibe.inv.bonus("sleep") : 0;
+    if (invSleep) { q += invSleep / 100; why += `. Вещи дома: +${invSleep}% к сну`; }
     if (b.mood < 30) { q -= 0.08; why += ". Тревожные мысли мешали уснуть"; }
     if (b.effects && b.effects.coffeeLate === dayOf(nowMin())) { q -= 0.1; why += ". Кофе вечером — плохая идея"; }
     return { q: clamp(q, 0.3, 1), why, e };
@@ -145,7 +147,7 @@
         b.food = clamp(b.food - 5 * k);
       }
       // Настроение тянется к базе, голод и усталость его портят
-      const base = 58 + (S().balance < 0 ? -15 : 0);
+      const base = 58 + (S().balance < 0 ? -15 : 0) + (Vibe.inv ? Math.min(20, Vibe.inv.bonus("mood")) : 0);
       b.mood = clamp(b.mood + (base - b.mood) * 0.04 * k - (b.food < 20 ? 3 * k : 0) - (b.energy < 20 ? 3 * k : 0));
       m += step;
     }
@@ -191,6 +193,7 @@
     work: (b) => { b.energy = clamp(b.energy - 6); b.mood = clamp(b.mood - 1); b.food = clamp(b.food - 3); return null; },
     salary: (b) => { b.mood = clamp(b.mood + 15); return null; },
     bill: (b) => { b.mood = clamp(b.mood - 4); return null; },
+    social: (b) => { b.mood = clamp(b.mood + 10); b.energy = clamp(b.energy - 4); return "🫂 Встреча с близкими: настроение +10"; },
     mom: (b) => { b.mood = clamp(b.mood + 6); return "📞 Поговорил с мамой. Настроение +6"; },
   };
   function effect(kind, opts = {}) {

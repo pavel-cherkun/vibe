@@ -423,13 +423,22 @@
         <div style="display:flex;justify-content:space-between;align-items:baseline;margin-top:6px"><span class="display" style="font-size:20px">Итого</span><span class="big-num" style="font-size:28px">${Vibe.rub(total)}</span></div>
         <div class="badge" style="justify-self:start;background:var(--yellow)">🪙 +${Vibe.fmt(Math.round(total * 0.03 * (S.plus ? 2 : 1)))} вайбиков кэшбеком</div>
       </div>
+      ${Vibe.vibikiPay && Vibe.vibikiPay(total) > 0 ? `<div class="card tight" style="display:flex;align-items:center;gap:12px;margin-bottom:12px"><span style="font-size:26px">🪙</span><div style="flex:1;font-weight:800">Списать ${Vibe.fmt(Vibe.vibikiPay(total))} вайбиков<div class="muted" style="font-size:12px">1 вайбик = 1 ₽, до 30% суммы</div></div><button class="switch" data-vib></button></div>` : ""}
       <button class="btn black xl block" data-pay>Оплатить через Vibe Pay <span class="arrow">→</span></button>
       <div class="fine">Нажимая «Оплатить», вы соглашаетесь с офертой, политикой, политикой об оферте и подпиской «Плюс Вайб» за 299 ₽/мес после пробного периода.</div>
     `, {
       onMount(sh, close) {
+        let useVib = false;
+        const vsw = sh.querySelector("[data-vib]");
+        if (vsw) vsw.addEventListener("click", () => {
+          useVib = !useVib; vsw.classList.toggle("on", useVib); FX.sound.pop();
+          sh.querySelector("[data-pay]").innerHTML = `Оплатить ${Vibe.rub(total - (useVib ? Vibe.vibikiPay(total) : 0))} <span class="arrow">→</span>`;
+        });
         sh.querySelector("[data-pay]").addEventListener("click", (e) => {
-          const ok = Vibe.pay(total, { title: `${opts.txTitle || "Vibe"} · заказ`, emoji: items[0] ? items[0].emo : "🛍️", col: opts.col || "c-yellow", from: e.currentTarget });
+          const vib = useVib ? Vibe.vibikiPay(total) : 0;
+          const ok = Vibe.pay(total - vib, { title: `${opts.txTitle || "Vibe"} · заказ`, emoji: items[0] ? items[0].emo : "🛍️", col: opts.col || "c-yellow", from: e.currentTarget });
           if (!ok) return;
+          if (vib) Vibe.spendVibiki(vib);
           close();
           cart.clear(svc);
           cart.renderBar(svc);

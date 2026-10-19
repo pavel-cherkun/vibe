@@ -64,7 +64,7 @@
     if (dom === 1 && s.home && s.home.rent) ev.push({ kind: "rent", title: `Аренда · ${s.home.title}`, a: -s.home.rent, e: "🔑", col: "c-mint" });
     if (dom === 5) ev.push({ kind: "bill", title: "Связь и интернет", a: -PHONE, e: "📶", col: "c-sky", quiet: true });
     if (dom === 10) ev.push({ kind: "bill", title: "ЖКХ (опять подорожало)", a: -UTILITIES, e: "💡", col: "c-yellow" });
-    if (dom === 14 && s.plus) ev.push({ kind: "bill", title: "Подписка «Плюс Вайб»", a: -299, e: "💎", col: "c-lilac", quiet: true });
+    if (Vibe.world) Vibe.world.dayEvents(dom).forEach((x) => ev.push(x));
     // Зарплата
     if (s.job) {
       const net = Math.round(s.job.salary * (1 - TAX));
@@ -83,6 +83,7 @@
   }
 
   function applyEvent(ev, day) {
+    if (ev.kind === "jar") { set({ jar: (S().jar || 0) + ev.jar }); return; }
     tx(ev.title, ev.a, ev.e, ev.col);
     const s = S();
     if (ev.kind === "salary") { stat("salaries"); if (Vibe.body) Vibe.body.effect("salary", { quiet: true }); }
@@ -193,7 +194,7 @@
     const s = S(); const j = s.job; if (!j || !tasksLeft()) return null;
     const day = info().day;
     const prod = Vibe.body ? Vibe.body.productivity().value / 100 : 1;
-    score = Math.max(0, Math.min(1, score)) * Math.max(0.3, prod);
+    score = Math.min(1, Math.max(0, Math.min(1, score)) * Math.max(0.3, prod) * (Vibe.work ? Vibe.work.mult() : 1));
     if (Vibe.body) Vibe.body.effect("work", { quiet: true });
     const bonus = Math.round((j.salary / 120) * (0.5 + score / 2) / 10) * 10;
     let perf = (j.perf || 0) + Math.round(12 + score * 10);
@@ -387,7 +388,8 @@
     if (ev.length) setTimeout(() => (ev.length > 3 ? summary(ev) : announce(ev)), 700);
     dailyBonus();
     if (Vibe.body) Vibe.body.tick();
-    setInterval(() => { if (!document.hidden) { tick(); checkApps(); if (Vibe.body) Vibe.body.tick(); } }, 5000);
+    setInterval(() => { if (!document.hidden) { tick(); checkApps(); if (Vibe.body) Vibe.body.tick(); if (Vibe.world) Vibe.world.tick(); } }, 5000);
+    if (Vibe.world) setTimeout(() => Vibe.world.tick(), 4000);
     document.addEventListener("visibilitychange", () => { if (!document.hidden) { tick(); if (Vibe.body) Vibe.body.tick(); } });
   }
 

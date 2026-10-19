@@ -26,6 +26,7 @@
     "Мне грустно": ["Понимаю. Вот 3 вещи, которые помогут: рамен 🍜, новые кроссовки 👟, ещё один рамен 🍜", "Шучу. Иногда помогает просто выйти на улицу. Но такси туда — в Vibe Maps 🚕"],
     "Кто ты?": ["Я Заботик. Я забочусь о тебе. И о показателях выручки 📈", "Но в первую очередь о тебе! Наверное."],
     "Подари вайбики": ["Ладно, ладно. Держи 🪙", "__reward__"],
+    "Что скажешь обо мне?": ["__insight__"],
   };
 
   Vibe.screen("chats", {
@@ -92,7 +93,13 @@
             const t = typing();
             timers.push(setTimeout(() => {
               t.remove();
-              if (line === "__reward__") { Vibe.reward({ vibiki: 50, xp: 10, from: box.lastChild || box }); return; }
+              if (line === "__reward__") {
+                const st = Vibe.state.get(), gd = Vibe.game ? Vibe.game.info().day : 0;
+                if (st.zabGiftDay === gd) { add("Сегодня уже дарил. Жадность — не вайб 😌", "in"); return; }
+                Vibe.state.set({ zabGiftDay: gd });
+                Vibe.reward({ vibiki: 50, xp: 10, from: box.lastChild || box }); return;
+              }
+              if (line === "__insight__") { (Vibe.insight ? Vibe.insight() : ["Ты прекрасен"]).slice(0, 3).forEach((t, k) => setTimeout(() => add(t, "in"), k * 900)); return; }
               add(line, "in");
             }, 700));
           }, delay));
@@ -157,8 +164,19 @@
           ["💸", "c-lime", "Зарплат получено", String((s.stats || {}).salaries || 0)],
           ["🏦", "c-pink", "Кредитов", String((s.loans || []).length)],
           ["🎯", "c-orange", "Целей выполнено", `${(s.goalsDone || []).length} из ${Vibe.game.GOALS.length}`],
+          ["🎂", "c-white", "Возраст", `${21 + Math.floor(Vibe.game.info().day / 360)} лет`],
+          ["🧥", "c-violet", "Внешность", Vibe.inv ? `${Vibe.inv.look()}%` : "—"],
+          ["💝", "c-mint", "Репутация", String(s.pp_rep || 0)],
         ].map(([e, c, t, d]) => `<div class="li"><div class="ic ${c}">${e}</div><div class="tx"><b>${t}</b><small>${Vibe.esc(d)}</small></div></div>`).join("")}
       </div>
+
+      ${Vibe.inv && Vibe.inv.list().length ? `
+      <h2 class="sec">Мои вещи <small>${Vibe.inv.list().length}</small></h2>
+      <div class="grid3 stagger">${Vibe.inv.list().map((i) => `<div class="card tight" style="text-align:center"><div style="font-size:30px">${i.e}</div><b style="font-size:12px;display:block">${Vibe.esc(i.name)}</b><small class="muted" style="font-size:10px;font-weight:800">${Object.entries(i.bonus || {}).filter(([, v]) => v).map(([k, v]) => `+${v} ${{ sleep: "сон", mood: "настр.", look: "стиль", energy: "энерг.", health: "здор." }[k] || k}`).join(" · ")}</small></div>`).join("")}</div>` : ""}
+
+      ${Vibe.subs && Vibe.subs.list().length ? `
+      <h2 class="sec">Подписки <small>${Vibe.rub(Vibe.subs.total())}/мес</small></h2>
+      <div class="card" style="padding:4px 16px">${Vibe.subs.list().map((x) => `<div class="li"><div class="ic c-lilac">${x.e}</div><div class="tx"><b>${Vibe.esc(x.name)}</b><small>${Vibe.rub(x.price)} · списание ${x.dom}-го</small></div>${x.id === "plus" ? `<button class="btn sm" data-go="plus">Управлять</button>` : `<button class="btn sm" data-unsub="${x.id}">Отменить</button>`}</div>`).join("")}</div>` : ""}
 
       <h2 class="sec">Достижения <small>${s.achievements.length} из ${Vibe.ACH_LIST().length}</small></h2>
       <div class="grid3 stagger">
@@ -180,6 +198,14 @@
     },
     mount(root) {
       root.addEventListener("click", (e) => {
+        const u = e.target.closest("[data-unsub]");
+        if (u) {
+          Vibe.modal(`<div class="m-emo">🥺</div><div class="display">Отменить?</div><p>Мы будем скучать. И теряем ${Vibe.rub((Vibe.subs.list().find((x) => x.id === u.dataset.unsub) || {}).price || 0)} в месяц.</p><div style="display:grid;gap:10px"><button class="btn black block" data-yes>Отменить подписку</button><button class="btn block" data-close>Оставить</button></div>`, {
+            sound: "pop",
+            onMount(m, close) { m.querySelector("[data-yes]").addEventListener("click", () => { Vibe.subs.remove(u.dataset.unsub); close(); FX.toast("Подписка отменена. Честно", "✂️"); Vibe.replace("profile"); }); },
+          });
+          return;
+        }
         const a = e.target.closest("[data-ach]");
         if (a) {
           const ach = Vibe.ACH[a.dataset.ach];
@@ -334,6 +360,7 @@
         if (a.dataset.act === "sub") {
           if (!Vibe.pay(1, { title: "Подписка «Плюс Вайб» · 1-й месяц", emoji: "💎", col: "c-lilac", from: a })) return;
           Vibe.state.set({ plus: true });
+          if (Vibe.subs) Vibe.subs.add({ id: "plus", name: "Плюс Вайб", e: "💎", price: 299 });
           FX.confetti();
           Vibe.modal(`<div class="m-emo float">💎</div><div class="display">Ты в Плюсе!</div><p>Кэшбек ×2 включён. Через месяц спишем 299 ₽ — ты даже не заметишь.</p><button class="btn black block" data-close>Я особенный</button>`, { onClose: () => Vibe.replace("plus") });
         }
@@ -344,6 +371,7 @@
   function maze(i) {
     if (i >= MAZE.length) {
       Vibe.state.set({ plus: false });
+      if (Vibe.subs) Vibe.subs.remove("plus");
       Vibe.achieve("cancel");
       FX.confetti();
       Vibe.modal(`<div class="m-emo float">🏆</div><div class="display">Получилось!</div><p>Ты отменил подписку. Это удаётся 3% пользователей. Заботик гордится тобой. И немного обижен.</p><button class="btn black block" data-close>Я свободен</button>`, { sound: "levelup", onClose: () => Vibe.replace("plus") });
@@ -367,17 +395,19 @@
 
   /* ================= Все сервисы ================= */
   const ALL = [
-    ["Деньги", [["pay", "Pay", "💳", "c-yellow"], ["invest", "Invest", "🚀", "c-black"], ["credit", "Credit", "🤑", "c-lime"], ["insure", "Insure", "☂️", "c-sky"]]],
+    ["Деньги", [["pay", "Pay", "💳", "c-yellow"], ["invest", "Invest", "🚀", "c-black"], ["pay", "Credit", "🤑", "c-lime"], ["plus", "Плюс", "💎", "c-sky"]]],
     ["Еда и покупки", [["eat", "Eat", "🍜", "c-pink"], ["supermarket", "Supermarket", "🥑", "c-lime"], ["market", "Market", "🛍️", "c-pink"], ["pets", "Pets", "🐶", "c-yellow"]]],
-    ["Передвижение", [["maps", "Maps", "🚕", "c-sky"], ["drive", "Drive", "🚗", "c-coral"], ["travel", "Travel", "🏝️", "c-orange"], ["scooter", "Scoot", "🛴", "c-mint"]]],
-    ["Жильё", [["rent", "Rent", "🔑", "c-mint"], ["home-buy", "Home", "🏠", "c-yellow"], ["clean", "Clean", "🫧", "c-sky"], ["fix", "Fix", "🛠️", "c-orange"]]],
-    ["Жизнь", [["job", "Job", "💼", "c-blue"], ["match", "Match", "💘", "c-pink"], ["health", "Health", "💊", "c-white"], ["learn", "Learn", "🎓", "c-lilac"], ["therapy", "Therapy", "🛋️", "c-coral"], ["fitness", "Fitness", "🏋️", "c-lime"], ["kids", "Kids", "🧸", "c-yellow"], ["forever", "Forever", "👻", "c-black"]]],
-    ["Развлечения", [["music", "Music", "🎧", "c-violet"], ["tickets", "Tickets", "🎤", "c-orange"], ["games", "Games", "🎮", "c-lime"], ["wheel", "Колесо", "🎡", "c-holo"]]],
+    ["Передвижение", [["maps", "Maps", "🚕", "c-sky"], ["drive", "Drive", "🚗", "c-coral"], ["auto", "Auto", "🚙", "c-sky"], ["travel", "Travel", "🏝️", "c-orange"]]],
+    ["Деньги на стороне", [["gig", "Gig", "🚲", "c-lime"], ["gov", "Госвайб", "🏛️", "c-white"], ["charity", "Добро", "💝", "c-mint"], ["wheel", "Колесо", "🎡", "c-holo"]]],
+    ["Люди и я", [["people", "Близкие", "🫂", "c-pink"], ["style", "Style", "🧥", "c-violet"], ["hobby", "Hobby", "🎸", "c-orange"], ["fit", "Fit", "⌚", "c-lime"], ["calendar", "Календарь", "📅", "c-yellow"], ["chats", "Чаты", "💬", "c-sky"]]],
+    ["Жильё", [["rent", "Rent", "🔑", "c-mint"], ["home-buy", "Home", "🏠", "c-yellow"], ["clean", "Clean", "🫧", "c-sky"], ["style", "Style", "🧥", "c-orange"]]],
+    ["Жизнь", [["job", "Job", "💼", "c-blue"], ["match", "Match", "💘", "c-pink"], ["health", "Health", "💊", "c-white"], ["learn", "Learn", "🎓", "c-lilac"], ["hobby", "Hobby", "🎸", "c-coral"], ["fit", "Fitness", "🏋️", "c-lime"], ["people", "Семья", "🧸", "c-yellow"], ["charity", "Добро", "💝", "c-black"]]],
+    ["Развлечения", [["music", "Music", "🎧", "c-violet"], ["tickets", "Tickets", "🎤", "c-orange"], ["games", "Games", "🎮", "c-lime"], ["invest", "Invest", "🚀", "c-black"]]],
   ];
   Vibe.screen("all", {
     render() {
       return `
-      ${Vibe.ui.head("Все сервисы", "34 сервиса · одна жизнь", Vibe.ui.vibikiPill())}
+      ${Vibe.ui.head("Все сервисы", "одна жизнь · одно приложение", Vibe.ui.vibikiPill())}
       <div class="field" style="margin-bottom:6px">🔍 <input placeholder="Найти сервис" data-search></div>
       ${ALL.map(([g, items]) => `
         <h2 class="sec">${g}</h2>

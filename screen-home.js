@@ -32,7 +32,14 @@
     { go: "learn", s: "Learn", ru: "Курсы", e: "🎓", c: "c-lilac" },
     { go: "invest", s: "Invest", ru: "Инвестиции", e: "🚀", c: "c-black" },
     { go: "pets", s: "Pets", ru: "Питомцы", e: "🐶", c: "c-yellow" },
-    { go: "all", s: "Ещё 14", ru: "Все сервисы", e: "🪐", c: "c-holo" },
+    { go: "gig", s: "Gig", ru: "Подработки", e: "🚲", c: "c-lime", badge: "₽" },
+    { go: "people", s: "Близкие", ru: "Друзья, семья", e: "🫂", c: "c-pink" },
+    { go: "style", s: "Style", ru: "Гардероб", e: "🧥", c: "c-violet" },
+    { go: "auto", s: "Auto", ru: "Своя машина", e: "🚙", c: "c-sky" },
+    { go: "gov", s: "Госвайб", ru: "Госуслуги", e: "🏛️", c: "c-white" },
+    { go: "hobby", s: "Hobby", ru: "Хобби", e: "🎸", c: "c-orange" },
+    { go: "charity", s: "Добро", ru: "Добрые дела", e: "💝", c: "c-mint" },
+    { go: "all", s: "Ещё", ru: "Все сервисы", e: "🪐", c: "c-holo" },
   ];
 
   const FEED = [
@@ -110,6 +117,15 @@
         <div class="progress" style="margin:10px 0 8px"><i style="--p:${Math.round(goal.progress * 100)}%"></i></div>
         ${goal.done ? `<button class="btn black block" data-act="goal">Забрать +${goal.r} 🪙</button>` : `<button class="btn sm" data-go="${goal.go}">Как это сделать →</button>`}
       </div>` : ""}
+
+      ${Vibe.sched && Vibe.sched.upcoming(3).length ? `
+      <h2 class="sec">В планах <small data-go="calendar">календарь →</small></h2>
+      <div class="stack">${Vibe.sched.upcoming(3).map((e) => {
+        const st = Vibe.sched.startMin(e), d = Math.floor(st / 1440), now = Vibe.game.info().day;
+        const when = (d === now ? "сегодня" : d === now + 1 ? "завтра" : `через ${d - now} дн.`) + " в " + String(e.hour).padStart(2, "0") + ":" + String(e.min || 0).padStart(2, "0");
+        const live = Vibe.sched.active().some((x) => x.id === e.id);
+        return `<button class="card tight tap plan ${live ? "c-yellow" : ""}" data-go="maps"><span class="emo">${e.e}</span><div style="flex:1;text-align:left;min-width:0"><b>${Vibe.esc(e.title)}</b><small>${when}${live ? " · сейчас! Доберись на место" : ""}</small></div><span>🗺️</span></button>`;
+      }).join("")}</div>` : ""}
 
       <h2 class="sec">Задания дня <small>обновятся завтра</small></h2>
       <div class="stack">${qs.map((q) => `
@@ -237,7 +253,7 @@
 
       <button class="zab-bubble tap card" data-go="chat" data-params='{"id":"zabotik"}'>
         ${Vibe.zabotik(60)}
-        <div class="zab-text"><b>Заботик</b><span data-zab>${ZAB_LINES[0]}</span></div>
+        <div class="zab-text"><b>Заботик</b><span data-zab>${(Vibe.insight ? Vibe.insight() : ZAB_LINES)[0]}</span></div>
       </button>
       `;
     },
@@ -252,8 +268,9 @@
         if (left === 120 && timerEl) { FX.bump(timerEl); }
       }, 1000);
       const zv = setInterval(() => {
-        zi = (zi + 1) % ZAB_LINES.length;
-        if (zabEl) { zabEl.textContent = ZAB_LINES[zi]; FX.bump(zabEl.parentElement); }
+        const lines = Vibe.insight ? Vibe.insight() : ZAB_LINES;
+        zi = (zi + 1) % lines.length;
+        if (zabEl) { zabEl.textContent = lines[zi]; FX.bump(zabEl.parentElement); }
       }, 6000);
 
       root.addEventListener("click", (e) => {
@@ -339,6 +356,8 @@
   .quest .emo { font-size:28px; } .quest b { font-size:14px; font-weight:800; }
   .quest.claimed { opacity:.55; }
   .home-map { height:210px; cursor:pointer; }
+  .plan { display:flex; gap:10px; align-items:center; width:100%; }
+  .plan .emo { font-size:28px; } .plan b { display:block; font-size:14px; font-weight:900; } .plan small { font-size:12px; font-weight:700; color:var(--muted); }
   .stories { display:flex; gap:12px; overflow-x:auto; margin:0 -16px 18px; padding:2px 16px 4px; scrollbar-width:none; }
   .stories::-webkit-scrollbar { display:none; }
   .story { flex:0 0 auto; width:70px; display:flex; flex-direction:column; align-items:center; gap:6px; font-size:11px; font-weight:800; }

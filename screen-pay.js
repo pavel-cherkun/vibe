@@ -107,6 +107,14 @@
           <div class="progress" style="height:8px;margin-top:6px"><i style="--p:${Math.round(((l.months - l.left) / l.months) * 100)}%"></i></div></div>
         </div>`).join("")}</div>` : ""}
 
+      ${Vibe.subs && Vibe.subs.list().length ? `
+      <h2 class="sec">Подписки <small>${Vibe.rub(Vibe.subs.total())}/мес</small></h2>
+      <button class="card tight c-lilac tap" data-go="profile" style="display:flex;gap:10px;align-items:center;width:100%;text-align:left">
+        <span style="font-size:24px;letter-spacing:-6px">${Vibe.subs.list().map((x) => x.e).join("")}</span>
+        <div style="flex:1;padding-left:8px"><b>${Vibe.subs.list().length} ${Vibe.game.plural(Vibe.subs.list().length, "подписка", "подписки", "подписок")}</b><div style="font-size:12px;font-weight:700">Управлять — в профиле</div></div><span>›</span>
+      </button>` : ""}
+      ${(s.jar || 0) > 0 ? `<div class="card tight c-orange" style="margin-top:12px;display:flex;gap:10px;align-items:center"><span style="font-size:26px">🐷</span><div style="flex:1"><b>Копилка: ${Vibe.rub(s.jar)}</b><div style="font-size:12px;font-weight:700">12% годовых, проценты 1-го числа</div></div></div>` : ""}
+
       <h2 class="sec">Траты <small>${Vibe.rub(SPEND.reduce((a, b) => a + b.a, 0))}</small></h2>
       <div class="card">
         <div class="bars">
@@ -285,7 +293,7 @@
 
   /* ---------- Копилка ---------- */
   function openJar() {
-    const saved = S().jar || 2400;
+    const saved = S().jar || 0;
     const goal = 30000;
     Vibe.ui.sheet(`
       <div class="display" style="font-size:28px">Копилка «На мечту»</div>
@@ -299,6 +307,7 @@
       <div class="grid3" style="margin-top:16px">
         ${[100, 500, 1000].map((v) => `<button class="btn yellow" data-put="${v}">+${Vibe.fmt(v)}</button>`).join("")}
       </div>
+      <button class="btn block" style="margin-top:12px" data-jarout>Забрать всё на карту</button>
       <div class="card tight" style="margin-top:14px;display:flex;align-items:center;gap:12px"><div style="flex:1;font-weight:800">Округлять покупки<div class="muted" style="font-size:12px">Сдача летит в копилку</div></div><button class="switch ${S().roundUp ? "on" : ""}" data-round></button></div>
     `, {
       onMount(sh) {
@@ -307,7 +316,7 @@
           if (p) {
             const v = +p.dataset.put;
             if (v > S().balance) { FX.shake(p); return; }
-            const nv = (S().jar || 2400) + v;
+            const nv = (S().jar || 0) + v;
             Vibe.state.set({ jar: nv, balance: S().balance - v });
             FX.coins(p, sh.querySelector(".jar"), 5, { emoji: "🪙" });
             FX.countTo(sh.querySelector("[data-jar]"), nv, { fmt: Vibe.rub });
@@ -316,6 +325,15 @@
             sh.querySelector("[data-jarbar]").style.setProperty("--p", pct);
             Vibe.refreshCounters();
             if (nv >= goal && !S().jarDone) { Vibe.state.set({ jarDone: true }); FX.confetti(); FX.toast("Цель достигнута! Купишь или ещё подкопишь?", "🎉"); }
+          }
+          if (e.target.closest("[data-jarout]")) {
+            const j = S().jar || 0;
+            if (!j) { FX.shake(e.target.closest("[data-jarout]")); return; }
+            Vibe.state.set({ jar: 0 });
+            Vibe.addMoney(j, { title: "Из копилки на карту", emoji: "🐷" });
+            sh.querySelector("[data-jar]").textContent = Vibe.rub(0);
+            sh.querySelector("[data-fill]").style.setProperty("--p", "0%");
+            FX.toast(`+${Vibe.rub(j)} на карте. Мечта подождёт`, "🐷");
           }
           const r = e.target.closest("[data-round]");
           if (r) { r.classList.toggle("on"); Vibe.state.set({ roundUp: r.classList.contains("on") }); FX.sound.pop(); }

@@ -60,7 +60,12 @@
   };
 
   /* ---------- Вибрация ---------- */
-  function haptic(p = 8) { try { navigator.vibrate && navigator.vibrate(p); } catch (e) {} }
+  function haptic(p = 8) {
+    try {
+      if (navigator.userActivation && !navigator.userActivation.hasBeenActive) return;
+      navigator.vibrate && navigator.vibrate(p);
+    } catch (e) {}
+  }
 
   /* ---------- Координаты ---------- */
   function pt(src) {
