@@ -184,14 +184,14 @@
       { t: "Остановить ☕", st: 1, tip: 100, say: "«Деплой прошёл! Ну, почти»" }, { t: "«Мы торопимся»", st: -1, say: "«Деплой упал. Из-за вас»" } ] },
   ];
   const FREELANCE = [
-    { id: "logo", e: "🎨", t: "Логотип за 500 ₽", client: "ИП «Шаурма у Ашота»", pay: 500, taps: 24, sec: 7, edit: "А можно логотип побольше, но чтобы он был меньше?" },
-    { id: "apple", e: "🍏", t: "Сделать как у «Яблока», но дешевле", client: "Стартап «Груша»", pay: 1500, taps: 34, sec: 8, edit: "И чтобы было вау. Вы же понимаете, какое вау?" },
-    { id: "land", e: "📝", t: "Текст для лендинга, 3000 знаков", client: "Курсы «Миллион за неделю»", pay: 900, taps: 28, sec: 8, edit: "Добавьте уникальности. И слово «синергия» раз двенадцать" },
-    { id: "reels", e: "🎬", t: "Смонтировать рилс за 300 ₽", client: "Блогер-миллионник (3 тыс. подписчиков)", pay: 300, taps: 18, sec: 6, edit: "А можно сделать вирусным? Просто сделайте вирусным" },
-    { id: "table", e: "🧾", t: "Таблица на 40 000 строк", client: "Бухгалтерия «Сдадим вчера»", pay: 700, taps: 26, sec: 7, edit: "Ой, мы прислали не тот файл. Вот правильный (тоже не тот)" },
-    { id: "bot", e: "🤖", t: "Чат-бот, который «как живой»", client: "Застройщик «Вайб-Сити»", pay: 2500, taps: 40, sec: 9, edit: "А пусть бот ещё продаёт квартиры. Сам. И звонит маме" },
-    { id: "cat", e: "🐈", t: "Аватарка для кота", client: "Кот Борис (через хозяйку)", pay: 400, taps: 20, sec: 6, edit: null },
-    { id: "deck", e: "📊", t: "Презентация «к утру»", client: "Начальник знакомого", pay: 1200, taps: 30, sec: 8, edit: "Шрифт какой-то не такой. Не знаю какой, но не такой" },
+    { id: "logo", e: "🎨", t: "Логотип за 300 ₽", client: "ИП «Шаурма у Ашота»", pay: 300, taps: 24, sec: 7, edit: "А можно логотип побольше, но чтобы он был меньше?" },
+    { id: "apple", e: "🍏", t: "Сделать как у «Яблока», но дешевле", client: "Стартап «Груша»", pay: 900, taps: 34, sec: 8, edit: "И чтобы было вау. Вы же понимаете, какое вау?" },
+    { id: "land", e: "📝", t: "Текст для лендинга, 3000 знаков", client: "Курсы «Миллион за неделю»", pay: 550, taps: 28, sec: 8, edit: "Добавьте уникальности. И слово «синергия» раз двенадцать" },
+    { id: "reels", e: "🎬", t: "Смонтировать рилс за 200 ₽", client: "Блогер-миллионник (3 тыс. подписчиков)", pay: 200, taps: 18, sec: 6, edit: "А можно сделать вирусным? Просто сделайте вирусным" },
+    { id: "table", e: "🧾", t: "Таблица на 40 000 строк", client: "Бухгалтерия «Сдадим вчера»", pay: 400, taps: 26, sec: 7, edit: "Ой, мы прислали не тот файл. Вот правильный (тоже не тот)" },
+    { id: "bot", e: "🤖", t: "Чат-бот, который «как живой»", client: "Застройщик «Вайб-Сити»", pay: 1500, taps: 40, sec: 9, edit: "А пусть бот ещё продаёт квартиры. Сам. И звонит маме" },
+    { id: "cat", e: "🐈", t: "Аватарка для кота", client: "Кот Борис (через хозяйку)", pay: 250, taps: 20, sec: 6, edit: null },
+    { id: "deck", e: "📊", t: "Презентация «к утру»", client: "Начальник знакомого", pay: 700, taps: 30, sec: 8, edit: "Шрифт какой-то не такой. Не знаю какой, но не такой" },
   ];
   const flOffers = () => { const d = today(); const out = []; let h = (d * 2654435761) >>> 0; const pool = FREELANCE.slice(); while (out.length < 3) { h = (h * 1103515245 + 12345) >>> 0; out.push(pool.splice(h % pool.length, 1)[0]); } return out; };
   const MAX_ORDERS = 5, MAX_RIDES = 6;
@@ -244,7 +244,7 @@
           <h2 class="sec">Подработки <small>${sg.label || "Будни · обычный спрос"}</small></h2>
           <div class="stack stagger">
             <div class="card c-yellow gg-gig">
-              <div class="gg-gh"><span class="emo float">🚲</span><div><b>Курьер Vibe Eat</b><small>180–450 ₽ за заказ + чаевые</small></div></div>
+              <div class="gg-gh"><span class="emo float">🚲</span><div><b>Курьер Vibe Eat</b><small>110–280 ₽ за заказ + чаевые</small></div></div>
               <p>Забери заказ, довези до клиента, объезжай лужи. Смена — до 5 заказов в игровой день.</p>
               <div class="gg-chips"><span class="badge" style="background:#fff">🏢 Комиссия Корпорации 25%</span><span class="badge" style="background:#fff">🚶 шаги в Vibe Fit</span></div>
               <button class="btn black block" data-courier>${g.orders >= MAX_ORDERS ? "Смена закрыта 😮‍💨" : g.orders ? `Следующий заказ · ${g.orders + 1}/${MAX_ORDERS}` : "Выйти на смену"} <span class="arrow">→</span></button>
@@ -299,7 +299,7 @@
         let b = Vibe.map.place("flat:gig" + rnd(1, 9999));
         let pts = Vibe.map.path(a, b), km = Math.max(0.6, Vibe.map.km(pts));
         const sg = surge();
-        const net = Math.round(Math.min(450, Math.max(180, 160 + km * 75 + rnd(0, 60))) * sg.k / 10) * 10;
+        const net = Math.round(Math.min(280, Math.max(110, 100 + km * 45 + rnd(0, 40))) * sg.k / 10) * 10;
         const gross = Math.round(net / (1 - COMMISSION) / 10) * 10;
         const fee = gross - net;
         const order = { R, a, b, pts, km, net, gross, fee, note: pick(NOTES), mins: Vibe.map.minutes(pts, "courier") };
@@ -405,7 +405,7 @@
             const k = Math.random() < 0.35 ? pick(kinds.filter((x) => x.good)) : pick(kinds.filter((x) => !x.good));
             hazard({
               e: k.e, label: k.label, good: k.good, life: k.good ? 1300 : 1600,
-              onHit() { if (k.good) { const v = pick([30, 40, 50, 70]); bonus += v; FX.toast(`+${v} ₽ бонус за скорость`, "💰", 1400); } else dodged++; sc(); },
+              onHit() { if (k.good) { const v = pick([20, 30, 40, 50]); bonus += v; FX.toast(`+${v} ₽ бонус за скорость`, "💰", 1400); } else dodged++; sc(); },
               onMiss() { if (!k.good) { missed++; FX.shake($(body, ".gg-mapwrap")); FX.toast(k.e === "🌊" ? "Плюх! Пакет промок" : k.e === "🐕" ? "Собака победила. Котлету отдал" : "Самокатчик подрезал. Суп в пакете", "💥", 1600); sc(); } },
             });
           },

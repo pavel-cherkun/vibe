@@ -11,6 +11,8 @@
   const S = () => Vibe.state.get();
   const clamp = (v, a = 0, b = 100) => Math.max(a, Math.min(b, v));
   const AUTO_GAP = 90;              // игровых минут без игрока → автопилот
+  const DRAIN = 3.5;                // −энергии в час бодрствования (болезнь: +1,5)
+  const SLEEP_GAIN = 16;            // +энергии в час сна × качество сна
   const STEP_GOAL = 8000;
   const listeners = new Set();
 
@@ -30,7 +32,8 @@
   /* ---------- Качество сна зависит от жилья ---------- */
   function sleepQuality(b = B()) {
     const s = S();
-    const h = s.home || {};
+    const h = Object.assign({}, s.home || {});
+    if (h.baseRent != null) h.rent = h.baseRent;
     let q, why, e;
     if (h.own) { q = 0.95; why = "Своя квартира. Тишина, никто не стучит в стену"; e = "🏡"; }
     else if (!h.rent) { q = 0.5; why = "Диван у мамы. Мама встаёт в 6 утра"; e = "🛋️"; }
@@ -132,18 +135,19 @@
       if (auto) {
         if (isNight(h) && !b.sleeping && b.energy < 95) { startSleep(b, m, true); autoNight++; }
         if (!isNight(h) && b.sleeping && b.sleeping.auto && (b.energy >= 95 || h >= 9 || (h >= 7 && b.energy >= 70))) endSleep(b, m);
-        if (!b.sleeping && [8, 13, 19].includes(h) && m % 60 === 0) { addMeal(b, b.fridge > 0 ? "cooked" : "basic"); if (b.fridge > 0) b.fridge--; autoMeals++; }
+        // ест по расписанию, а если проспал завтрак и проголодался — перекусывает
+        if (!b.sleeping && m % 60 === 0 && ([8, 13, 19].includes(h) || (b.food < 20 && h >= 7))) { addMeal(b, b.fridge > 0 ? "cooked" : "basic"); if (b.fridge > 0) b.fridge--; autoMeals++; }
         if (!b.sleeping && job && h >= 8 && h < 20 && dayOf(m) % 7 < 5) b.steps += (step / 60) * 450;
         else if (!b.sleeping) b.steps += (step / 60) * 220;
       } else if (!b.sleeping) b.steps += (step / 60) * 120;
       const k = step / 60;
       if (b.sleeping) {
-        b.energy = clamp(b.energy + 15 * b.sleeping.q * k);
+        b.energy = clamp(b.energy + SLEEP_GAIN * b.sleeping.q * k);
         b.food = clamp(b.food - 1.5 * k);
         if (b.cur) b.cur.mins += step;
         if (b.energy >= 100 && !isNight(h)) { const rec = endSleep(b, m); if (rec && !auto) b.notes.push({ e: "☀️", t: `Ты проснулся. Сон ${rec.hours} ч, качество ${Math.round(rec.q * 100)}%` }); }
       } else {
-        b.energy = clamp(b.energy - (b.sick ? 6 : 4.5) * k);
+        b.energy = clamp(b.energy - (b.sick ? DRAIN + 1.5 : DRAIN) * k);
         b.food = clamp(b.food - 5 * k);
       }
       // Настроение тянется к базе, голод и усталость его портят
@@ -173,7 +177,7 @@
     junk: (b) => { const M = addMeal(b, "junk"); b.mood = clamp(b.mood + 4); return `${M.e} Сытость +${M.food}%, питание хуже`; },
     cook: (b) => { if (b.fridge <= 0) return null; b.fridge--; const M = addMeal(b, "cooked"); b.mood = clamp(b.mood + 3); return `${M.e} Сытость +${M.food}%, питание лучше`; },
     healthy: (b) => { const M = addMeal(b, "healthy"); return `${M.e} Сытость +${M.food}%, питание +`; },
-    groceries: (b, o) => { const n = clamp(Math.round((o.amount || 800) / 450), 1, 12); b.fridge = Math.min(20, (b.fridge || 0) + n); return `🧊 В холодильнике +${n} порц.`; },
+    groceries: (b, o) => { const n = clamp(Math.round((o.amount || 800) / 220), 1, 12); /* ~220 ₽ за порцию */ b.fridge = Math.min(20, (b.fridge || 0) + n); return `🧊 В холодильнике +${n} порц.`; },
     coffee: (b) => { b.energy = clamp(b.energy + 10); if (hourOf(nowMin()) >= 17) b.effects.coffeeLate = dayOf(nowMin()); return "☕ Энергия +10%"; },
     walk: (b, o) => { const st = Math.round((o.km || 1) * 1350); b.steps += st; b.energy = clamp(b.energy - 3); b.mood = clamp(b.mood + 4); b.health = clamp(b.health + 0.5); return `🚶 +${Vibe.fmt(st)} шагов`; },
     metro: (b, o) => { const st = Math.round(600 + (o.km || 1) * 200); b.steps += st; b.energy = clamp(b.energy - 2); return `🚇 +${Vibe.fmt(st)} шагов`; },
@@ -190,7 +194,7 @@
     clean: (b) => { b.cleanUntil = dayOf(nowMin()) + 3; b.mood = clamp(b.mood + 8); return "🫧 Чисто! Сон лучше 3 дня"; },
     travel: (b) => { b.mood = 100; b.energy = 100; b.health = clamp(b.health + 10); return "🏝️ Отдохнул на 100%"; },
     study: (b) => { b.energy = clamp(b.energy - 5); b.mood = clamp(b.mood + 2); return "🎓 Энергия −5"; },
-    work: (b) => { b.energy = clamp(b.energy - 6); b.mood = clamp(b.mood - 1); b.food = clamp(b.food - 3); return null; },
+    work: (b) => { b.energy = clamp(b.energy - 4); b.mood = clamp(b.mood - 1); b.food = clamp(b.food - 3); return null; },
     salary: (b) => { b.mood = clamp(b.mood + 15); return null; },
     bill: (b) => { b.mood = clamp(b.mood - 4); return null; },
     social: (b) => { b.mood = clamp(b.mood + 10); b.energy = clamp(b.energy - 4); return "🫂 Встреча с близкими: настроение +10"; },

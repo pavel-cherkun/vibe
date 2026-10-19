@@ -191,9 +191,18 @@
         <div class="li"><div class="ic c-yellow">🔊</div><div class="tx"><b>Звуки и вибрация</b><small>Дофамин на максимум</small></div><button class="switch ${s.sound ? "on" : ""}" data-act="sound"></button></div>
         <button class="li" data-go="plus" style="width:100%;text-align:left"><div class="ic c-lilac">💎</div><div class="tx"><b>Плюс Вайб</b><small>${s.plus ? "Активна · 299 ₽/мес" : "Не подключена"}</small></div><span>›</span></button>
         <button class="li" data-act="name" style="width:100%;text-align:left"><div class="ic c-mint">✏️</div><div class="tx"><b>Имя</b><small>${Vibe.esc(s.name)}</small></div><span>›</span></button>
+        <button class="li" data-act="save" style="width:100%;text-align:left"><div class="ic c-lime">💾</div><div class="tx"><b>Сохранение</b><small>Перенести жизнь на другой телефон</small></div><span>›</span></button>
+        <button class="li" data-act="cheats" style="width:100%;text-align:left"><div class="ic c-black" style="color:#c6ff4d">🎮</div><div class="tx"><b>Консоль</b><small>Для тех, кто помнит motherlode</small></div><span>›</span></button>
         <button class="li" data-act="data" style="width:100%;text-align:left"><div class="ic c-sky">🕵️</div><div class="tx"><b>Мои данные</b><small>Что Vibe знает о тебе</small></div><span>›</span></button>
         <button class="li" data-act="reset" style="width:100%;text-align:left"><div class="ic c-coral">🧨</div><div class="tx"><b>Начать жизнь заново</b><small>Сбросить прогресс</small></div><span>›</span></button>
       </div>
+      ${s.devMode ? `
+      <h2 class="sec">🛠 Режим тестировщика</h2>
+      <div class="card">
+        <div style="font-weight:800;margin-bottom:10px">Перемотка игрового времени</div>
+        <div class="grid3">${[[1, "+1 ч"], [6, "+6 ч"], [24, "+1 день"], [72, "+3 дня"], [168, "+неделя"], [720, "+месяц"]].map(([h, t]) => `<button class="btn sm" data-skip="${h}">${t}</button>`).join("")}</div>
+        <div class="fine">Выключить: testingcheats false в консоли.</div>
+      </div>` : ""}
       <div class="fine" style="text-align:center">Vibe 1.0 · сатирическая игра · все компании и совпадения вымышлены</div>`;
     },
     mount(root) {
@@ -216,8 +225,12 @@
           FX.toast(got ? `${ach.t}: ${ach.d}` : `Закрыто: ${ach.d}`, got ? ach.e : "🔒");
           return;
         }
+        const sk = e.target.closest("[data-skip]");
+        if (sk) { Vibe.timeSkip(+sk.dataset.skip); FX.bump(sk); return; }
         const act = (e.target.closest("[data-act]") || {}).dataset;
         if (!act) return;
+        if (act.act === "save") return Vibe.save.sheet();
+        if (act.act === "cheats") return Vibe.cheats.sheet();
         if (act.act === "sound") {
           const on = !S().sound;
           Vibe.state.set({ sound: on });
@@ -412,7 +425,7 @@
       ${ALL.map(([g, items]) => `
         <h2 class="sec">${g}</h2>
         <div class="svc-grid stagger">
-          ${items.map(([go, s, e, c]) => `<button class="svc" data-go="${go}" data-name="${s.toLowerCase()}"><span class="svc-ic ${c}"><span class="emo">${e}</span></span><b>${s}</b></button>`).join("")}
+          ${items.map(([go, s, e, c]) => { const lk = Vibe.unlock && !Vibe.unlock.isOpen(go); return `<button class="svc ${lk ? "locked-tile" : ""}" data-go="${go}" data-name="${s.toLowerCase()}"><span class="svc-ic ${c}">${lk ? `<span class="dot-count" style="background:#fff;animation:none">🔒</span>` : ""}<span class="emo">${e}</span></span><b>${s}</b></button>`; }).join("")}
         </div>`).join("")}
       <div class="card c-black" style="margin-top:26px;text-align:center">
         <div class="emo float" style="font-size:54px">👻</div>

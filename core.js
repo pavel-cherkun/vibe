@@ -56,6 +56,7 @@
   const ACH = {
     first: { e: "🐣", t: "Новичок", d: "Зарегистрировался в Vibe" },
     employed: { e: "💼", t: "Трудоустроен", d: "Нашёл работу" },
+    cheater: { e: "🎮", t: "Читер", d: "Ввёл чит-код" },
     buyer: { e: "🛍️", t: "Шопоголик", d: "Первая покупка" },
     credit: { e: "🤑", t: "Предодобренный", d: "Взял кредит" },
     spinner: { e: "🎡", t: "Крутила", d: "Покрутил колесо" },
@@ -189,6 +190,7 @@
   };
 
   function render(route, mode) {
+    if (Vibe.unlock && screens[route.name] && !Vibe.unlock.isOpen(route.name) && screens.locked) route = { name: "locked", params: { s: route.name }, key: route.key };
     const def = screens[route.name] || screens.notfound;
     const stackEl = document.getElementById("stack");
     const prev = current;

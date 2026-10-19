@@ -215,11 +215,11 @@
       ${Vibe.ui.marquee(["КЭШБЕК ДО 30%*", "ПРЕДОДОБРЕНО", "−50% НА ВСЁ", "ДОСТАВКА 0 ₽*", "ТЫ ЗАСЛУЖИЛ"])}
 
       <div class="svc-grid stagger">
-        ${GRID.map((g) => `
-          <button class="svc" data-go="${g.go}">
-            <span class="svc-ic ${g.c}">${g.badge ? `<span class="dot-count" style="background:var(--lime);animation-delay:${Math.random() * 2}s">${g.badge}</span>` : ""}<span class="emo">${g.e}</span></span>
+        ${GRID.map((g) => { const lk = Vibe.unlock && !Vibe.unlock.isOpen(g.go); return `
+          <button class="svc ${lk ? "locked-tile" : ""}" data-go="${g.go}">
+            <span class="svc-ic ${g.c}">${lk ? `<span class="dot-count" style="background:#fff;animation:none">🔒</span>` : g.badge ? `<span class="dot-count" style="background:var(--lime);animation-delay:${Math.random() * 2}s">${g.badge}</span>` : ""}<span class="emo">${g.e}</span></span>
             <b>${g.s}</b><small>${g.ru}</small>
-          </button>`).join("")}
+          </button>`; }).join("")}
       </div>
 
       <div class="card c-black promo">

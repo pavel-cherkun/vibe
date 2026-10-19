@@ -11,8 +11,11 @@
   const START_MIN = 9 * 60;           // жизнь начинается в 09:00
   const MONTHS = ["ноября", "декабря", "января", "февраля", "марта", "апреля", "мая", "июня", "июля", "августа", "сентября", "октября"];
   const MONTHS_NOM = ["Ноябрь", "Декабрь", "Январь", "Февраль", "Март", "Апрель", "Май", "Июнь", "Июль", "Август", "Сентябрь", "Октябрь"];
-  const DAILY_COST = 300;             // бытовые траты в день
-  const UTILITIES = 3200;             // ЖКХ, 10-го
+  const DAILY_COST = 150;             // бытовые траты в день
+  const OVERDRAFT = 0.01;             // проценты за минус на карте, в день
+  const BONUS_DIV = 300;              // премия за задачу ≈ оклад / 300 (раньше /120 — премия была +50% к окладу)
+  // ЖКХ, 10-го: зависит от жилья (комната дешевле, своя квартира — дороже)
+  const utilities = (h) => (h && h.own ? 4500 : Math.round((1500 + ((h && h.rent) || 0) * 0.05) / 100) * 100);
   const PHONE = 590;                  // связь, 5-го
   const TAX = 0.13;
   const LEVEL_TITLES = ["", "Младший", "", "Старший", "Ведущий", "Руководитель направления:", "Директор по"];
@@ -63,7 +66,7 @@
     // Аренда
     if (dom === 1 && s.home && s.home.rent) ev.push({ kind: "rent", title: `Аренда · ${s.home.title}`, a: -s.home.rent, e: "🔑", col: "c-mint" });
     if (dom === 5) ev.push({ kind: "bill", title: "Связь и интернет", a: -PHONE, e: "📶", col: "c-sky", quiet: true });
-    if (dom === 10) ev.push({ kind: "bill", title: "ЖКХ (опять подорожало)", a: -UTILITIES, e: "💡", col: "c-yellow" });
+    if (dom === 10) ev.push({ kind: "bill", title: "ЖКХ (опять подорожало)", a: -utilities(s.home), e: "💡", col: "c-yellow" });
     if (Vibe.world) Vibe.world.dayEvents(dom).forEach((x) => ev.push(x));
     // Зарплата
     if (s.job) {
@@ -78,7 +81,7 @@
     // Кредиты
     (s.loans || []).forEach((l) => { if (l.left > 0 && dom === l.dom) ev.push({ kind: "loan", title: `Платёж по кредиту «${l.name}»`, a: -l.monthly, e: "🏦", col: "c-pink", loan: l.id }); });
     // Проценты за минус
-    if (s.balance < 0) ev.push({ kind: "overdraft", title: "Проценты за минус на карте (1% в день)", a: -Math.ceil(Math.abs(s.balance) * 0.01), e: "🫠", col: "c-coral", quiet: true });
+    if (s.balance < 0) ev.push({ kind: "overdraft", title: `Проценты за минус на карте (${String(OVERDRAFT * 100).replace(".", ",")}% в день)`, a: -Math.ceil(Math.abs(s.balance) * OVERDRAFT), e: "🫠", col: "c-coral", quiet: true });
     return ev;
   }
 
@@ -161,14 +164,14 @@
     const add = (dom, t, a, e) => { const d = nextDom(dom); if (d != null) res.push({ in: d - now.day, day: d, t, a, e, real: Math.round(realMinTo(d)) }); };
     if (s.job) { const net = Math.round(s.job.salary * (1 - TAX)); add(15, "Аванс", Math.round(net * 0.4), "💸"); add(30, "Зарплата", Math.round(net * 0.6) + (s.job.bonus || 0), "💰"); }
     if (s.home && s.home.rent) add(1, "Аренда", -s.home.rent, "🔑");
-    add(10, "ЖКХ", -UTILITIES, "💡");
+    add(10, "ЖКХ", -utilities(s.home), "💡");
     (s.loans || []).forEach((l) => add(l.dom, `Кредит «${l.name}»`, -l.monthly, "🏦"));
     return res.sort((a, b) => a.in - b.in).slice(0, limit);
   }
   // На сколько дней хватит денег без дохода
   function runway() {
     const s = S();
-    const perDay = DAILY_COST + ((s.home && s.home.rent) || 0) / 30 + UTILITIES / 30 + (s.loans || []).reduce((a, l) => a + l.monthly / 30, 0);
+    const perDay = DAILY_COST + ((s.home && s.home.rent) || 0) / 30 + utilities(s.home) / 30 + (s.loans || []).reduce((a, l) => a + l.monthly / 30, 0);
     return Math.max(0, Math.floor(s.balance / perDay));
   }
 
@@ -196,9 +199,10 @@
     const prod = Vibe.body ? Vibe.body.productivity().value / 100 : 1;
     score = Math.min(1, Math.max(0, Math.min(1, score)) * Math.max(0.3, prod) * (Vibe.work ? Vibe.work.mult() : 1));
     if (Vibe.body) Vibe.body.effect("work", { quiet: true });
-    const bonus = Math.round((j.salary / 120) * (0.5 + score / 2) / 10) * 10;
-    let perf = (j.perf || 0) + Math.round(12 + score * 10);
+    const bonus = Math.round((j.salary / BONUS_DIV) * (0.5 + score / 2) / 10) * 10;
     let level = j.level || 2, salary = j.salary, promoted = false;
+    // Прогресс к повышению: ~25 задач до первого, каждое следующее вдвое-втрое дольше
+    let perf = (j.perf || 0) + Math.max(1, Math.round((2 + score * 3) / Math.max(1, level - 1)));
     if (perf >= 100) { perf = 0; level++; salary = Math.round(salary * 1.25 / 1000) * 1000; promoted = true; }
     set({ job: Object.assign({}, j, { perf, level, salary, bonus: (j.bonus || 0) + bonus, tasksDay: day, tasksDone: (j.tasksDay === day ? j.tasksDone : 0) + 1, lastTaskDay: day }) });
     stat("tasks");
@@ -218,7 +222,7 @@
   function moveHome(listing) {
     const p = Vibe.map.place(listing.key ? "flat:" + listing.key : "flat:" + listing.title);
     const first = !S().home;
-    set({ home: Object.assign({}, listing, { x: p.x, y: p.y, district: p.district, since: info().day }) });
+    set({ home: Object.assign({}, listing, { x: p.x, y: p.y, district: p.district, since: info().day, baseRent: listing.rent }) });
     if (!first) stat("moves");
   }
   function buyHome(listing) {
