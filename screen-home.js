@@ -65,7 +65,21 @@
     const qs = G.quests();
     const job = s.job;
     const left = job ? G.tasksLeft() : 0;
+    const b = Vibe.body ? (Vibe.body.tick(), Vibe.body.get()) : null;
+    const prod = b ? Vibe.body.productivity().value : 0;
+    const bars = b ? [
+      ["⚡", "Энергия", b.energy, "var(--yellow)"],
+      ["🍽️", "Сытость", b.food, "var(--pink)"],
+      ["😊", "Настроение", b.mood, "var(--sky)"],
+      ["👟", "Шаги", Math.min(100, (b.steps / Vibe.body.STEP_GOAL) * 100), "var(--lime)"],
+    ] : [];
+    const warn = !b ? "" : b.sleeping ? "😴 Ты спишь" : b.sick ? "🤒 Ты болеешь" : b.food < 25 ? "🍽️ Ты голоден" : b.energy < 20 ? "🥱 Пора спать" : b.mood < 30 ? "🌧️ Грустишь" : "";
     return `
+      ${b ? `
+      <button class="card tap fit-mini" data-go="fit">
+        <div class="fm-head"><b>⌚ Vibe Fit</b>${warn ? `<span class="badge" style="background:var(--coral)">${warn}</span>` : `<span class="badge">Продуктивность ${prod}%</span>`}</div>
+        <div class="fm-bars">${bars.map(([e, t, v, c]) => `<div class="fm-bar"><span>${e}</span><div class="progress" style="height:10px;flex:1"><i style="--p:${Math.round(v)}%;background:${c}"></i></div><small>${Math.round(v)}%</small></div>`).join("")}</div>
+      </button>` : ""}
       ${job ? `
       <button class="card tap job-card c-sky" data-go="job">
         <div class="li-ic c-white"><span class="emo float">${job.emoji || "💼"}</span></div>
@@ -116,6 +130,7 @@
         <div class="logo home-logo">Vibe</div>
         <div style="display:flex;gap:10px;align-items:center">
           ${Vibe.ui.vibikiPill()}
+          <button class="icon-btn" data-go="chats" aria-label="Чаты">💬<span class="dot-count" style="background:var(--lime)">3</span></button>
           <button class="icon-btn" data-act="bell" aria-label="Уведомления">🔔<span class="dot-count">99+</span></button>
         </div>
       </div>
@@ -309,6 +324,11 @@
   .hello-ava .lvl { position:absolute; bottom:-6px; right:-6px; background:var(--lime); border:2px solid var(--ink); border-radius:999px; font-size:12px; font-weight:900; padding:1px 7px; }
   .search { cursor:pointer; }
   .clock { font-size:12px; font-weight:800; color:var(--muted); margin-top:6px; }
+  .fit-mini { display:block; width:100%; text-align:left; margin-top:14px; padding:12px 14px; }
+  .fm-head { display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; }
+  .fm-head b { font-size:15px; font-weight:900; }
+  .fm-bars { display:grid; grid-template-columns:1fr 1fr; gap:6px 12px; }
+  .fm-bar { display:flex; align-items:center; gap:6px; font-size:14px; } .fm-bar small { font-size:11px; font-weight:900; width:30px; text-align:right; }
   .job-card { display:flex; gap:12px; align-items:center; width:100%; margin-top:14px; padding:12px 14px; }
   .job-card b { display:block; font-size:15px; } .job-card small { display:block; font-size:12px; font-weight:700; }
   .up-row { margin-top:4px; padding-top:12px; }

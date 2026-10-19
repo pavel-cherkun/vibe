@@ -125,6 +125,20 @@
       if (/Supermarket/.test(t)) Vibe.game.track("supermarket");
       else if (/Market/.test(t)) Vibe.game.track("market");
     }
+    if (Vibe.body) {
+      const t = String(title || "");
+      const B = Vibe.body.effect;
+      if (/Eat/.test(t)) B("eat_out");
+      else if (/Supermarket/.test(t)) B("groceries", { amount });
+      else if (/Кофе|латте|энергетик|Вендинг/i.test(t)) B(/энергетик|Вендинг/i.test(t) ? "junk" : "coffee");
+      else if (/Шаурма/.test(t)) B("junk");
+      else if (/Tickets|концерт|билет/i.test(t)) B("concert");
+      else if (/Travel|тур/i.test(t)) B("travel");
+      else if (/Clean|уборк/i.test(t)) B("clean");
+      else if (/Health|врач|приём|аптек/i.test(t)) B(/аптек/i.test(t) ? "pharmacy" : "doctor");
+      else if (/Learn|курс/i.test(t)) B("study");
+      else if (/Market|Pets/.test(t)) B("shopping");
+    }
     const vib = Math.max(5, Math.round(amount * cashback * (S.plus ? 2 : 1)));
     Vibe.reward({ vibiki: vib, xp: Math.min(60, 10 + Math.round(amount / 200)), from });
     return true;
@@ -147,7 +161,7 @@
   const screens = {};
   Vibe.screen = (name, def) => (screens[name] = def);
   Vibe.screens = screens;
-  const TABS = ["home", "pay", "chats", "profile"];
+  const TABS = ["home", "fit", "calendar", "profile"];
 
   /* ---------- Роутер (hash) ---------- */
   let stack = [];
@@ -195,6 +209,7 @@
     if ((mode === "back" || tabSwitchRestore) && scrollPos[route.key]) el.scrollTop = scrollPos[route.key];
     if (mode === "forward" && !isTab) delete scrollPos[route.key];
     if (Vibe.game && route.name) Vibe.game.track("visit:" + route.name);
+    if (Vibe.body && ["music", "games", "match"].includes(route.name)) setTimeout(() => Vibe.body.effect(route.name === "match" ? "date" : route.name, { quiet: route.name === "match" }), 4000);
     const tabSwitch = prev && TABS.includes(prev.route.name) && isTab;
     if (!prev || mode === "replace") el.classList.add("fade-in");
     else if (tabSwitch) el.classList.add("fade-in");
@@ -213,7 +228,7 @@
     const tb = document.getElementById("tabbar");
     tb.classList.toggle("hidden", !isTab);
     if (isTab) {
-      const idx = { home: 0, pay: 1, chats: 3, profile: 4 }[route.name];
+      const idx = { home: 0, fit: 1, calendar: 3, profile: 4 }[route.name];
       tb.querySelectorAll(".tab").forEach((t) => t.classList.toggle("on", t.dataset.go === route.name));
       tb.querySelector(".blob").style.transform = `translateX(calc(${idx} * (100% + 12px)))`;
     }

@@ -85,7 +85,8 @@
   function applyEvent(ev, day) {
     tx(ev.title, ev.a, ev.e, ev.col);
     const s = S();
-    if (ev.kind === "salary") stat("salaries");
+    if (ev.kind === "salary") { stat("salaries"); if (Vibe.body) Vibe.body.effect("salary", { quiet: true }); }
+    if ((ev.kind === "rent" || ev.kind === "bill" || ev.kind === "loan") && Vibe.body) Vibe.body.effect("bill", { quiet: true });
     if (ev.kind === "rent") stat(S().balance >= 0 ? "rentPaid" : "rentLate");
     if (ev.kind === "bonus") set({ job: Object.assign({}, s.job, { bonus: 0 }) });
     if (ev.kind === "loan") {
@@ -191,6 +192,9 @@
   function completeTask(score = 1) {
     const s = S(); const j = s.job; if (!j || !tasksLeft()) return null;
     const day = info().day;
+    const prod = Vibe.body ? Vibe.body.productivity().value / 100 : 1;
+    score = Math.max(0, Math.min(1, score)) * Math.max(0.3, prod);
+    if (Vibe.body) Vibe.body.effect("work", { quiet: true });
     const bonus = Math.round((j.salary / 120) * (0.5 + score / 2) / 10) * 10;
     let perf = (j.perf || 0) + Math.round(12 + score * 10);
     let level = j.level || 2, salary = j.salary, promoted = false;
@@ -375,19 +379,20 @@
 
   /* ---------- Запуск ---------- */
   function begin() {
-    set({ game: { start: Date.now(), processedDay: 0 } });
+    set({ game: { start: Date.now(), processedDay: 0 }, body: null });
   }
   function boot() {
     if (!S().profile) return;
     const ev = tick({ silent: true });
     if (ev.length) setTimeout(() => (ev.length > 3 ? summary(ev) : announce(ev)), 700);
     dailyBonus();
-    setInterval(() => { if (!document.hidden) { tick(); checkApps(); } }, 5000);
-    document.addEventListener("visibilitychange", () => { if (!document.hidden) tick(); });
+    if (Vibe.body) Vibe.body.tick();
+    setInterval(() => { if (!document.hidden) { tick(); checkApps(); if (Vibe.body) Vibe.body.tick(); } }, 5000);
+    document.addEventListener("visibilitychange", () => { if (!document.hidden) { tick(); if (Vibe.body) Vibe.body.tick(); } });
   }
 
   Vibe.game = {
-    DAY_MS, info, tick, upcoming, runway, begin, boot, on: (fn) => (listeners.add(fn), () => listeners.delete(fn)),
+    DAY_MS, info, minutes: () => minutesNow(), tick, upcoming, runway, begin, boot, on: (fn) => (listeners.add(fn), () => listeners.delete(fn)),
     setJob, quitJob, jobTitle, tasksLeft, completeTask, TASKS_PER_DAY,
     moveHome, buyHome, addLoan, tx,
     quests, track, claimQuest, goal, claimGoal, GOALS,

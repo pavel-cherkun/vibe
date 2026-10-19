@@ -31,7 +31,7 @@
   Vibe.screen("chats", {
     render() {
       return `
-      <div class="head"><div class="title" style="font-size:30px">Чаты<small>Все тебя ждут</small></div><button class="icon-btn" data-act="new">✏️</button></div>
+      <div class="head"><button class="icon-btn" data-back aria-label="Назад">←</button><div class="title" style="font-size:26px">Чаты<small>Все тебя ждут</small></div><button class="icon-btn" data-act="new">✏️</button></div>
       <div class="field" style="margin-bottom:14px">🔍 <input placeholder="Поиск по чатам" data-act="none"></div>
       <div class="stack stagger">
         ${Object.entries(CHATS).map(([id, c]) => `

@@ -55,7 +55,8 @@
       const loans = s.loans || [];
       return `
       <div class="head">
-        <div class="title" style="font-size:30px">Vibe Pay<small>Банк, который всегда рядом. Слишком рядом</small></div>
+        <button class="icon-btn" data-back aria-label="Назад">←</button>
+        <div class="title" style="font-size:26px">Vibe Pay<small>Банк, который всегда рядом. Слишком рядом</small></div>
         ${Vibe.ui.vibikiPill()}
       </div>
 

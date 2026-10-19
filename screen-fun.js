@@ -700,6 +700,7 @@
         } else if (kind === "walk") {
           Vibe.reward({ vibiki: walkVib(T), xp: 20, from: big });
         }
+        if (Vibe.body) Vibe.body.effect(kind === "walk" ? "walk" : kind === "metro" ? "metro" : "taxi", { km: T.km, quiet: kind === "taxi" });
         FX.confetti(); FX.sound.success();
         FX.burst(big, { emojis: [PLACES[arr].e, "🎉", "✨", M.veh], count: 16 });
         const i = gameInfo();
