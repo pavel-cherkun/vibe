@@ -264,21 +264,21 @@
      ============================================================ */
   const DRINKS = ["Напитки", [["Лимонад «Вайб»", 190, "🍋", "Газированный, как твои мысли"], ["Морс домашний", 160, "🧃", "Дом не наш, морс — наш"], ["Вода без газа", 90, "💧", "Просто вода. Без подвоха. Почти"]]];
   const RESTS = [
-    { id: "1", name: "Смэш Бро", emo: "🍔", col: "c-yellow", cat: 0, rating: 4.9, rev: "3,2 тыс.", time: "25–35", lvl: "₽₽", promo: "−20%*", tag: "Хит района",
+    { id: "1", name: "Смэш Бро", emo: "🍔", col: "c-yellow", cat: 0, rating: 4.9, rev: "3,2 тыс.", time: "25–35", lvl: "₫₫", promo: "−20%*", tag: "Хит района",
       menu: [["Хиты", [["Двойной смэш", 490, "🍔", "Две котлеты, одна мечта, ноль сожалений"], ["Чизбургер-вайб", 390, "🧀", "Сыр тянется до следующей зарплаты"], ["Бургер «Без булки»", 450, "🥬", "Для тех, кто «я только посмотреть»"]]], ["Закуски", [["Картошка фри", 190, "🍟", "Хрустит громче, чем твой бывший"], ["Луковые кольца", 220, "🧅", "Не плачь, это лук"], ["Наггетсы ×9", 290, "🍗", "Девять. Потому что десять — банально"]]]] },
-    { id: "2", name: "Сушивёрс", emo: "🍣", col: "c-pink", cat: 1, rating: 4.8, rev: "5,1 тыс.", time: "35–45", lvl: "₽₽₽", promo: "Ролл в подарок*", tag: "Новинка",
+    { id: "2", name: "Сушивёрс", emo: "🍣", col: "c-pink", cat: 1, rating: 4.8, rev: "5,1 тыс.", time: "35–45", lvl: "₫₫₫", promo: "Ролл в подарок*", tag: "Новинка",
       menu: [["Роллы", [["Филадельфия ×8", 690, "🍣", "Сыра больше, чем рыбы. Как ты любишь"], ["Калифорния", 590, "🦀", "Краб настоящий. Почти. Морально"], ["Запечённый «Вулкан»", 640, "🌋", "Горячий, как твой краш"]]], ["Сеты", [["Сет «На одного»", 1490, "🍱", "24 штуки. Никто не узнает"], ["Сет «Свидание»", 1990, "💘", "Палочки — 2 шт. Шансы — 50/50"], ["Мисо-суп", 290, "🥣", "Тёплый, как поддержка мамы"]]]] },
-    { id: "3", name: "Рамен-бар «Мисо»", emo: "🍜", col: "c-orange", cat: 2, rating: 4.9, rev: "2,8 тыс.", time: "30–40", lvl: "₽₽", promo: "Бульон 12 ч", tag: "Топ-1",
+    { id: "3", name: "Рамен-бар «Мисо»", emo: "🍜", col: "c-orange", cat: 2, rating: 4.9, rev: "2,8 тыс.", time: "30–40", lvl: "₫₫", promo: "Бульон 12 ч", tag: "Топ-1",
       menu: [["Рамены", [["Тонкоцу", 590, "🍜", "Бульон варили дольше, чем ты спишь"], ["Острый мисо", 560, "🌶️", "Острота: «позвоните маме»"], ["Шою с уткой", 640, "🦆", "Утка не против. Мы спрашивали"]]], ["Гёдза и баны", [["Гёдза ×6", 320, "🥟", "Шесть маленьких поводов жить"], ["Бао со свининой", 280, "🫓", "Мягкий, как дедлайн по пятницам"], ["Онигири", 190, "🍙", "Треугольный. Смирись"]]]] },
-    { id: "4", name: "Тесто и Вайб", emo: "🍕", col: "c-coral", cat: 3, rating: 4.7, rev: "6,4 тыс.", time: "25–35", lvl: "₽₽", promo: "2 = 3*", tag: "Ночью −0%",
+    { id: "4", name: "Тесто и Вайб", emo: "🍕", col: "c-coral", cat: 3, rating: 4.7, rev: "6,4 тыс.", time: "25–35", lvl: "₫₫", promo: "2 = 3*", tag: "Ночью −0%",
       menu: [["Пиццы 30 см", [["Пепперони", 590, "🍕", "Классика. Как спор про ананасы"], ["Четыре сыра", 640, "🧀", "Четыре. Мы считали дважды"], ["С ананасами", 610, "🍍", "Да, мы это сделали. Нет, не стыдно"]]], ["К пицце", [["Сырные палочки", 290, "🥖", "Палочки-выручалочки"], ["Соус «Чесночный»", 60, "🧄", "Свидания после — на свой риск"], ["Крылышки BBQ", 390, "🍗", "Летать не умеют. Уже"]]]] },
-    { id: "5", name: "Шаурма Эстетик", emo: "🌯", col: "c-lime", cat: 4, rating: 4.95, rev: "11 тыс.", time: "15–25", lvl: "₽", promo: "Сырный лаваш 0 ₽", tag: "Легенда",
+    { id: "5", name: "Шаурма Эстетик", emo: "🌯", col: "c-lime", cat: 4, rating: 4.95, rev: "11 тыс.", time: "15–25", lvl: "₫", promo: "Сырный лаваш 0 ₫", tag: "Легенда",
       menu: [["Шаурма", [["Классическая", 290, "🌯", "Та самая. Из твоих лучших 3 ночи"], ["Сырная", 340, "🧀", "Сыр внутри, сыр снаружи, сыр в душе"], ["Веган-шаурма", 360, "🥙", "Без мяса. С чувством превосходства"]]], ["Добавки", [["Двойное мясо", 120, "🥩", "Для серьёзных намерений"], ["Халапеньо", 50, "🌶️", "Плюс 3 к смелости"], ["Картошка по-деревенски", 190, "🥔", "Деревни нет. Картошка есть"]]]] },
-    { id: "6", name: "Сахарный кризис", emo: "🍩", col: "c-lilac", cat: 5, rating: 4.8, rev: "1,9 тыс.", time: "30–50", lvl: "₽₽", promo: "Сладко −15%", tag: "💅 Эстетика",
+    { id: "6", name: "Сахарный кризис", emo: "🍩", col: "c-lilac", cat: 5, rating: 4.8, rev: "1,9 тыс.", time: "30–50", lvl: "₫₫", promo: "Сладко −15%", tag: "💅 Эстетика",
       menu: [["Десерты", [["Пончик «Глазурь»", 190, "🍩", "Круглый, как твой план на понедельник"], ["Чизкейк Сан-Себастьян", 390, "🍰", "Сожжён специально. Так модно"], ["Макаруны ×6", 450, "🌈", "Шесть цветов, ноль пользы, сто счастья"]]], ["Кофе", [["Раф «Лаванда»", 290, "☕", "Пахнет как бабушкин шкаф. В хорошем смысле"], ["Матча-латте", 320, "🍵", "Зелёный. Полезный. Наверное"], ["Какао с маршмеллоу", 260, "🍫", "Детство в стакане"]]]] },
-    { id: "7", name: "Боул и точка", emo: "🥗", col: "c-mint", cat: 6, healthy: true, rating: 4.6, rev: "980", time: "20–30", lvl: "₽₽₽", promo: "ЗОЖ-кэшбек ×2", tag: "🌱 Полезно",
+    { id: "7", name: "Боул и точка", emo: "🥗", col: "c-mint", cat: 6, healthy: true, rating: 4.6, rev: "980", time: "20–30", lvl: "₫₫₫", promo: "ЗОЖ-кэшбек ×2", tag: "🌱 Полезно",
       menu: [["Боулы", [["Поке с лососем", 690, "🐟", "Рис, рыба и ощущение, что ты молодец"], ["Боул с киноа", 590, "🥗", "Киноа — это крупа, а не кино"], ["Цезарь (лайт)", 520, "🥬", "Лайт — это про цену. Шучу. Нет"]]], ["Смузи", [["Зелёный детокс", 350, "🥤", "Детоксит всё, кроме карты"], ["Ягодный буст", 330, "🫐", "Буст настроения +12%*"], ["Протеиновый", 390, "💪", "Мышцы не прилагаются"]]]] },
-    { id: "8", name: "Вок-н-ролл", emo: "🥡", col: "c-sky", cat: 1, rating: 4.7, rev: "4,4 тыс.", time: "25–40", lvl: "₽", promo: "Палочки бесплатно", tag: "Дёшево",
+    { id: "8", name: "Вок-н-ролл", emo: "🥡", col: "c-sky", cat: 1, rating: 4.7, rev: "4,4 тыс.", time: "25–40", lvl: "₫", promo: "Палочки бесплатно", tag: "Дёшево",
       menu: [["Воки", [["Удон с курицей", 420, "🍝", "Длинный, как очередь в МФЦ"], ["Рис с креветками", 490, "🍤", "Креветки маленькие, но гордые"], ["Фунчоза овощная", 380, "🥢", "Прозрачная, как наши условия*"]]], ["Роллы", [["Ролл с огурцом", 190, "🥒", "Минимализм на тарелке"], ["Темпура-ролл", 450, "🍤", "Обжарен в кляре и в мечтах"], ["Спринг-роллы ×4", 290, "🌯", "Весна круглый год"]]]] },
   ];
   const EAT_CATS = ["🔥 Все", "🍔 Бургеры", "🍣 Суши", "🍜 Рамен", "🍕 Пицца", "🌯 Шаурма", "🍩 Десерты", "🥗 Здоровое"];
@@ -356,11 +356,11 @@
 
       <div class="card cm-promo tap c-yellow" id="eat-promo" style="margin-top:6px">
         ${V.zabotik(54, "sly")}
-        <div style="flex:1"><div class="muted" style="font-size:12px;font-weight:800">Заботик дарит промокод</div><div class="cm-code">VIBE30</div><div style="font-size:12px;font-weight:700">Тапни, чтобы скопировать</div></div>
+        <div style="flex:1"><div class="muted" style="font-size:12px;font-weight:800">Вайбот дарит промокод</div><div class="cm-code">VIBE30</div><div style="font-size:12px;font-weight:700">Тапни, чтобы скопировать</div></div>
         <span class="emo pulse" style="font-size:34px">🎟️</span>
       </div>
 
-      ${ui.marquee(["Бесплатная доставка*", "Кэшбек вайбиками", "Курьеры с рейтингом 4.98", "*от 9 999 ₽"])}
+      ${ui.marquee(["Бесплатная доставка*", "Кэшбек вайбиками", "Курьеры с рейтингом 4.98", "*от 9 999 ₫"])}
 
       <h2 class="sec">Рестораны рядом<small id="eat-count">${RESTS.length} мест · ближе к дому — выше</small></h2>
       <div class="stack stagger" id="eat-list">${near.map((r) => restCard(r)).join("")}</div>
@@ -391,7 +391,7 @@
           FX.bump(el); FX.sound.success();
           FX.burst(el, { emojis: ["🎟️", "✨", "💸", "🎉"], count: 16 });
           try { navigator.clipboard && navigator.clipboard.writeText("VIBE30"); } catch (er) {}
-          FX.toast("Скопировано! Действует на заказы от 9 999 ₽ по вторникам", "🎟️", 3000);
+          FX.toast("Скопировано! Действует на заказы от 9 999 ₫ по вторникам", "🎟️", 3000);
           return;
         }
         if (e.target.closest("#eat-search")) {
@@ -461,7 +461,7 @@
           },
           after(p) {
             adds++;
-            if (adds === 3) setTimeout(() => FX.toast("Заботик: возьми напиток. Без него еда грустит", "🥤"), 600);
+            if (adds === 3) setTimeout(() => FX.toast("Вайбот: возьми напиток. Без него еда грустит", "🥤"), 600);
             if (adds === 6) setTimeout(() => FX.toast("Ого, вечеринка? Кэшбек растёт 📈", "🥳"), 600);
           },
         });
@@ -557,7 +557,7 @@
         </div>
         <div style="display:flex;gap:8px;margin-top:14px">
           <button class="btn sm" data-msg style="flex:1">💬 Написать</button>
-          <button class="btn sm yellow" data-tip style="flex:1">🪙 Чаевые 50 ₽</button>
+          <button class="btn sm yellow" data-tip style="flex:1">🪙 Чаевые 50 ₫</button>
           <button class="icon-btn" data-call style="width:38px;height:38px;font-size:16px">📞</button>
         </div>
       </div>
@@ -791,9 +791,9 @@
         <div class="hero-emo emo float">🛒</div>
       </div>
       <div class="card c-yellow" style="margin-top:14px" id="sm-free">
-        <div class="cm-row"><b style="font-weight:800">🚚 Бесплатная доставка от 1 500 ₽</b><span class="emo wobble" style="font-size:26px">🎯</span></div>
+        <div class="cm-row"><b style="font-weight:800">🚚 Бесплатная доставка от 1 500 ₫</b><span class="emo wobble" style="font-size:26px">🎯</span></div>
         <div class="progress cm-progress-free"><i id="sm-free-bar" style="--p:${Math.min(100, (t / 1500) * 100)}%"></i></div>
-        <div class="muted" style="font-size:12px;font-weight:800;margin-top:6px" id="sm-free-t">${t >= 1500 ? "Готово! Доставка 0 ₽ 🎉" : `Ещё ${rub(1500 - t)} — и курьер везёт бесплатно`}</div>
+        <div class="muted" style="font-size:12px;font-weight:800;margin-top:6px" id="sm-free-t">${t >= 1500 ? "Готово! Доставка 0 ₫ 🎉" : `Ещё ${rub(1500 - t)} — и курьер везёт бесплатно`}</div>
       </div>
       <div class="card c-sky cm-fridge tap" id="sm-fridge" data-go="fit">${fridgeHtml()}</div>
       <div style="margin-top:14px">${chipsHtml(SM_CATS)}</div>
@@ -806,7 +806,7 @@
       const upd = () => {
         const t = cart.total("supermarket");
         root.querySelector("#sm-free-bar").style.setProperty("--p", Math.min(100, (t / 1500) * 100) + "%");
-        root.querySelector("#sm-free-t").textContent = t >= 1500 ? "Готово! Доставка 0 ₽ 🎉" : `Ещё ${rub(1500 - t)} — и курьер везёт бесплатно`;
+        root.querySelector("#sm-free-t").textContent = t >= 1500 ? "Готово! Доставка 0 ₫ 🎉" : `Ещё ${rub(1500 - t)} — и курьер везёт бесплатно`;
         const fr = root.querySelector("#sm-fridge");
         if (fr) { const h = fridgeHtml(); if (fr.innerHTML !== h) fr.innerHTML = h; }
       };
@@ -843,9 +843,15 @@
      VIBE MARKET
      ============================================================ */
   // kind → категория в Vibe.inv; bonus → эффекты вещи (сон, настроение, внешность…)
-  const MK_CATS = ["✨ Для тебя", "🏠 Для квартиры", "👕 Одежда", "🎧 Гаджеты"];
-  const MK_KIND = ["", "home", "wear", "gadget"];
+  // tab "watch" — отдельная витрина «Часы» (в инвентаре это всё равно cat:"gadget").
+  // Часы открывают Vibe Fit: watch_band → шаги/пульс/сон, watch_pro/watch_ultra → всё.
+  const MK_CATS = ["✨ Для тебя", "⌚ Часы", "🏠 Для квартиры", "👕 Одежда", "🎧 Гаджеты"];
+  const MK_KIND = ["", "watch", "home", "wear", "gadget"];
+  const mkInTab = (p, i) => !i || p.kind === MK_KIND[i] || p.tab === MK_KIND[i];
   const MK = [
+    { key: "band", inv: "watch_band", tab: "watch", kind: "gadget", name: "Vibe Band", price: 4990, old: 38400, emo: "📿", col: "c-lime", left: 2, rating: "4.9", rev: "31 тыс.", bonus: { health: 2 }, sub: "Шаги, пульс и сон в Vibe Fit. Наконец узнаешь, почему ты так плохо спишь", fit: "👟 Шаги точно · ❤️ Пульс · 😴 Сон" },
+    { key: "watchpro", inv: "watch_pro", tab: "watch", kind: "gadget", name: "Vibe Watch", price: 19990, old: 153800, emo: "⌚", col: "c-violet", rating: "4.9", rev: "18 тыс.", bonus: { health: 3, mood: 2 }, sub: "Знает всё: стресс, выгорание, прогноз продуктивности, питание", fit: "Всё из Band + 💼 Продуктивность · 🥗 Питание · 😊 Настроение · 💚 Здоровье" },
+    { key: "watchultra", inv: "watch_ultra", tab: "watch", kind: "gadget", name: "Vibe Watch Ultra", price: 59990, old: 461400, emo: "🏆", col: "c-yellow", left: 2, rating: "5.0", rev: "4 тыс.", bonus: { health: 4, mood: 3, look: 6 }, sub: "Для тех, кто не бегает, но мог бы", fit: "Всё из Watch + 🔥 Прогноз выгорания · золотой безель" },
     { key: "mattress", kind: "home", name: "Матрас «Облако сна»", price: 8990, old: 69900, emo: "🛏️", col: "c-lilac", left: 2, rating: "4.9", rev: "7 тыс.", bonus: { sleep: 12 }, sub: "Спишь как в рекламе матрасов" },
     { key: "blackout", kind: "home", name: "Блэкаут-шторы", price: 2490, old: 19200, emo: "🌚", col: "c-violet", rating: "4.8", rev: "4 тыс.", bonus: { sleep: 8 }, sub: "Солнце, до свидания до 11:00" },
     { key: "plant", kind: "home", name: "Монстера «Не убивай меня»", price: 1190, old: 9100, emo: "🪴", col: "c-mint", rating: "4.7", rev: "3 тыс.", bonus: { mood: 3 }, sub: "Поливать раз в неделю. Или вспомнить" },
@@ -857,11 +863,10 @@
     { key: "sharks", kind: "wear", name: "Тапки-акулы", price: 790, old: 6100, emo: "🦈", col: "c-blue", left: 2, sizes: ["36–38", "39–41", "42–44"], rating: "4.9", rev: "17 тыс.", bonus: { look: 2, mood: 1 } },
     { key: "glasses", kind: "wear", name: "Очки «Главный герой»", price: 1490, old: 11400, emo: "🕶️", col: "c-lilac", rating: "4.6", rev: "2 тыс.", bonus: { look: 5 } },
     { key: "headphones", kind: "gadget", name: "Наушники «Тишина Про»", price: 2990, old: 22990, emo: "🎧", col: "c-sky", left: 2, rating: "4.8", rev: "8 тыс.", bonus: { mood: 3 } },
-    { key: "watch", kind: "gadget", name: "Смарт-часы «Пульс»", price: 3490, old: 26800, emo: "⌚", col: "c-lime", rating: "4.7", rev: "5 тыс.", bonus: { health: 2 } },
     { key: "ringlight", kind: "gadget", name: "Кольцевая лампа для сторис", price: 1290, old: 9900, emo: "💡", col: "c-yellow", rating: "4.9", rev: "21 тыс.", bonus: { look: 3 } },
     { key: "skate", kind: "gadget", name: "Скейт «Вайб-борд»", price: 3990, old: 30700, emo: "🛹", col: "c-coral", rating: "4.7", rev: "1 тыс.", bonus: { mood: 3, steps: 5 } },
     { key: "speaker", kind: "gadget", name: "Колонка «Сосед, прости»", price: 2490, old: 19200, emo: "🔊", col: "c-violet", left: 2, rating: "4.8", rev: "6 тыс.", bonus: { mood: 3 } },
-  ].map((p, i) => Object.assign(p, { id: "mk" + i, inv: "mk-" + p.key, st: "−" + Math.round((1 - p.price / p.old) * 100) + "%", stc: i % 2 ? "var(--yellow)" : "var(--lime)", d: i % 4 }));
+  ].map((p, i) => Object.assign(p, { id: "mk" + i, inv: p.inv || "mk-" + p.key, st: "−" + Math.round((1 - p.price / p.old) * 100) + "%", stc: i % 2 ? "var(--yellow)" : "var(--lime)", d: i % 4 }));
   const mkByInv = (invId) => MK.find((p) => p.inv === invId);
   // Покупка → вещь в инвентаре (Vibe.inv)
   function mkGive(p) {
@@ -886,11 +891,12 @@
       <div class="cm-meta"><span class="badge">⭐ ${p.rating}</span><span class="muted" style="font-size:12px;font-weight:700">${p.rev} отзывов (из них ботов — пара тысяч)</span></div>
       <div style="display:flex;align-items:baseline;gap:10px;margin-top:12px"><span class="big-num" style="font-size:34px">${rub(p.price)}</span><span class="old-price" style="font-size:15px">${rub(p.old)}</span></div>
       ${p.bonus ? `<div style="margin-top:10px">${bonusChips(p.bonus)}</div><div class="muted" style="font-size:12px;font-weight:700">${p.kind === "home" ? "Ставится в квартиру — работает каждую ночь и каждый день" : p.kind === "wear" ? "Идёт в гардероб — внешность растёт, лайки тоже" : "Гаджет в карман — бонус навсегда (пока не потеряешь)"}</div>` : ""}
+      ${p.fit ? `<div class="card flat c-lime" style="margin-top:12px;font-weight:800;font-size:13px">⌚ Открывает в Vibe Fit: ${p.fit}</div>` : ""}
       ${have ? `<div class="card flat c-mint" style="margin-top:12px;font-weight:800;font-size:13px">✅ Уже есть у тебя. Второй такой бонус не даст — проверено отделом «Хочу ещё»</div>` : ""}
       <div style="font-weight:800;font-size:13px;margin-top:14px">Цвет</div>
       <div style="display:flex;gap:10px;margin-top:8px" data-group="col">${SWATCH.map((c, i) => `<button class="cm-swatch ${i === 0 ? "on" : ""}" data-pick="${i}" style="background:${c}" aria-label="Цвет"></button>`).join("")}</div>
       ${p.sizes ? `<div style="font-weight:800;font-size:13px;margin-top:14px">Размер</div><div class="chips" data-group="size" style="margin-top:4px">${p.sizes.map((s, i) => `<button class="chip ${i === 1 ? "on" : ""}" data-pick="${i}">${s}</button>`).join("")}</div>` : ""}
-      ${!have && vibMax > 0 ? `<div class="card tight cm-vibrow"><span style="font-size:26px">🪙</span><div style="flex:1;font-weight:800;font-size:14px">Списать ${V.fmt(vibMax)} вайбиков<div class="muted" style="font-size:12px">1 вайбик = 1 ₽, до 30% цены</div></div><button class="switch" data-vibsw aria-label="Вайбики"></button></div>` : ""}
+      ${!have && vibMax > 0 ? `<div class="card tight cm-vibrow"><span style="font-size:26px">🪙</span><div style="flex:1;font-weight:800;font-size:14px">Списать ${V.fmt(vibMax)} вайбиков<div class="muted" style="font-size:12px">1 вайбик = 1 ₫, до 30% цены</div></div><button class="switch" data-vibsw aria-label="Вайбики"></button></div>` : ""}
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:16px">
         <button class="btn" data-tocart ${have ? "disabled" : ""}>🛒 В корзину</button>
         <button class="btn black" data-buy ${have ? "disabled" : ""}>${have ? "✅ Уже есть" : "Купить сейчас"}</button>
@@ -899,11 +905,11 @@
       <div class="cm-instal card flat" style="padding:0 14px" data-instbox>
         <div style="padding:12px 0;display:grid;gap:6px">
           <div class="r"><span class="muted">Платёж</span><b>${rub(mon)} × 36</b></div>
-          <div class="r"><span class="muted">Платёж за возможность платить</span><b>12 ₽/мес</b></div>
-          <div class="r"><span class="muted">Страховка от рассрочки</span><b>9 ₽/мес</b></div>
-          <div class="r"><span class="muted">Комиссия за отсутствие комиссии</span><b>0 ₽*</b></div>
+          <div class="r"><span class="muted">Платёж за возможность платить</span><b>12 ₫/мес</b></div>
+          <div class="r"><span class="muted">Страховка от рассрочки</span><b>9 ₫/мес</b></div>
+          <div class="r"><span class="muted">Комиссия за отсутствие комиссии</span><b>0 ₫*</b></div>
           <div class="r"><span class="muted">Итого переплата</span><b style="color:#e5333d">312% 🙃</b></div>
-          <div class="fine" style="margin-top:2px">Первый платёж — сегодня, последний — когда ты уже забудешь, что это было. *Кроме случаев, когда не 0 ₽.</div>
+          <div class="fine" style="margin-top:2px">Первый платёж — сегодня, последний — когда ты уже забудешь, что это было. *Кроме случаев, когда не 0 ₫.</div>
           <button class="btn sm pink block" data-instgo>Оформить · ${rub(mon + 21)} сегодня</button>
         </div>
       </div>
@@ -980,7 +986,7 @@
     const grid = root && root.querySelector("#mk-grid");
     if (!grid) return;
     const i = +(root.dataset.mkCat || 0);
-    fill(grid, MK.filter((p) => !i || p.kind === MK_KIND[i]).map(mkCard).join(""));
+    fill(grid, MK.filter((p) => mkInTab(p, i)).map(mkCard).join(""));
     const ol = root.querySelector("#mk-owned");
     if (ol) ol.textContent = mkOwnedLine();
   }
@@ -995,8 +1001,11 @@
       <button class="btn black block" data-close>Вайбово 🔥</button>`);
   }
 
+  // ?cat=watch — сразу открыть витрину; ?open=watch_band — и карточку товара
+  const mkCatIdx = (params) => Math.max(0, MK_KIND.indexOf((params && params.cat) || ""));
   V.screen("market", {
-    render() {
+    render(params) {
+      const ci = mkCatIdx(params);
       return `
       ${ui.head("Vibe Market", "100 млн товаров · 2 нужных", ui.vibikiPill())}
       <div class="field tap" id="mk-search">🔎 <span class="muted">Кроссовки, которые изменят жизнь</span></div>
@@ -1007,16 +1016,19 @@
         <div class="t" id="mk-timer" style="color:#fff">00:04:59</div>
         <div class="fine" style="color:#aaa;margin-top:4px">Распродажа заканчивается каждые 5 минут с 2019 года.</div>
       </div>
-      <div style="margin-top:14px">${chipsHtml(MK_CATS)}</div>
+      <div style="margin-top:14px">${chipsHtml(MK_CATS, ci)}</div>
       <div class="muted" style="font-size:12px;font-weight:800;margin-top:2px" id="mk-owned">${mkOwnedLine()}</div>
-      <div class="grid2 stagger" id="mk-grid" style="margin-top:6px">${MK.map(mkCard).join("")}</div>
+      <div class="grid2 stagger" id="mk-grid" style="margin-top:6px">${MK.filter((p) => mkInTab(p, ci)).map(mkCard).join("")}</div>
       ${ui.marquee(["−87% на всё", "Осталось 2 шт.", "Рассрочка 0-0-36*", "Доставка завтра**"])}
-      <div class="fine">*0 ₽ первоначальный взнос, 0 ₽ переплата, 36 месяцев раздумий. **Завтра — понятие относительное. Старые цены являются произведением искусства и охраняются законом.</div>
+      <div class="fine">*0 ₫ первоначальный взнос, 0 ₫ переплата, 36 месяцев раздумий. **Завтра — понятие относительное. Старые цены являются произведением искусства и охраняются законом.</div>
       ${dock("market", { txTitle: "Vibe Market", col: "c-pink", onPaid: mkPaid })}`;
     },
-    mount(root) {
+    mount(root, params) {
       cart.renderBar("market");
-      root.dataset.mkCat = "0";
+      root.dataset.mkCat = String(mkCatIdx(params));
+      let openT = 0;
+      const want = params && params.open && MK.find((p) => p.inv === params.open || p.id === params.open);
+      if (want) openT = setTimeout(() => mkDetail(want, root), 450);
       let left = 299;
       const tEl = root.querySelector("#mk-timer");
       const iv = setInterval(() => {
@@ -1051,7 +1063,7 @@
           FX.toast("По запросу найдено 4 млн товаров. Все — то, что надо", "🔎");
         }
       });
-      return () => clearInterval(iv);
+      return () => { clearInterval(iv); clearTimeout(openT); };
     },
   });
 
@@ -1248,12 +1260,12 @@
         <div><div class="display" style="font-size:22px">Ветеринар</div><small>Здоровье ${p.name}: ${p.health}%</small></div></div>
       ${vv ? `<div class="card c-yellow cm-visit" style="margin-top:14px"><div class="ic">🏥</div><div class="tx"><b>Уже записаны</b><small>${dayWord(vv.day)}, ${pad2(vv.hour)}:00 · Vibe Клиника</small></div><button class="btn sm black" data-vroute>🚕 Доехать</button></div>` : `
       <div class="card" style="margin-top:14px">
-        <b style="font-weight:800">📱 Вет онлайн · 990 ₽</b>
+        <b style="font-weight:800">📱 Вет онлайн · 990 ₫</b>
         <div style="font-size:12px;font-weight:700;margin:4px 0 10px">Сразу: здоровье +25. Посоветуют «наблюдать». Ты и так наблюдаешь</div>
         <button class="btn block" data-vonline>Позвонить сейчас</button>
       </div>
       <div class="card c-mint" style="margin-top:10px">
-        <b style="font-weight:800">🏥 Приём в клинике · 1 490 ₽</b>
+        <b style="font-weight:800">🏥 Приём в клинике · 1 490 ₫</b>
         <div style="font-size:12px;font-weight:700;margin:4px 0 10px">${dayWord(day)}, ${pad2(hour)}:00. Полное здоровье — когда доедешь с питомцем. Событие появится в календаре</div>
         <button class="btn black block" data-vbook>Записаться</button>
       </div>`}
@@ -1383,7 +1395,7 @@
       <div class="card c-pink" style="margin-top:14px">
         <div class="cm-row"><div><div class="display" style="font-size:22px">Груминг 🛁</div><div style="font-weight:700;font-size:13px;margin-top:4px">Стрижка, ванна, укладка. Питомец будет красивее тебя</div></div><span class="emo wobble" style="font-size:54px">🐩</span></div>
         <div class="cm-slots" id="pt-slots">${GROOM_SLOTS.map((s, i) => `<button class="chip cm-slot ${i === 1 ? "on" : ""}" data-gslot="${i}">${s}</button>`).join("")}</div>
-        <button class="btn black block" data-groom style="margin-top:12px">Записать · 1 990 ₽</button>
+        <button class="btn black block" data-groom style="margin-top:12px">Записать · 1 990 ₫</button>
         <div class="fine" style="color:var(--ink);opacity:.7">Мастер не несёт ответственности за выражение морды после процедуры.</div>
       </div>
       <div class="card tap c-sky" data-vet style="margin-top:12px;display:flex;align-items:center;gap:12px">
@@ -1460,7 +1472,7 @@
   const SYMPTOMS = [
     ["🤕 Голова болит", "Возможно, это мигрень. Или 47 открытых вкладок. Подписка «Плюс Вайб» закрывает вкладки за тебя*"],
     ["😵‍💫 Не сплю", "Это бессонница. Или сериал. Сомнолог Игорь свободен в 03:00 — как удобно, ты ведь не спишь"],
-    ["🥱 Устал", "Классика! Рекомендую отдых. Отдых доступен в Vibe Travel от 49 990 ₽. Усталость не входит в стоимость"],
+    ["🥱 Устал", "Классика! Рекомендую отдых. Отдых доступен в Vibe Travel от 49 990 ₫. Усталость не входит в стоимость"],
     ["🤧 Чихаю", "Весна, пыль или кот. Если кот — у нас скидка на шампунь в Vibe Pets. Совпадение? Нет"],
     ["😔 Грустно", "Возможно, это тревожность. Подписка «Плюс Вайб» снижает её на 12%*. *По опросу из одного человека — меня"],
     ["🪑 Спина", "Ты сидишь как вопросительный знак. Коврик для йоги на Vibe Market −87%. Сидеть ровно — бесплатно"],
@@ -1483,7 +1495,7 @@
   const MODES = [
     { t: "📱 Онлайн", place: "home", where: "онлайн из дома", fee: 0 },
     { t: "🏥 В клинике", place: "clinic", where: "в клинике", fee: 0 },
-    { t: "🏠 На дом +990 ₽", place: "home", where: "врач приедет домой", fee: 990 },
+    { t: "🏠 На дом +990 ₫", place: "home", where: "врач приедет домой", fee: 990 },
   ];
   const slotHM = (s) => { const [h, m] = s.split(":").map(Number); return { h, m }; };
   // Ближайший день для слота: сегодня, если до него ≥ 30 игровых минут, иначе завтра
@@ -1548,8 +1560,8 @@
       </div>
       <div style="margin:10px 4px;display:grid;gap:6px;font-weight:700;font-size:14px">
         <div class="cm-row"><span class="muted">Приём</span><span>${rub(d.price)}</span></div>
-        <div class="cm-row"><span class="muted">Сбор за запись на приём</span><span>49 ₽</span></div>
-        <div class="cm-row"><span class="muted">Выезд врача</span><span id="bk-home">0 ₽</span></div>
+        <div class="cm-row"><span class="muted">Сбор за запись на приём</span><span>49 ₫</span></div>
+        <div class="cm-row"><span class="muted">Выезд врача</span><span id="bk-home">0 ₫</span></div>
         <div class="cm-row"><span class="muted">Где</span><span id="bk-where">${MODES[0].where}</span></div>
       </div>
       <div class="card flat" style="font-size:12px;font-weight:700;margin-bottom:12px">📅 Запись попадёт в календарь. Здоровье +15 — когда реально придёшь (в клинику — через Vibe Maps).</div>
@@ -1563,7 +1575,7 @@
             mode = +mb.dataset.mode;
             sh.querySelectorAll("[data-mode]").forEach((b) => b.classList.toggle("on", b === mb));
             FX.bump(mb); FX.sound.pop();
-            sh.querySelector("#bk-home").textContent = MODES[mode].fee ? rub(MODES[mode].fee) : "0 ₽";
+            sh.querySelector("#bk-home").textContent = MODES[mode].fee ? rub(MODES[mode].fee) : "0 ₫";
             sh.querySelector("#bk-where").textContent = MODES[mode].where;
             const te = sh.querySelector("#bk-total");
             te.textContent = rub(tot()); FX.bump(te);
@@ -1603,12 +1615,12 @@
       <div class="hero c-mint">
         <div class="sticker" style="top:14px;right:14px;background:var(--pink)">Врач за 5 мин</div>
         <div class="display">Будь здоров. Буквально.</div>
-        <p>Врачи, аптека и Заботик, который точно не врач.</p>
+        <p>Врачи, аптека и Вайбот, который точно не врач.</p>
         <div class="hero-emo emo float">💊</div>
       </div>
       <div id="hl-visits">${visitsHtml()}</div>
 
-      <h2 class="sec">Что беспокоит?<small>диагноз от Заботика</small></h2>
+      <h2 class="sec">Что беспокоит?<small>диагноз от Вайбота</small></h2>
       <div class="card c-lilac">
         ${zab("smile", "Выбери симптом — я поставлю диагноз. У меня нет диплома, но есть уверенность ✨", "hl-bub")}
         <div class="chips" style="margin-top:12px;margin-bottom:-6px">${SYMPTOMS.map((s, i) => `<button class="chip" data-sym="${i}">${s[0]}</button>`).join("")}</div>
@@ -1619,7 +1631,7 @@
 
       <h2 class="sec">Аптека<small>доставка 30 мин</small></h2>
       <div class="grid2 stagger">${PHARM.map((p) => prodCard("health", p)).join("")}</div>
-      <div class="fine">Не является медицинской рекомендацией. Является рекламой. Заботик не врач, но в его семье были калькуляторы. Перед применением проконсультируйтесь с кем-нибудь, кто не продаёт подписку.</div>
+      <div class="fine">Не является медицинской рекомендацией. Является рекламой. Вайбот не врач, но в его семье были калькуляторы. Перед применением проконсультируйтесь с кем-нибудь, кто не продаёт подписку.</div>
       ${dock("health", { txTitle: "Vibe Health · аптека", col: "c-mint", onPaid: paidModal("Курьер везёт аптечку. Выздоравливай со скоростью доставки.", "💊") })}`;
     },
     mount(root) {

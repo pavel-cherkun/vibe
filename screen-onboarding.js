@@ -58,7 +58,7 @@
         <b>Пользовательское соглашение Vibe (страница 1 из 147)</b>
         <p>1.1. Пользователь соглашается со всем.</p>
         <p>1.2. Vibe вправе знать, где пользователь находится, что ест, с кем встречается и о чём думает перед сном.</p>
-        <p>1.3. Кэшбек начисляется в вайбиках. Курс вайбика к рублю определяется настроением Корпорации.</p>
+        <p>1.3. Кэшбек начисляется в вайбиках. Курс вайбика к дэньгам определяется настроением Корпорации.</p>
         <p>1.4. Отказ от подписки возможен. Теоретически.</p>
         <p>1.5. Пользователь обязуется быть счастливым. Несчастье является нарушением п. 1.1.</p>
         <p>2.1. Корпорация не несёт ответственности ни за что. Особенно за это.</p>
@@ -73,7 +73,7 @@
       <p class="ob-p">Ты переехал в большой город. В кармане ${Vibe.rub(15000)} от мамы, комната в коммуналке за ${Vibe.rub(18000)} в месяц (первый месяц мама оплатила). Работы пока нет.</p>
       <div class="ob-map" data-map></div>
       <div class="grid3 ob-stats stagger">
-        <div class="card tight c-lime"><span class="emo">💸</span><b>${Vibe.fmt(15000)} ₽</b><small>на карте</small></div>
+        <div class="card tight c-lime"><span class="emo">💸</span><b>${Vibe.fmt(15000)} ₫</b><small>на карте</small></div>
         <div class="card tight c-yellow"><span class="emo">🏚️</span><b>18к/мес</b><small>аренда</small></div>
         <div class="card tight c-coral"><span class="emo">💼</span><b>нет</b><small>работы</small></div>
       </div>
@@ -84,6 +84,7 @@
   Vibe.screen("welcome", {
     render() {
       if (Vibe.state.get().profile) return "";
+      step = 0; data = { phone: "", name: "", avatar: "😎" };
       return `<div class="ob" data-ob>${VIEWS[step]()}</div>`;
     },
     mount(root) {

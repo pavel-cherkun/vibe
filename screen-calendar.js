@@ -296,7 +296,7 @@
   }
   function moneyStripHtml(I) {
     const ev = eventsOn(I.day).filter((e) => !e.concert);
-    if (!ev.length) return `<div class="cal-strip muted">🧾 Сегодня без больших платежей. Только кофе, метро и −300 ₽ на «просто жизнь».</div>`;
+    if (!ev.length) return `<div class="cal-strip muted">🧾 Сегодня без больших платежей. Только кофе, метро и −300 ₫ на «просто жизнь».</div>`;
     return `<div class="cal-strip"><b>Ночью в 00:00 случилось:</b>${ev.map((e) => `<span class="cal-tag ${e.a > 0 ? "p" : "y"}">${e.e} ${esc(e.t)} ${e.a > 0 ? "+" : "−"}${Vibe.rub(Math.abs(e.a))}</span>`).join("")}</div>`;
   }
 
@@ -444,7 +444,7 @@
     const grade = d.score < 25 ? "Овощ 🥔" : d.score < 50 ? "Разгоняюсь 🐢" : d.score < 70 ? "Норм 🙂" : d.score < 85 ? "Машина 🚀" : "Сигма 🗿";
     return `
       <div class="cal-prod">
-        <div class="cal-big-tags"><span class="cal-tag y">${grade}</span><span class="cal-tag k">считает Заботик</span><b class="cal-big-corner">/100</b></div>
+        <div class="cal-big-tags"><span class="cal-tag y">${grade}</span><span class="cal-tag k">считает Вайбот</span><b class="cal-big-corner">/100</b></div>
         <div class="cal-prod-row">
           <b class="cal-prod-n" style="color:${col}">${d.score}</b>
           <div class="cal-prod-u">вайб-<br>индекс<br>дня</div>
@@ -581,7 +581,7 @@
         <div class="cal-todos" data-todos>${todosHtml(list)}</div>
 
         <h2 class="cal-h v">Продуктивность</h2>
-        <div class="cal-hsub">считает Заботик · честно</div>
+        <div class="cal-hsub">считает Вайбот · честно</div>
         <div data-prod>${prodHtml(list)}</div>
 
         <div class="cal-mq">${Vibe.ui.marquee(["1 ДЕНЬ = 1 ЧАС", "ДЕДЛАЙН БЛИЖЕ, ЧЕМ КАЖЕТСЯ", "ПОНЕДЕЛЬНИК НЕИЗБЕЖЕН", "ПРОДУКТИВНОСТЬ — ЭТО ВАЙБ", "ЗАРПЛАТА СКОРО*"])}</div>

@@ -19,6 +19,9 @@
   const PHONE = 590;                  // связь, 5-го
   const TAX = 0.13;
   const LEVEL_TITLES = ["", "Младший", "", "Старший", "Ведущий", "Руководитель направления:", "Директор по"];
+  // Перки навыков (skills.js): множители и прибавки, мягко — если модуля нет
+  const SK = { mult: (k) => (Vibe.skills ? Vibe.skills.mult(k) : 1), add: (k) => (Vibe.skills ? Vibe.skills.add(k) : 0) };
+  const netOf = (j) => Math.round(j.salary * SK.mult("salary") * (1 - TAX + SK.add("taxCut")));
 
   const S = () => Vibe.state.get();
   const set = (p) => Vibe.state.set(p);
@@ -65,12 +68,11 @@
     ev.push({ kind: "daily", title: "Продукты, метро, кофе", a: -DAILY_COST, e: "🧾", col: "c-white", quiet: true });
     // Аренда
     if (dom === 1 && s.home && s.home.rent) ev.push({ kind: "rent", title: `Аренда · ${s.home.title}`, a: -s.home.rent, e: "🔑", col: "c-mint" });
-    if (dom === 5) ev.push({ kind: "bill", title: "Связь и интернет", a: -PHONE, e: "📶", col: "c-sky", quiet: true });
     if (dom === 10) ev.push({ kind: "bill", title: "ЖКХ (опять подорожало)", a: -utilities(s.home), e: "💡", col: "c-yellow" });
     if (Vibe.world) Vibe.world.dayEvents(dom).forEach((x) => ev.push(x));
     // Зарплата
     if (s.job) {
-      const net = Math.round(s.job.salary * (1 - TAX));
+      const net = netOf(s.job);
       if (dom === 15) ev.push({ kind: "salary", title: `Аванс · ${s.job.company}`, a: Math.round(net * 0.4), e: "💸", col: "c-lime" });
       if (dom === 30) {
         const bonus = s.job.bonus || 0;
@@ -86,7 +88,7 @@
   }
 
   function applyEvent(ev, day) {
-    if (ev.kind === "jar") { set({ jar: (S().jar || 0) + ev.jar }); return; }
+    if (ev.kind === "jar") { set({ jar: (S().jar || 0) + ev.jar + Math.round(ev.jar * SK.add("jarRate") / 0.12) }); return; }
     tx(ev.title, ev.a, ev.e, ev.col);
     const s = S();
     if (ev.kind === "salary") { stat("salaries"); if (Vibe.body) Vibe.body.effect("salary", { quiet: true }); }
@@ -162,7 +164,7 @@
     const res = [];
     const nextDom = (dom) => { for (let d = now.day + 1; d <= now.day + 31; d++) if ((d % 30) + 1 === dom) return d; return null; };
     const add = (dom, t, a, e) => { const d = nextDom(dom); if (d != null) res.push({ in: d - now.day, day: d, t, a, e, real: Math.round(realMinTo(d)) }); };
-    if (s.job) { const net = Math.round(s.job.salary * (1 - TAX)); add(15, "Аванс", Math.round(net * 0.4), "💸"); add(30, "Зарплата", Math.round(net * 0.6) + (s.job.bonus || 0), "💰"); }
+    if (s.job) { const net = netOf(s.job); add(15, "Аванс", Math.round(net * 0.4), "💸"); add(30, "Зарплата", Math.round(net * 0.6) + (s.job.bonus || 0), "💰"); }
     if (s.home && s.home.rent) add(1, "Аренда", -s.home.rent, "🔑");
     add(10, "ЖКХ", -utilities(s.home), "💡");
     (s.loans || []).forEach((l) => add(l.dom, `Кредит «${l.name}»`, -l.monthly, "🏦"));
@@ -182,6 +184,8 @@
   }
   function setJob(j) {
     const p = Vibe.map.place("office:" + j.company);
+    const hh = SK.mult("offer");
+    if (hh > 1 && j.salary) { j = Object.assign({}, j, { salary: Math.round(j.salary * hh / 1000) * 1000 }); setTimeout(() => FX.toast(`Хедхантер: выбил оклад ${Vibe.rub(j.salary)} (+${Math.round((hh - 1) * 100)}%)`, "🎯", 3000), 600); }
     set({ job: Object.assign({ level: 2, perf: 0, bonus: 0, tasksDay: -1, tasksDone: 0, sinceDay: info().day, x: p.x, y: p.y, district: p.district }, j) });
     stat("jobs");
     Vibe.achieve("employed");
@@ -198,20 +202,27 @@
     const day = info().day;
     const prod = Vibe.body ? Vibe.body.productivity().value / 100 : 1;
     score = Math.min(1, Math.max(0, Math.min(1, score)) * Math.max(0.3, prod) * (Vibe.work ? Vibe.work.mult() : 1));
-    if (Vibe.body) Vibe.body.effect("work", { quiet: true });
+    if (Vibe.body) {
+      Vibe.body.tick();
+      const e0 = Vibe.body.get().energy;
+      Vibe.body.effect("work", { quiet: true });
+      const k = SK.mult("taskEnergy"), b1 = S().body;
+      if (k < 1 && b1 && b1.energy < e0) set({ body: Object.assign({}, b1, { energy: Math.min(100, b1.energy + (e0 - b1.energy) * (1 - k)) }) });
+    }
     const bonus = Math.round((j.salary / BONUS_DIV) * (0.5 + score / 2) / 10) * 10;
     let level = j.level || 2, salary = j.salary, promoted = false;
     // Прогресс к повышению: ~25 задач до первого, каждое следующее вдвое-втрое дольше
     let perf = (j.perf || 0) + Math.max(1, Math.round((2 + score * 3) / Math.max(1, level - 1)));
-    if (perf >= 100) { perf = 0; level++; salary = Math.round(salary * 1.25 / 1000) * 1000; promoted = true; }
+    if (perf >= 100) { perf = 0; level++; salary = Math.round(salary * (1.25 + SK.add("promoRaise")) / 1000) * 1000; promoted = true; }
     set({ job: Object.assign({}, j, { perf, level, salary, bonus: (j.bonus || 0) + bonus, tasksDay: day, tasksDone: (j.tasksDay === day ? j.tasksDone : 0) + 1, lastTaskDay: day }) });
     stat("tasks");
     track("work");
+    Vibe.emit && Vibe.emit("work", { score, promoted });
     if (promoted) {
       stat("promotions");
       setTimeout(() => {
         FX.confetti(); FX.confetti({ count: 80 });
-        Vibe.modal(`<div class="m-emo float">🚀</div><div class="display">Повышение!</div><p>Теперь ты ${Vibe.esc(jobTitle(S().job))}. Оклад ${Vibe.rub(salary)}. Ответственности ×3, зарплата ×1,25. Справедливо.</p><button class="btn black block" data-close>Я заслужил</button>`, { sound: "levelup" });
+        Vibe.modal(`<div class="m-emo float">🚀</div><div class="display">Повышение!</div><p>Теперь ты ${Vibe.esc(jobTitle(S().job))}. Оклад ${Vibe.rub(salary)}. Ответственности ×3, зарплата ×${String(1.25 + SK.add("promoRaise")).replace(".", ",")}. Справедливо.</p><button class="btn black block" data-close>Я заслужил</button>`, { sound: "levelup" });
       }, 500);
     }
     return { bonus, promoted, perf };
@@ -254,7 +265,7 @@
     { id: "apply", t: "Откликнись на 3 вакансии", e: "📨", need: 3, r: 60 },
     { id: "market", t: "Купи что-нибудь в Market", e: "🛒", need: 1, r: 50 },
     { id: "visit:games", t: "Сыграй в Vibe Games", e: "🎮", need: 1, r: 40 },
-    { id: "visit:chats", t: "Поболтай с Заботиком", e: "🤖", need: 1, r: 30 },
+    { id: "visit:chats", t: "Поболтай с Вайботом", e: "🤖", need: 1, r: 30 },
   ];
   const todayKey = () => { const d = new Date(); return `${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`; };
   function quests() {
@@ -271,6 +282,7 @@
     return q.items.map((it) => Object.assign({}, QUESTS.find((x) => x.id === it.id), { n: it.n, done: it.n >= QUESTS.find((x) => x.id === it.id).need, claimed: q.claimed.includes(it.id) }));
   }
   function track(ev) {
+    Vibe.emit && Vibe.emit("track", ev);
     const s = S();
     if (!s.profile) return;
     const q = s.quests && s.quests.day === todayKey() ? s.quests : null;
@@ -302,10 +314,10 @@
     { id: "salary", t: "Получить первую зарплату", e: "💸", r: 150, p: (s) => Math.min(1, (s.stats.salaries || 0)), go: "job" },
     { id: "tasks", t: "Сделать 10 рабочих задач", e: "📋", r: 150, p: (s) => Math.min(1, (s.stats.tasks || 0) / 10), go: "job" },
     { id: "rent", t: "Оплатить аренду без минуса", e: "🔑", r: 150, p: (s) => Math.min(1, s.stats.rentPaid || 0), go: "rent" },
-    { id: "save100", t: "Накопить 100 000 ₽", e: "🐷", r: 200, p: (s) => Math.max(0, Math.min(1, s.balance / 100000)), go: "pay" },
+    { id: "save100", t: "Накопить 100 000 ₫", e: "🐷", r: 200, p: (s) => Math.max(0, Math.min(1, s.balance / 100000)), go: "pay" },
     { id: "promo", t: "Получить повышение", e: "🚀", r: 250, p: (s) => Math.min(1, s.stats.promotions || 0), go: "job" },
     { id: "move", t: "Переехать в квартиру получше", e: "🏡", r: 250, p: (s) => Math.min(1, s.stats.moves || 0), go: "rent" },
-    { id: "save500", t: "Накопить 500 000 ₽", e: "💰", r: 400, p: (s) => Math.max(0, Math.min(1, s.balance / 500000)), go: "invest" },
+    { id: "save500", t: "Накопить 500 000 ₫", e: "💰", r: 400, p: (s) => Math.max(0, Math.min(1, s.balance / 500000)), go: "invest" },
     { id: "boss", t: "Стать руководителем", e: "👔", r: 500, p: (s) => Math.min(1, ((s.job && s.job.level) || 0) / 5), go: "job" },
     { id: "own", t: "Купить свою квартиру", e: "🏠", r: 1000, p: (s) => Math.min(1, s.stats.homesBought || 0), go: "home-buy" },
     { id: "free", t: "Закрыть все кредиты", e: "🕊️", r: 800, p: (s) => ((s.stats.loans || 0) > 0 && !(s.loans || []).length ? 1 : 0), go: "pay" },

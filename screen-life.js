@@ -31,7 +31,7 @@
     };
   }
 
-  // Заботик с репликой
+  // Вайбот с репликой
   const zab = (text, mood = "sly") => `<div class="lf-zab">${Vibe.zabotik(58, mood)}<div class="lf-bubble" data-zab>${text}</div></div>`;
   function say(root, text) {
     const b = root.querySelector("[data-zab]");
@@ -539,7 +539,9 @@
     Vibe.sched.on("interview", (e) => {
       const a = apps().find((x) => x.id === e.app);
       if (!a || appStatus(a) !== "invite") return;
-      Vibe.state.set({ life_ivPending: a.id });
+      const lateP = Vibe.sched.latePenalty ? Vibe.sched.latePenalty(e) : 0;
+      Vibe.state.set({ life_ivPending: a.id, life_ivLate: lateP });
+      if (lateP > 0) FX.toast(`Ты опоздал на ${e.late} мин. HR заметил: шанс −${Math.round(lateP * 100)}%`, "⏰", 3200);
       setTimeout(() => { if (!(Vibe.current && Vibe.current.route && Vibe.current.route.name === "job")) Vibe.go("job"); }, 1400);
     });
     Vibe.sched.on("interview:missed", (e) => {
@@ -1042,7 +1044,7 @@
               }));
             }
             function result() {
-              const p = clamp(0.2 + (score / qs.length) * 0.7 + (resume().total - v.req) / 150 + lookBonus() + (mode === "office" ? 0.05 : 0), 0.05, 0.95) * (mode === "online" ? 0.8 : 1);
+              const p = clamp(0.2 + (score / qs.length) * 0.7 + (resume().total - v.req) / 150 + lookBonus() + (mode === "office" ? 0.05 : 0), 0.05, 0.95) * (mode === "online" ? 0.8 : 1) * (1 - (mode === "online" ? 0 : (Vibe.state.get().life_ivLate || 0)));
               box.innerHTML = `<div class="wobble" style="display:inline-block">${Vibe.zabotik(90, "wow")}</div><div class="display" style="font-size:24px;margin-top:8px">HR совещается…</div><p>Тебя обсуждают в курилке. Это хорошо. Наверное.</p><div class="typing" style="margin-bottom:6px"><span></span><span></span><span></span></div>`;
               IT.to(() => (Math.random() < p ? offer() : fail()), 2100);
             }
@@ -1163,7 +1165,7 @@
           <h2 class="sec">Дорога на работу <small>${dec(Vibe.map.km(p))} км</small></h2>
           <div data-jmap style="height:200px"></div>
           <div class="grid2" style="margin-top:12px">
-            <div class="card tight c-sky"><div class="lf-mini" style="color:var(--ink)">🚇 Метро</div><div class="big-num" style="font-size:22px">${Vibe.map.minutes(p, "metro")} мин</div><div style="font-size:11px;font-weight:800">57 ₽ и немного локтей</div></div>
+            <div class="card tight c-sky"><div class="lf-mini" style="color:var(--ink)">🚇 Метро</div><div class="big-num" style="font-size:22px">${Vibe.map.minutes(p, "metro")} мин</div><div style="font-size:11px;font-weight:800">57 ₫ и немного локтей</div></div>
             <div class="card tight c-yellow"><div class="lf-mini">🚕 Такси</div><div class="big-num" style="font-size:22px">${Vibe.map.minutes(p, "taxi")} мин</div><div style="font-size:11px;font-weight:800">если без пробок (нет)</div></div>
           </div>
           ${zab(pick(JOB_QUIPS), "smile")}
@@ -1403,7 +1405,7 @@
      ============================================================ */
   const PEOPLE = [
     { n: "Ника", a: 24, e: "👩‍🎤", km: "1,2 км", tags: ["🎧 техно", "🧘 йога", "🍷 вино"], bio: "ищу того, кто не пишет «привет, как дела»", col: "c-pink" },
-    { n: "Артём", a: 27, e: "🧔", km: "800 м", tags: ["🏋️ зал", "📈 крипта", "🚴 вело"], bio: "инвестор (вложил 3000 ₽ в монету с собачкой)", col: "c-sky" },
+    { n: "Артём", a: 27, e: "🧔", km: "800 м", tags: ["🏋️ зал", "📈 крипта", "🚴 вело"], bio: "инвестор (вложил 3000 ₫ в монету с собачкой)", col: "c-sky" },
     { n: "Соня", a: 22, e: "👩‍🎨", km: "3 км", tags: ["🎨 арт", "🐈 коты", "📚 классика"], bio: "рисую, грущу, ставлю лайки в 3 ночи", col: "c-lilac" },
     { n: "Макс", a: 29, e: "🧑‍💻", km: "5 км", tags: ["💻 айти", "🎮 игры", "🍕 пицца"], bio: "фронтендер. да, починю принтер. нет, не хочу", col: "c-lime" },
     { n: "Лиза", a: 25, e: "💁‍♀️", km: "2 км", tags: ["✈️ трэвел", "☕ кофе", "🌱 веган"], bio: "рост 170, а то спрашивают. знак зодиака — дедлайн", col: "c-yellow" },
@@ -1412,7 +1414,7 @@
     { n: "Даня", a: 26, e: "🎸", km: "7 км", tags: ["🎸 гитара", "🛹 скейт", "🍜 рамен"], bio: "знаю три аккорда, но играю их с душой", col: "c-coral" },
   ];
   const ONLINE = ["🟢 онлайн", "был(а) 3 мин назад", "🟢 печатает кому-то", "был(а) вчера в 4:20"];
-  const MATCH_LINES = ["Совместимость 87%. Считали по цвету аватарки.", "Свайп вправо — это почти свидание. В 2026-м засчитывается.", "Заботик одобряет. Заботик одобряет всех.", "Ещё 3 свайпа — и алгоритм покажет тебе бывшую."];
+  const MATCH_LINES = ["Совместимость 87%. Считали по цвету аватарки.", "Свайп вправо — это почти свидание. В 2026-м засчитывается.", "Вайбот одобряет. Вайбот одобряет всех.", "Ещё 3 свайпа — и алгоритм покажет тебе бывшую."];
 
   /* --- Мэтч → свидание → отношения (Vibe.sched + Vibe.people) --- */
   const pidOf = (m) => m.pid || "m_" + Math.max(0, PEOPLE.findIndex((p) => p.n === m.n));
@@ -1512,7 +1514,7 @@
           <div class="lf-row"><div><div class="display" style="font-size:20px">Мои люди 🫂</div><div style="font-size:12px;font-weight:800;margin-top:4px">${(() => { const pr = Vibe.people && Vibe.people.partner(); return pr ? `${pr.e} ${esc(pr.n)} — твой человек 💘` : "Друзья, семья и те, с кем было 3 свидания"; })()}</div></div><span class="emo float" style="font-size:40px">💞</span></div>
         </div>
         <div class="card c-grad tap" data-act="plus" style="margin-top:10px">
-          <div class="lf-row"><div><div class="display" style="font-size:22px">Узнай, кто тебя лайкнул</div><div style="font-size:13px;margin-top:4px;font-weight:700">Всего 990 ₽/нед · первые 3 дня 1 ₽</div></div><span class="emo pulse" style="font-size:46px">🔒</span></div>
+          <div class="lf-row"><div><div class="display" style="font-size:22px">Узнай, кто тебя лайкнул</div><div style="font-size:13px;margin-top:4px;font-weight:700">Всего 990 ₫/нед · первые 3 дня 1 ₫</div></div><span class="emo pulse" style="font-size:46px">🔒</span></div>
         </div>
         <div class="fine">Vibe Match не несёт ответственности за ghosting, «давай останемся друзьями» и знакомство с родителями. Анкеты частично реальны.</div>
       </div>`;
@@ -1639,7 +1641,7 @@
       root.addEventListener("click", (e) => {
         const a = e.target.closest("[data-act]");
         if (!a) return;
-        if (a.dataset.act === "plus") { FX.shake(a); FX.toast("Тебя лайкнули 99+ человек. Возможно. Узнай за 990 ₽", "🔒"); }
+        if (a.dataset.act === "plus") { FX.shake(a); FX.toast("Тебя лайкнули 99+ человек. Возможно. Узнай за 990 ₫", "🔒"); }
         if (a.dataset.act === "mm") { FX.bump(a); const m = st("life_matches", []).find((x) => x.n === a.dataset.n); if (m) openMatch(m); }
       });
       return () => T.clear();
@@ -1663,7 +1665,7 @@
     { id: "r6", key: "one45", t: "1-к, 45 м²", sub: "евроремонт, вид на парк (через ЖК)", p: 64000, emoji: "🛋️", tags: ["1-к", "С котом"], col: "c-yellow", e: ["🛋️", "🌳", "☕", "🖼️"], fee: 0.5, feat: ["Посудомойка! (сломана)", "Тёплый пол в коридоре", "Хозяин живёт в Дубае и пишет в 4 утра"] },
     { id: "r7", key: "two52", t: "2-к, 52 м²", sub: "сталинка, потолки 3,2 м", p: 79000, emoji: "🕰️", tags: ["2-к"], col: "c-orange", e: ["🛋️", "🕰️", "🪞", "📚"], nodep: true, feat: ["Хозяйка заходит полить цветы каждый день", "Шкаф-ценность (не открывать)", "Эхо бесплатно"] },
     { id: "r8", key: "two60", t: "2-к, 60 м²", sub: "с ремонтом от бабушки", p: 72000, emoji: "🧶", tags: ["2-к", "С котом"], col: "c-mint", e: ["🛋️", "🧶", "🐈", "🫖"], feat: ["Сервант с хрусталём включён", "Кот бабушки — тоже", "Бабушка — нет (но звонит)"] },
-    { id: "r9", key: "two75", t: "2-к, 75 м², бизнес-класс", sub: "консьерж, шлагбаум, амбиции", p: 108000, emoji: "🏙️", tags: ["2-к"], col: "c-sky", e: ["🛋️", "🍸", "🏙️", "🪴"], fee: 1, feat: ["Подземный паркинг (за отдельные 25 000 ₽)", "Фитнес во дворе", "Соседи здороваются по-английски"] },
+    { id: "r9", key: "two75", t: "2-к, 75 м², бизнес-класс", sub: "консьерж, шлагбаум, амбиции", p: 108000, emoji: "🏙️", tags: ["2-к"], col: "c-sky", e: ["🛋️", "🍸", "🏙️", "🪴"], fee: 1, feat: ["Подземный паркинг (за отдельные 25 000 ₫)", "Фитнес во дворе", "Соседи здороваются по-английски"] },
     { id: "r10", key: "penthouse", t: "Пентхаус 180 м²", sub: "панорама, терраса, сосед — депутат", p: 400000, emoji: "🏰", tags: ["Пентхаус"], col: "c-holo", e: ["🛋️", "🍾", "🌃", "🛁"], fee: 1, feat: ["Терраса с видом на твою прошлую жизнь", "Джакузи на крыше", "Лифт открывается прямо в гостиную"] },
   ].map((f) => Object.assign(f, { watch: rnd(9, 48) }));
   const POS = [[8, 30, 62], [56, 10, 46], [36, 56, 52], [72, 58, 40]];
@@ -1675,7 +1677,7 @@
   const moveCost = (f) => { const fee = Math.round(f.p * (f.fee || 0)); return { first: f.p, dep: f.p, fee, total: f.p * 2 + fee }; };
   function rentBlock(f) {
     const s = S();
-    if (!s.job && f.p > 40000) return "Хозяйка просит справку о доходах. Без работы сдают только комнаты и студии до 40 000 ₽.";
+    if (!s.job && f.p > 40000) return "Хозяйка просит справку о доходах. Без работы сдают только комнаты и студии до 40 000 ₫.";
     if (s.job && f.p > netOf(s.job.salary) * 0.6) return `Хозяйка посчитала: аренда больше 60% твоей зарплаты (${rub(netOf(s.job.salary))} на руки). Говорит, «не потянешь».`;
     return null;
   }
@@ -1700,8 +1702,8 @@
   }
   function homeNow() {
     const h = S().home;
-    if (!h) return `<div class="card c-coral"><div class="lf-row" style="justify-content:flex-start;gap:12px"><span class="emo wobble" style="font-size:42px">🛋️</span><div style="flex:1;min-width:0"><div class="lf-mini" style="color:var(--ink)">Ты живёшь</div><b style="display:block">У мамы на диване · 0 ₽/мес</b><div style="font-size:12px;font-weight:700">Мама намекает. Каждый день. Громко.</div><div class="lf-pills" style="margin-top:6px">${sleepBadge(null)}</div></div></div>${thingsHtml()}</div>`;
-    return `<div class="card c-lime"><div class="lf-row" style="justify-content:flex-start;gap:12px"><span class="emo float" style="font-size:42px">${h.emoji || "🏠"}</span><div style="flex:1;min-width:0"><div class="lf-mini" style="color:var(--ink)">Ты живёшь</div><b style="display:block">${esc(h.title)}</b><div style="font-size:12px;font-weight:800">${h.own ? "своя квартира 🔑 · аренда 0 ₽" : `аренда ${rub(h.rent || 0)}/мес · списание 1-го`}${h.district ? " · 📍 " + h.district : ""}</div><div class="lf-pills" style="margin-top:6px">${sleepBadge(h)}</div></div></div>${thingsHtml()}</div>`;
+    if (!h) return `<div class="card c-coral"><div class="lf-row" style="justify-content:flex-start;gap:12px"><span class="emo wobble" style="font-size:42px">🛋️</span><div style="flex:1;min-width:0"><div class="lf-mini" style="color:var(--ink)">Ты живёшь</div><b style="display:block">У мамы на диване · 0 ₫/мес</b><div style="font-size:12px;font-weight:700">Мама намекает. Каждый день. Громко.</div><div class="lf-pills" style="margin-top:6px">${sleepBadge(null)}</div></div></div>${thingsHtml()}</div>`;
+    return `<div class="card c-lime"><div class="lf-row" style="justify-content:flex-start;gap:12px"><span class="emo float" style="font-size:42px">${h.emoji || "🏠"}</span><div style="flex:1;min-width:0"><div class="lf-mini" style="color:var(--ink)">Ты живёшь</div><b style="display:block">${esc(h.title)}</b><div style="font-size:12px;font-weight:800">${h.own ? "своя квартира 🔑 · аренда 0 ₫" : `аренда ${rub(h.rent || 0)}/мес · списание 1-го`}${h.district ? " · 📍 " + h.district : ""}</div><div class="lf-pills" style="margin-top:6px">${sleepBadge(h)}</div></div></div>${thingsHtml()}</div>`;
   }
   const RENT_CHIPS = [["lt40", "💸 До 40к"], ["Комната", "🚪 Комната"], ["Студия", "🛏️ Студия"], ["1-к", "🚪 1-к"], ["2-к", "🛋️ 2-к"], ["near", "💼 Рядом с работой"], ["С котом", "🐈 С котом"]];
 
@@ -1714,7 +1716,7 @@
         ${Vibe.ui.hero({ title: "Сними жильё мечты", text: "Свободно 3 квартиры из 12 000. Успей!", emo: "🔑", color: "c-mint", sticker: "0% комиссии*" })}
         <div class="chips" style="margin-top:14px">${RENT_CHIPS.map(([k, t]) => `<button class="chip" data-f="${k}">${t}</button>`).join("")}</div>
         <div class="stack stagger" data-list>${FLATS.map(flatCard).join("")}</div>
-        ${zab("Совет от Заботика: говори хозяйке, что ты непьющий программист без кота. Работает в 100% случаев.")}
+        ${zab("Совет от Вайбота: говори хозяйке, что ты непьющий программист без кота. Работает в 100% случаев.")}
         <div class="fine">*Без риелторов, но с «помощником хозяина». Комиссия 0%, кроме тех, где не 0%. Фото сделаны в лучшие дни квартир.</div>
       </div>`;
     },
@@ -1778,7 +1780,7 @@
           </div>
           <div style="margin-top:14px">
             <div class="lf-fee"><span>Первый месяц</span><span>${rub(c.first)}</span></div>
-            <div class="lf-fee"><span>${f.nodep ? "Залог 0 ₽ 🎉 · «Страховой платёж»*" : "Залог"}</span><span>${rub(c.dep)}</span></div>
+            <div class="lf-fee"><span>${f.nodep ? "Залог 0 ₫ 🎉 · «Страховой платёж»*" : "Залог"}</span><span>${rub(c.dep)}</span></div>
             ${c.fee ? `<div class="lf-fee"><span>Комиссия «помощника хозяина»</span><span>${rub(c.fee)}</span></div>` : ""}
             <div class="lf-total"><span class="display" style="font-size:18px">На заезд</span><span class="big-num">${rub(c.total)}</span></div>
           </div>
@@ -1849,7 +1851,7 @@
     { key: "buy-city", n: "ЖК «Вайб Сити»", s: "3-к, 82 м²", e: "🏙️", p: 12400000, d: "II кв. 2029*", col: "c-sky" },
     { key: "buy-elite", n: "Клубный дом «Элита»", s: "Пентхаус 160 м²", e: "🏰", p: 29000000, d: "уже сдан (в аренду)", col: "c-lilac" },
   ];
-  const mln = (n) => dec(n / 1e6, n % 1e6 ? 1 : 0) + " млн ₽";
+  const mln = (n) => dec(n / 1e6, n % 1e6 ? 1 : 0) + " млн ₫";
   const ownsKey = (k) => { const h = S().home; return !!(h && h.own && h.key === k); };
   function mortgage(price, down, years) {
     const L = price * (1 - down / 100), r = RATE / 12, n = years * 12;
@@ -2121,48 +2123,226 @@
   });
 
   /* ============================================================
-     5. VIBE TRAVEL
+     5. VIBE TRAVEL — настоящие поездки на 2–7 игровых дней.
+     Бронь → событие в календаре (kind:"travel", payload trip) →
+     пришёл на вокзал/аэроэкспресс → state.lf_vacation {fromDay, toDay}.
+     В отпуске: работа заблокирована, тело восстанавливается,
+     фото-моменты в Vibegram, сувенир домой в конце.
+     Vibe.travel.onVacation() / current() / end() — для других модулей.
      ============================================================ */
+  const TRIPS = [
+    { id: "beach", to: "Море «Вайб-Бич»", e: "🏖️", f: "🌊", col: "c-sky", how: "✈️", dep: "metro2", depL: "аэроэкспресс от м. Сити", ticket: 8990, night: 4500, tag: "Хит сезона",
+      sub: "Песок, солнце, вай-фай у шезлонга (платный)",
+      souv: { id: "sv_beach", name: "Ракушка с Вайб-Бич", e: "🐚", bonus: { mood: 2 } },
+      photos: ["Закат над Вайб-Бич. Без фильтров (с тремя фильтрами) 🌅", "Ноги на фоне моря. Классика жанра 🦶🌊", "Коктейль с зонтиком. Зонтик за отдельную плату 🍹", "Чайка украла мой круассан. Это был лучший день 🐦"] },
+    { id: "mount", to: "Горы", e: "🏔️", f: "🥾", col: "c-mint", how: "✈️", dep: "metro2", depL: "аэроэкспресс от м. Сити", ticket: 7490, night: 3900, tag: "Перезагрузка",
+      sub: "Связь только на вершине. Как и смысл жизни",
+      souv: { id: "sv_mount", name: "Магнит «Я покорил»", e: "🧲", bonus: { mood: 2 } },
+      photos: ["Я выше облаков. Начальник — нет ⛰️", "Чай из термоса на вершине. Вкуснее любого рафа 🫖", "Нашёл связь. Сразу закрыл 🏔️", "Козёл посмотрел на меня с уважением 🐐"] },
+    { id: "north", to: "Северная столица", e: "🌉", f: "🎨", col: "c-lilac", how: "🚆", dep: "metro1", depL: "вокзал у м. Кредитная", ticket: 3490, night: 5200, tag: "Культурно",
+      sub: "Мосты, музеи и дождь — включены бесплатно",
+      souv: { id: "sv_north", name: "Кружка с мостами", e: "☕", bonus: { mood: 2 } },
+      photos: ["Развели мосты. Я остался на правильном берегу 🌉", "Музей. Смотрел на картину 40 минут. Она на меня — тоже 🖼️", "Дождь, поребрик, пышка. Атмосфера ☔", "Белые ночи: не спал, но зато красиво 🌙"] },
+    { id: "grandpa", to: "Деревня у деда", e: "🏡", f: "🌾", col: "c-lime", how: "🚃", dep: "metro1", depL: "электричка с вокзала у м. Кредитная", ticket: 990, night: 0, tag: "Дед зовёт", grandpa: true,
+      sub: "Грядки, тишина и письмо, которое пока рано открывать",
+      souv: { id: "sv_grandpa", name: "Семена пастернака от деда", e: "🌱", bonus: { mood: 3, sleep: 1 } },
+      photos: ["Петух разбудил в 5:00. Никакого будильника не надо 🐓", "Сам вырастил редиску. Ну, дед вырастил. Я сорвал 🌱", "Тут нет сети. И мне… нормально? 📵", "Дед сказал: «Земля всегда ждёт». Что бы это значило 🌾"] },
+  ];
   const HOT = [
     { id: "t1", to: "Турция", f: "🇹🇷", e: "🏖️", n: 7, p: 58990, old: 119990, col: "c-orange", cd: 14 },
-    { id: "t2", to: "Египет", f: "🇪🇬", e: "🐫", n: 10, p: 64990, old: 99990, col: "c-yellow", cd: 1320 },
-    { id: "t3", to: "Таиланд", f: "🇹🇭", e: "🐘", n: 12, p: 119990, old: 189990, col: "c-mint", cd: 2710 },
+    { id: "t2", to: "Египет", f: "🇪🇬", e: "🐫", n: 6, p: 64990, old: 99990, col: "c-yellow", cd: 1320 },
+    { id: "t3", to: "Таиланд", f: "🇹🇭", e: "🐘", n: 7, p: 119990, old: 189990, col: "c-mint", cd: 2710 },
     { id: "t4", to: "ОАЭ", f: "🇦🇪", e: "🏙️", n: 5, p: 89990, old: 149990, col: "c-sky", cd: 488 },
-  ];
-  const DEST = [
-    { id: "d1", to: "Мальдивы", f: "🇲🇻", e: "🏝️", n: 9, p: 289990, col: "c-sky" },
-    { id: "d2", to: "Грузия", f: "🇬🇪", e: "🍷", n: 6, p: 42990, col: "c-coral" },
-    { id: "d3", to: "Бали", f: "🇮🇩", e: "🌴", n: 14, p: 159990, col: "c-lime" },
-    { id: "d4", to: "Сочи", f: "🇷🇺", e: "🌊", n: 7, p: 299990, col: "c-lilac", note: "дороже Мальдив" },
-    { id: "d5", to: "Вьетнам", f: "🇻🇳", e: "🍜", n: 11, p: 99990, col: "c-yellow" },
-    { id: "d6", to: "Дача", f: "🏡", e: "🥒", n: 30, p: 4990, col: "c-mint", note: "электричка + рассада" },
-  ];
-  const ALL_TRIPS = HOT.concat(DEST);
-  if (Vibe.sched) {
-    // Доехал до аэроэкспресса → отпуск засчитан: тело отдыхает на 100%
-    Vibe.sched.on("travel", () => {
-      if (Vibe.body) Vibe.body.effect("travel");
-      Vibe.state.set({ life_tripsDone: st("life_tripsDone", 0) + 1 });
-      setTimeout(() => FX.burst({ x: innerWidth / 2, y: innerHeight / 3 }, { emojis: ["✈️", "🌴", "☀️", "🏖️"], count: 20 }), 600);
-    });
-    Vibe.sched.on("travel:missed", (e) => setTimeout(() => FX.toast(`Самолёт улетел без тебя. ${e.title.replace("Аэроэкспресс → ", "")} передаёт привет`, "🛫", 3200), 1400));
+  ].map((h) => Object.assign({ hot: true, how: "✈️", dep: "metro2", depL: "аэроэкспресс от м. Сити", sub: "Всё включено*", souv: { id: "sv_" + h.id, name: `Магнит «${h.to}»`, e: "🧲", bonus: { mood: 1 } },
+    photos: [`${h.to}! Всё включено, кроме меня в рабочий чат ☀️`, "Бассейн, шезлонг, полотенце с утра занято не мной 🏊", "Шведский стол. Я победил шведов 🍽️"] }, h));
+  const ALL_TRIPS = TRIPS.concat(HOT);
+  const tripById = (id) => ALL_TRIPS.find((x) => x.id === id) || null;
+
+  // Цена: билеты туда-обратно на каждого + отель за ночь на номер (2 чел/номер) + сбор
+  function tripCost(tr, nights, people) {
+    if (tr.hot) { const base = tr.p * people; return { tickets: base, hotel: 0, fee: 990, total: base + 990 }; }
+    const tickets = tr.ticket * 2 * people;
+    const hotel = tr.night * nights * Math.ceil(people / 2);
+    const fee = tr.grandpa ? 0 : 990;
+    return { tickets, hotel, fee, total: tickets + hotel + fee };
   }
-  function tripHtml() {
-    const up = Vibe.sched ? Vibe.sched.upcoming(20).find((e) => e.kind === "travel") : null;
-    if (!up) return "";
-    return `<div class="card c-lime" style="margin-top:12px">
-      <div class="lf-row"><div style="min-width:0"><div class="lf-mini" style="color:var(--ink)">🧳 Твой вылет</div><b style="display:block;font-size:15px;margin-top:2px">${esc(up.title)}</b><div style="font-size:12px;font-weight:800">${whenStr(up.day, up.hour)} · Ⓜ️ м. Сити</div></div><span class="emo float" style="font-size:40px">✈️</span></div>
-      <div style="margin-top:10px">${mapsBtn("metro2", "Доехать до аэроэкспресса 🚇", "btn black block")}</div>
+
+  /* ---------- Отпуск: состояние и API ---------- */
+  const vac = () => S().lf_vacation || null;
+  const travel = (Vibe.travel = {
+    TRIPS: ALL_TRIPS,
+    current: vac,
+    onVacation() { const v = vac(); if (!v || !Vibe.game || !S().game) return false; const d = gToday(); return d >= v.fromDay && d <= v.toDay; },
+    booked: () => (Vibe.sched ? Vibe.sched.upcoming(20).find((e) => e.kind === "travel") || null : null),
+    cost: tripCost,
+    start(tripData) {
+      const tr = tripById(tripData.id) || TRIPS[0];
+      const nights = Math.max(1, tripData.nights || 3);
+      const from = gToday();
+      Vibe.state.set({ lf_vacation: { id: tr.id, to: tr.to, e: tr.e, people: tripData.people || 1, nights, fromDay: from, toDay: from + nights, lastMin: Vibe.game.minutes(), photoDay: from - 1 }, lf_trip: null });
+      Vibe.emit && Vibe.emit("travel_start", { id: tr.id, to: tr.to, nights });
+      return vac();
+    },
+    end(early = false) {
+      const v = vac(); if (!v) return;
+      const tr = tripById(v.id) || TRIPS[0];
+      Vibe.state.set({ lf_vacation: null, life_tripsDone: st("life_tripsDone", 0) + 1, lf_places: Object.assign({}, st("lf_places", {}), { [tr.id]: (st("lf_places", {})[tr.id] || 0) + 1 }) });
+      // Сувенир — домой, в инвентарь (настроение +). Повторный — уже не бонус, а воспоминание.
+      let souvTxt = "";
+      if (Vibe.inv && tr.souv) {
+        if (Vibe.inv.add(Object.assign({ cat: "home" }, tr.souv))) souvTxt = ` Сувенир «${tr.souv.name}» ${tr.souv.e} теперь дома: настроение +${tr.souv.bonus.mood}.`;
+        else souvTxt = ` Второй «${tr.souv.name}» повесили рядом с первым.`;
+      }
+      if (Vibe.body) { const b = Vibe.body.get(); Vibe.state.set({ body: Object.assign({}, b, { mood: Math.min(100, b.mood + (early ? 0 : 8)) }) }); }
+      FX.toast(`${early ? "Вернулся раньше" : "Отпуск закончился"}: ${tr.to}.${souvTxt} Добро пожаловать обратно в семью Vibe 💜`, tr.e, 5200);
+      FX.burst({ x: innerWidth / 2, y: innerHeight / 3 }, { emojis: [tr.e, tr.souv ? tr.souv.e : "🎁", "💜"], count: 16 });
+      if (Vibe.mail) {
+        if (tr.grandpa) {
+          const n = st("lf_places", {}).grandpa || 1;
+          Vibe.mail.send({ from: "Дед", subject: n > 1 ? "Опять уехал?" : "Внучок, доехал?", kind: "personal",
+            body: n > 1 ? "Грядки помнят твои руки. Пастернак взошёл. Письмо в серванте всё ещё лежит — то самое, «когда устанешь». Ферма никуда не денется. Я — может быть. Дед." : "Доехал? Город тебя быстро обратно заберёт, я знаю. Письмо с ключами от фермы я пока придержу. Скажешь, когда устанешь от всего этого. Дед." });
+        } else {
+          Vibe.mail.send({ from: "Vibe Travel", subject: `Как прошла поездка: ${tr.to}?`, kind: "official",
+            body: `Надеемся, ты отдохнул и готов к новым свершениям! Оцени поездку от 5 до 5 звёзд. Кстати, с «Плюс Вайб» следующий отпуск — на 0,5% дешевле. Мы скучали. Твой рабочий чат — тоже.` });
+        }
+      }
+      Vibe.emit && Vibe.emit("travel_end", { id: tr.id, to: tr.to, early });
+      Vibe.refreshCounters();
+    },
+    photo(manual = false) {
+      const v = vac(); if (!v) return false;
+      const tr = tripById(v.id) || TRIPS[0];
+      const text = pick(tr.photos || ["Я в отпуске ✨"]);
+      if (Vibe.gram && Vibe.gram.post) { try { Vibe.gram.post({ e: tr.e, text: `${text} · ${tr.to}`, kind: "travel", from: "me" }); } catch (err) { console.error(err); } }
+      Vibe.emit && Vibe.emit("post", { e: tr.e, text, kind: "travel" });
+      if (manual) Vibe.reward({ xp: 8, silent: true });
+      return text;
+    },
+  });
+
+  // Работа во время отпуска заблокирована (оборачиваем world.js/game.js, не правя их)
+  const VAC_LINES = ["Ты в отпуске! Рабочий чат на паузе. Корпорация гордится твоим отдыхом (и ждёт)", "Отпуск — это тоже работа над собой. Задачи подождут", "Вайбот спрятал ноутбук. Найдёшь после отпуска 🏖️"];
+  if (Vibe.work && !Vibe.work._lfWrapped) {
+    const can0 = Vibe.work.can.bind(Vibe.work);
+    Vibe.work.can = () => (travel.onVacation() ? { ok: false, why: pick(VAC_LINES), vacation: true } : can0());
+    Vibe.work._lfWrapped = true;
+  }
+  if (Vibe.game && Vibe.game.completeTask && !Vibe.game._lfWrapped) {
+    const ct0 = Vibe.game.completeTask;
+    Vibe.game.completeTask = (score) => { if (travel.onVacation()) { FX.toast(pick(VAC_LINES), "🏖️", 3200); return null; } return ct0(score); };
+    Vibe.game._lfWrapped = true;
+  }
+
+  // Тик отпуска: восстановление раз в игровой час, фото раз в игровой день, конец поездки
+  function vacTick() {
+    const v = vac();
+    if (!v || !S().profile || !S().game || !Vibe.game) return;
+    const m = Vibe.game.minutes(), d = gToday();
+    if (m >= v.toDay * 1440 + 10 * 60) return travel.end(false);
+    const hours = Math.floor((m - (v.lastMin || m)) / 60);
+    const patch = {};
+    if (hours > 0 && Vibe.body) {
+      const b = Vibe.body.get(), k = Math.min(hours, 48);
+      Vibe.state.set({ body: Object.assign({}, b, { energy: Math.min(100, b.energy + 4 * k), mood: Math.min(100, b.mood + 3 * k), health: Math.min(100, b.health + 1 * k) }) });
+      if (Vibe.body.addStress) Vibe.body.addStress(-2 * k, `Отпуск: ${v.to}`, v.e || "🏝️");
+      patch.lastMin = (v.lastMin || m) + hours * 60;
+    }
+    if ((v.photoDay == null || v.photoDay < d) && Vibe.game.info().hour >= 12) {
+      const text = travel.photo();
+      patch.photoDay = d;
+      if (text && !document.hidden) FX.toast(`📸 ${text}`, v.e || "🏖️", 3600);
+    }
+    if (Object.keys(patch).length) Vibe.state.set({ lf_vacation: Object.assign({}, vac(), patch) });
+  }
+  if (!Vibe._lfVacTimer) Vibe._lfVacTimer = setInterval(() => { if (!document.hidden) { try { vacTick(); } catch (err) { console.error(err); } } }, 5000);
+
+  if (Vibe.sched) {
+    // Пришёл на вокзал/аэроэкспресс → поездка началась, отпуск идёт N игровых дней
+    Vibe.sched.on("travel", (e) => {
+      const t = e.trip || { id: (ALL_TRIPS.find((x) => e.title && e.title.includes(x.to)) || TRIPS[0]).id, nights: 3, people: 1 };
+      const v = travel.start(t);
+      const tr = tripById(v.id) || TRIPS[0];
+      setTimeout(() => {
+        FX.burst({ x: innerWidth / 2, y: innerHeight / 3 }, { emojis: [tr.how || "✈️", tr.e, "☀️", "🧳"], count: 20 });
+        FX.toast(`Ты в отпуске до ${whenStr(v.toDay, 10)}: ${tr.to}. Работа заблокирована. Это забота 💜`, tr.e, 4600);
+      }, 600);
+    });
+    Vibe.sched.on("travel:missed", (e) => {
+      Vibe.state.set({ lf_trip: null });
+      setTimeout(() => FX.toast(`${(e.trip && tripById(e.trip.id) || {}).how === "🚆" ? "Поезд ушёл" : "Самолёт улетел"} без тебя. ${e.title.replace(/^.*→\s*/, "")} передаёт привет`, "🛫", 3200), 1400);
+    });
+  }
+
+  /* ---------- Вёрстка ---------- */
+  const tcss = `
+  .lft-vac{position:relative;overflow:hidden}
+  .lft-vac .big{position:absolute;right:-6px;top:-10px;font-size:96px;opacity:.9;pointer-events:none}
+  .lft-bar{height:14px;border:2.5px solid var(--ink);border-radius:99px;background:var(--paper);overflow:hidden;margin-top:10px}
+  .lft-bar i{display:block;height:100%;background:var(--ink);border-radius:99px}
+  .lft-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .lft-dest{padding:0;overflow:hidden;display:flex;flex-direction:column}
+  .lft-dest .pic{height:96px;display:flex;align-items:center;justify-content:center;gap:4px;font-size:42px;border-bottom:2.5px solid var(--ink);position:relative}
+  .lft-dest .pic .sticker{position:absolute;left:8px;top:8px;font-size:10px}
+  .lft-dest .bd{padding:10px 12px 12px;display:flex;flex-direction:column;gap:2px;min-width:0}
+  .lft-dest .bd b{font-size:14px;line-height:1.15}
+  .lft-dest .bd small{font-size:11px;font-weight:700;color:var(--muted);line-height:1.25}
+  .lft-dest.grandpa .pic{background-image:repeating-linear-gradient(90deg,rgba(14,14,18,.06) 0 10px,transparent 10px 20px)}
+  .lft-pins{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+  `;
+  if (!document.getElementById("lft-style")) { const s = document.createElement("style"); s.id = "lft-style"; s.textContent = tcss; document.head.appendChild(s); }
+
+  function vacHtml() {
+    const v = vac();
+    if (!v) return "";
+    const tr = tripById(v.id) || TRIPS[0];
+    const total = Math.max(1, v.toDay * 1440 + 600 - v.fromDay * 1440);
+    const pct = Math.round(clamp((Vibe.game.minutes() - v.fromDay * 1440) / total) * 100);
+    return `<div class="card ${tr.col} lft-vac" style="margin-top:12px">
+      <span class="big emo float">${tr.e}</span>
+      <div class="lf-mini" style="color:var(--ink)">🌴 Ты в отпуске</div>
+      <div class="display" style="font-size:22px;margin-top:2px;max-width:70%">${esc(tr.to)}</div>
+      <div style="font-size:12px;font-weight:800;margin-top:4px">До ${whenStr(v.toDay, 10)} · ${v.nights} ${plural(v.nights, "ночь", "ночи", "ночей")}</div>
+      <div class="lft-bar"><i style="width:${pct}%"></i></div>
+      <div class="lft-pins"><span class="badge w">⚡ энергия ↑</span><span class="badge w">🙂 настроение ↑</span><span class="badge w">🧘 стресс ↓</span><span class="badge w">💼 работа на паузе</span></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px">
+        <button class="btn black" data-photo>Фото 📸</button>
+        <button class="btn" data-endvac>Домой раньше</button>
+      </div>
     </div>`;
   }
+  function tripHtml() {
+    if (vac()) return "";
+    const up = travel.booked();
+    if (!up) return "";
+    const t = up.trip || {}, tr = tripById(t.id) || {};
+    return `<div class="card c-lime" style="margin-top:12px">
+      <div class="lf-row"><div style="min-width:0"><div class="lf-mini" style="color:var(--ink)">🧳 Твоя поездка</div><b style="display:block;font-size:15px;margin-top:2px">${esc(up.title)}</b><div style="font-size:12px;font-weight:800">${whenStr(up.day, up.hour)}${t.nights ? ` · ${t.nights} ${plural(t.nights, "ночь", "ночи", "ночей")}` : ""} · ${esc(tr.depL || "м. Сити")}</div></div><span class="emo float" style="font-size:40px">${tr.how || "✈️"}</span></div>
+      <div style="margin-top:10px">${mapsBtn(up.place || "metro2", "Доехать до отправления 🚇", "btn black block")}</div>
+      <div class="fine" style="margin-top:6px">Опоздаешь больше чем на 4 часа — поездка сгорит. Возврат только эмоциональный.</div>
+    </div>`;
+  }
+  const destCard = (t) => {
+    const c = tripCost(t, 3, 1);
+    return `<div class="card tap lft-dest ${t.grandpa ? "grandpa" : ""}" data-trip="${t.id}">
+      <div class="pic ${t.col}"><div class="sticker" style="background:var(--paper)">${t.tag}</div><span class="emo wobble">${t.f}</span><span class="emo float">${t.e}</span></div>
+      <div class="bd"><b>${t.to}</b><small>${t.sub}</small>
+        <div class="price" style="font-size:15px;margin-top:4px">${t.grandpa ? "дед денег не берёт" : `от ${rub(c.total)}`}</div>
+        <small>${t.how} ${t.grandpa ? `${rub(t.ticket)} электричка` : `+ ${rub(t.night)}/ночь`}</small></div>
+    </div>`;
+  };
 
   Vibe.screen("travel", {
     render() {
+      const done = st("life_tripsDone", 0);
       return `
       ${Vibe.ui.head("Vibe Travel", "Улетай от проблем (они догонят)", Vibe.ui.vibikiPill())}
       <div class="stagger">
-        ${Vibe.ui.hero({ title: "Туры, которые горят", text: `Смотрят сейчас: <b data-watch>48</b> человек`, emo: "✈️", color: "c-sky", sticker: "−70%*" })}
+        ${Vibe.ui.hero({ title: travel.onVacation() ? "Ты в отпуске!" : "Отпуск, который засчитается", text: `Смотрят сейчас: <b data-watch>48</b> человек${done ? ` · у тебя ${done} ${plural(done, "поездка", "поездки", "поездок")}` : ""}`, emo: travel.onVacation() ? "🌴" : "✈️", color: "c-sky", sticker: "−70%*" })}
+        ${vacHtml()}
         ${tripHtml()}
+        <h2 class="sec">Куда махнём? <small>2–7 дней</small></h2>
+        <div class="lft-grid">${TRIPS.map(destCard).join("")}</div>
+        <div class="fine">В отпуске: работа на паузе, энергия и настроение растут, фото сами летят в Vibegram, сувенир едет домой. Отель — за ночь, билеты — туда и обратно (да, обратно тоже, мы сами удивились).</div>
         <h2 class="sec">🔥 Горящие <small>таймеры честные*</small></h2>
         <div class="hscroll">${HOT.map((h) => `
           <div class="card tap lf-hot" data-trip="${h.id}">
@@ -2176,15 +2356,7 @@
           </div>`).join("")}</div>
         <div class="fine" style="margin-top:0">*Таймер честно обнуляется, когда заканчивается. Акция продлевается автоматически, как и ваша подписка.</div>
         ${Vibe.ui.marquee(["Всё включено*", "Перелёт в 04:20", "Отель 5★ (звёзды видно с балкона)", "Море в 15 минутах (на такси)"])}
-        <h2 class="sec">Куда махнём?</h2>
-        <div class="grid2">${DEST.map((d, i) => `
-          <div class="card tap lf-dest" data-trip="${d.id}">
-            <div class="pic ${d.col}"><span class="f">${d.f}</span><span class="emo float d${i % 3}">${d.e}</span>${i % 3 === 0 ? `<span class="emo float d2" style="position:absolute;right:8px;bottom:4px;font-size:26px">🌴</span>` : ""}</div>
-            <b style="font-size:14px;margin-top:4px">${d.to}</b>
-            <div class="muted" style="font-size:11px;font-weight:700">${d.n} ночей${d.note ? " · " + d.note : ""}</div>
-            <div class="price" style="font-size:16px">от ${rub(d.p)}</div>
-          </div>`).join("")}</div>
-        ${zab("Отпуск — лучшее время, чтобы проверить рабочий чат. Мы добавили роуминг для него бесплатно.")}
+        ${zab(travel.onVacation() ? "Отдыхай! Я присмотрю за рабочим чатом. Там всего 214 сообщений 💜" : (st("lf_places", {}).grandpa ? "Дед опять звонил. Спрашивал, не устал ли ты. Я сказал, что ты в порядке. Ты же в порядке?" : "Отпуск — лучшее время, чтобы проверить рабочий чат. Мы добавили роуминг для него бесплатно."))}
       </div>`;
     },
     mount(root) {
@@ -2207,92 +2379,109 @@
         if (w && Math.random() < 0.4) { w.textContent = Math.max(12, +w.textContent + rnd(-3, 5)); }
       }, 1000);
       root.addEventListener("click", (e) => {
+        if (e.target.closest("[data-photo]")) {
+          const v = vac(); if (!v) return;
+          if (v.lastShot && Vibe.game.minutes() - v.lastShot < 60) { FX.toast("Ещё одно фото — и отпуск превратится в работу контент-мейкера", "📸"); return; }
+          Vibe.state.set({ lf_vacation: Object.assign({}, v, { lastShot: Vibe.game.minutes() }) });
+          const text = travel.photo(true);
+          FX.flash ? FX.flash() : null;
+          FX.burst(e.target.closest("[data-photo]"), { emojis: ["📸", "✨", v.e || "🌴"], count: 12 });
+          FX.sound.like && FX.sound.like();
+          FX.toast(`${text}${Vibe.gram ? " — в Vibegram!" : ""}`, "📸", 3200);
+          return;
+        }
+        if (e.target.closest("[data-endvac]")) {
+          Vibe.modal(`<div class="m-emo float">🧳</div><div class="display">Домой раньше?</div><p>Деньги за оставшиеся ночи не вернутся. Зато вернёшься ты — к задачам, дедлайнам и семье Vibe.</p>
+            <div class="stack"><button class="btn black block" data-close data-yes>Да, по работе соскучился</button><button class="btn block" data-close>Ещё отдохну 🌴</button></div>
+            <div class="fine">Корпорация ценит твою преданность. Это записано.</div>`, {
+            sound: "pop",
+            onMount(m) { m.querySelector("[data-yes]").addEventListener("click", () => { travel.end(true); T.to(() => Vibe.replace("travel"), 300); }); },
+          });
+          return;
+        }
         const t = e.target.closest("[data-trip]");
-        if (t) book(ALL_TRIPS.find((x) => x.id === t.dataset.trip), t);
+        if (t) book(tripById(t.dataset.trip), t);
       });
 
       function book(tr, card) {
+        if (!tr) return;
         FX.bump(card);
-        // Вылет — по игровому календарю: [подпись, множитель цены, через сколько дней]
-        const ny = ((60 - (gToday() % 360)) + 360) % 360 || 360;
-        const DATES = [1, 3, 7].map((off, i) => [whenStr(gToday() + off).replace(/^./, (x) => x.toUpperCase()), i === 2 ? 0.9 : 1, off]).concat([["Новый год", 3, ny]]);
-        let mult = 1, people = 2, dIdx = 0;
-        const calc = () => {
-          const base = Math.round(tr.p * people * mult);
-          const fuel = 4990 * people, fee = 990;
-          return { base, fuel, fee, total: base + fuel + fee };
-        };
+        if (travel.onVacation()) { FX.toast("Ты уже в отпуске! Отпуск в отпуске — это уже выгорание наоборот", "🌴"); return; }
+        if (travel.booked()) { FX.toast("Одна поездка за раз. Чемодан у тебя тоже один", "🧳"); return; }
+        // Отправление по игровому календарю: [подпись, через сколько дней]
+        const DATES = [1, 3, 7].map((off) => [whenStr(gToday() + off).replace(/^./, (x) => x.toUpperCase()), off]);
+        let people = 1, dIdx = 0, nights = tr.hot ? tr.n : 3;
+        const calc = () => tripCost(tr, nights, people);
         const c0 = calc();
         Vibe.ui.sheet(`
-          <div class="lf-photo ${tr.col}" style="height:150px;display:flex;align-items:center;justify-content:center;gap:10px;font-size:64px">
-            <span class="emo wobble">${tr.f}</span><span class="emo float">${tr.e}</span><span class="emo float d2" style="font-size:40px">🌴</span>
+          <div class="lf-photo ${tr.col}" style="height:140px;display:flex;align-items:center;justify-content:center;gap:10px;font-size:60px">
+            <span class="emo wobble">${tr.f}</span><span class="emo float">${tr.e}</span><span class="emo float d2" style="font-size:40px">${tr.how}</span>
           </div>
-          <div class="display" style="font-size:28px;margin-top:14px">${tr.to}</div>
-          <div class="muted" style="font-weight:700;font-size:13px">${tr.n} ночей · отель «Вайб Резорт 5★»</div>
-          <div class="lf-mini" style="margin-top:16px">Даты</div>
-          <div class="chips">${DATES.map((d, i) => `<button class="chip ${i === 0 ? "on" : ""}" data-date="${i}">${d[0]}${d[1] > 1 ? " ×3" : ""}</button>`).join("")}</div>
+          <div class="display" style="font-size:26px;margin-top:14px">${tr.to}</div>
+          <div class="muted" style="font-weight:700;font-size:13px">${tr.sub}</div>
+          <div class="lf-mini" style="margin-top:14px">Отправление · ${esc(tr.depL)}</div>
+          <div class="chips">${DATES.map((d, i) => `<button class="chip ${i === 0 ? "on" : ""}" data-date="${i}">${d[0]}</button>`).join("")}</div>
+          <div class="lf-row" style="margin-top:8px">
+            <div><div class="lf-mini">Ночей</div><div style="font-weight:800;font-size:13px;margin-top:2px">${tr.hot ? "пакетный тур, фиксировано" : "1 ночь = 1 игровой день"}</div></div>
+            ${tr.hot ? `<b style="font-size:18px">${nights}</b>` : `<div class="stepper"><button data-nt="-1">−</button><span data-ntn>${nights}</span><button data-nt="1">+</button></div>`}
+          </div>
           <div class="lf-row" style="margin-top:10px">
-            <div><div class="lf-mini">Путешественники</div><div style="font-weight:800;font-size:13px;margin-top:2px">взрослые (дети — тоже взрослые)</div></div>
+            <div><div class="lf-mini">Путешественники</div><div style="font-weight:800;font-size:13px;margin-top:2px">${tr.grandpa ? "дед рад всем" : "2 человека на номер"}</div></div>
             <div class="stepper"><button data-ppl="-1">−</button><span data-ppln>${people}</span><button data-ppl="1">+</button></div>
           </div>
-          <div class="card flat tight" style="margin-top:14px;font-size:13px;font-weight:700;display:grid;gap:4px">
-            <div>✅ Перелёт (туда)</div><div>✅ Отель 5★ (звёзды на потолке номера)</div><div>✅ Завтрак (концептуальный)</div><div>❌ Обратный билет*</div>
-          </div>
           <div style="margin-top:12px">
-            <div class="lf-fee"><span>Тур</span><span data-base>${rub(c0.base)}</span></div>
-            <div class="lf-fee"><span>Топливный сбор</span><span data-fuel>${rub(c0.fuel)}</span></div>
-            <div class="lf-fee"><span>Сбор за то, что вы в отпуске</span><span>${rub(c0.fee)}</span></div>
-            <div class="lf-total"><span class="display" style="font-size:18px">Итого</span><span class="big-num" data-tot data-val="${c0.total}">${rub(c0.total)}</span></div>
+            <div class="lf-fee"><span>${tr.hot ? "Тур «всё включено»" : `${tr.how} Билеты туда-обратно`}</span><span data-tk>${rub(c0.tickets)}</span></div>
+            ${tr.hot ? "" : `<div class="lf-fee"><span>${tr.grandpa ? "🏡 Ночлег у деда" : "🏨 Отель за ночи"}</span><span data-ht>${tr.grandpa ? "0 ₫ (пирожки)" : rub(c0.hotel)}</span></div>`}
+            ${c0.fee ? `<div class="lf-fee"><span>Сбор за то, что вы в отпуске</span><span>${rub(c0.fee)}</span></div>` : ""}
+            <div class="lf-total"><span class="display" style="font-size:18px">Итого</span><span class="big-num" data-tot>${rub(c0.total)}</span></div>
           </div>
-          <button class="btn black xl block" data-buy>Улетаю! ✈️ <span class="arrow">→</span></button>
-          <div class="fine">*Обратный билет продаётся отдельно, когда вы поймёте, что хотите вернуться. Вылет в 04:20 из аэропорта в 80 км.</div>`, {
+          <div class="card flat tight" style="font-size:12px;font-weight:700;display:grid;gap:3px;margin-bottom:12px">
+            <div>🏖️ Пока ты там: работа на паузе, ⚡ и 🙂 растут, стресс тает каждый час</div><div>📸 Фото-моменты — в Vibegram</div><div>🎁 Сувенир «${tr.souv.name}» ${tr.souv.e} — домой</div>
+          </div>
+          <button class="btn black xl block" data-buy>${tr.grandpa ? "Еду к деду! 🚃" : "Бронирую! ✈️"} <span class="arrow">→</span></button>
+          <div class="fine">${tr.grandpa ? "Дед просил не предупреждать заранее: «Всё равно напечёт». Связь в деревне — на крыше сарая." : "Отель 5★ (звёзды на потолке номера). Завтрак концептуальный. Вылет в 04:20 перенесён на 09:00 по многочисленным просьбам."}</div>`, {
           onMount(sh, close) {
             const upd = () => {
               const c = calc();
-              $(sh, "[data-base]").textContent = rub(c.base);
-              $(sh, "[data-fuel]").textContent = rub(c.fuel);
-              FX.countTo($(sh, "[data-tot]"), c.total, { fmt: Vibe.rub, dur: 500 });
+              $(sh, "[data-tk]").textContent = rub(c.tickets);
+              const ht = $(sh, "[data-ht]"); if (ht && !tr.grandpa) ht.textContent = rub(c.hotel);
+              FX.countTo($(sh, "[data-tot]"), c.total, { fmt: Vibe.rub, dur: 400 });
               FX.bump($(sh, "[data-tot]"));
             };
             sh.addEventListener("click", (e) => {
               const d = e.target.closest("[data-date]");
-              if (d) {
-                dIdx = +d.dataset.date; mult = DATES[dIdx][1];
-                $$(sh, "[data-date]").forEach((x) => x.classList.toggle("on", x === d));
-                FX.bump(d);
-                if (mult > 1) FX.toast("Новый год — это ×3. Праздник же!", "🎄");
-                upd();
-                return;
+              if (d) { dIdx = +d.dataset.date; $$(sh, "[data-date]").forEach((x) => x.classList.toggle("on", x === d)); FX.bump(d); return; }
+              const nt = e.target.closest("[data-nt]");
+              if (nt) {
+                const nn = nights + +nt.dataset.nt;
+                if (nn < 2 || nn > 7) { FX.shake(nt.parentElement); FX.toast(nn < 2 ? "Меньше 2 ночей — это командировка" : "Больше 7 — HR не подпишет", "🗓️"); return; }
+                nights = nn; const n = $(sh, "[data-ntn]"); n.textContent = nights; FX.bump(n); FX.sound.add(); upd(); return;
               }
               const p = e.target.closest("[data-ppl]");
               if (p) {
                 const np = people + +p.dataset.ppl;
-                if (np < 1 || np > 6) { FX.shake(p.parentElement); return; }
-                people = np;
-                const n = $(sh, "[data-ppln]"); n.textContent = people; FX.bump(n);
-                FX.sound.add();
-                upd();
-                return;
+                if (np < 1 || np > 4) { FX.shake(p.parentElement); return; }
+                people = np; const n = $(sh, "[data-ppln]"); n.textContent = people; FX.bump(n); FX.sound.add(); upd(); return;
               }
               const b = e.target.closest("[data-buy]");
-              if (b) {
-                const c = calc();
-                const ok = Vibe.pay(c.total, { title: `Vibe Travel · ${tr.to}`, emoji: tr.e, col: tr.col, from: b });
-                if (!ok) return;
-                close();
-                FX.confetti();
-                // Вылет — событие в календаре: аэроэкспресс от м. Сити
-                const day = gToday() + DATES[dIdx][2];
-                const se = Vibe.sched ? Vibe.sched.add({ kind: "travel", place: "metro2", day, hour: 9, dur: 240, title: `Аэроэкспресс → ${tr.to}`, e: "✈️", go: "travel", price: c.total }) : null;
-                Vibe.state.set({ life_trips: (st("life_trips", 0) || 0) + 1 });
-                Vibe.modal(`
-                  <div class="m-emo float">🧳</div>
-                  <div class="display">Чемоданы собраны!</div>
-                  <p>${tr.to}, ${people} чел. Аэроэкспресс ${whenStr(day, 9)} от м. Сити — уже в календаре. Опоздаешь больше чем на 4 часа — тур сгорит.</p>
-                  <div class="stack">${se ? mapsBtn("metro2", "Маршрут до аэроэкспресса 🚇", "btn black block") : ""}<button class="btn block" data-close>Скорее бы 🌴</button></div>
-                  <div class="fine">Возврат средств возможен только эмоциональный.</div>`);
-                T.to(() => FX.burst({ x: innerWidth / 2, y: innerHeight / 2 - 80 }, { emojis: ["✈️", "🌴", "☀️", "🏖️"], count: 20 }), 300);
-              }
+              if (!b) return;
+              const c = calc();
+              const ok = Vibe.pay(c.total, { title: `Vibe Поездки · ${tr.to}`, emoji: tr.e, col: tr.col, from: b });
+              if (!ok) return;
+              close();
+              FX.confetti();
+              const day = gToday() + DATES[dIdx][1];
+              const trip = { id: tr.id, nights, people, to: tr.to, fromDay: day, toDay: day + nights };
+              const se = Vibe.sched ? Vibe.sched.add({ kind: "travel", place: tr.dep, day, hour: 9, dur: 240, title: `${tr.how} → ${tr.to}`, e: tr.how, go: "travel", price: c.total, trip }) : null;
+              Vibe.state.set({ life_trips: (st("life_trips", 0) || 0) + 1, lf_trip: Object.assign({ ev: se && se.id }, trip) });
+              Vibe.emit && Vibe.emit("travel_book", trip);
+              Vibe.modal(`
+                <div class="m-emo float">🧳</div>
+                <div class="display">${tr.grandpa ? "Дед уже топит баню!" : "Чемоданы собраны!"}</div>
+                <p>${tr.to}, ${nights} ${plural(nights, "ночь", "ночи", "ночей")}, ${people} чел. Отправление ${whenStr(day, 9)} — ${esc(tr.depL)}. Уже в календаре. Приедешь на место — отпуск начнётся.</p>
+                <div class="stack">${se ? mapsBtn(tr.dep, "Маршрут до отправления 🚇", "btn black block") : ""}<button class="btn block" data-close>Скорее бы 🌴</button></div>
+                <div class="fine">Возврат средств возможен только эмоциональный.</div>`);
+              T.to(() => { FX.burst({ x: innerWidth / 2, y: innerHeight / 2 - 80 }, { emojis: [tr.how, tr.e, "☀️", "🧳"], count: 20 }); Vibe.replace("travel"); }, 300);
             });
           },
         });
@@ -2310,7 +2499,7 @@
     { id: "fin", e: "💰", short: "Финграмотность", t: "Финграмотность: как не брать кредиты", by: "спонсор — Vibe Credit", p: 9990, old: 19990, dur: "1 месяц", col: "c-yellow", les: ["Бюджет", "Подушка безопасности", "Почему кредит — это нормально (интеграция)", "Как оформить рассрочку на этот курс"], badge: "Можно в кредит" },
     { id: "med", e: "🧘", short: "Медитация 30 сек", t: "Медитация за 30 секунд", by: "гуру из рилсов", p: 1990, old: 9990, dur: "30 секунд", col: "c-lilac", les: ["Дышим", "Не дышим", "Ищем дзен в уведомлениях", "Отпускаем (не дедлайны)"], badge: "Для занятых" },
     { id: "code", e: "💻", short: "Код без кода", t: "Пишем код без кода и без смысла", by: "сеньор-помидор", p: 14990, old: 59990, dur: "6 недель", col: "c-sky", les: ["Ctrl+C", "Ctrl+V", "Спрашиваем нейросеть", "Спрашиваем другую нейросеть", "Деплой в пятницу"], badge: "−75%" },
-    { id: "blog", e: "📱", short: "Блогер-миллионник", t: "Как стать блогером-миллионником", by: "блогер с 1 000 000 (рублей долга)", p: 19990, old: 49990, dur: "∞", col: "c-coral", les: ["Свет из окна", "Хук в первую секунду", "Покупаем подписчиков (не покупайте)"], badge: "Осталось 2 места" },
+    { id: "blog", e: "📱", short: "Блогер-миллионник", t: "Как стать блогером-миллионником", by: "блогер с 1 000 000 (дэнег долга)", p: 19990, old: 49990, dur: "∞", col: "c-coral", les: ["Свет из окна", "Хук в первую секунду", "Покупаем подписчиков (не покупайте)"], badge: "Осталось 2 места" },
   ];
   const cById = (id) => COURSES.find((c) => c.id === id);
   const myCourses = () => st("life_courses", { cats: 1, med: 2 });
@@ -2472,7 +2661,7 @@
         <div class="lf-row" style="margin-top:12px">
           <div><div class="price" style="font-size:20px">${rub(c.p)}</div><div class="old-price">${rub(c.old)}</div></div>
           <div style="display:flex;gap:6px">
-            ${own ? `<button class="btn lime sm" data-open="${c.id}">Продолжить →</button>` : `<button class="btn sm" data-trial="${c.id}">Урок 0 ₽</button><button class="btn black sm" data-buy="${c.id}">Купить</button>`}
+            ${own ? `<button class="btn lime sm" data-open="${c.id}">Продолжить →</button>` : `<button class="btn sm" data-trial="${c.id}">Урок 0 ₫</button><button class="btn black sm" data-buy="${c.id}">Купить</button>`}
           </div>
         </div>
       </div>`;
@@ -2517,7 +2706,7 @@
               </div>
             </div>
             <div class="lf-row" style="margin-top:12px">
-              <div><div class="price" style="font-size:22px">${dec(c.ppm)} ₽<span style="font-family:var(--font);font-size:12px;font-weight:800">/мин</span></div><div class="fine" style="margin-top:0">+${START_FEE} ₽ за старт, +2 ₽/мин за грусть</div></div>
+              <div><div class="price" style="font-size:22px">${dec(c.ppm)} ₫<span style="font-family:var(--font);font-size:12px;font-weight:800">/мин</span></div><div class="fine" style="margin-top:0">+${START_FEE} ₫ за старт, +2 ₫/мин за грусть</div></div>
               <button class="btn black sm" data-reserve="${c.id}">Забронировать</button>
             </div>
           </div>`).join("")}</div>
@@ -2560,7 +2749,7 @@
               <button class="btn black xl block" data-unlockstage>Открыть машину 🔓</button>
               <button class="btn block" data-cancel>Отменить</button>
             </div>
-            <div class="fine" style="color:var(--ink);opacity:.7">После 20 минут ожидание платное: 3 ₽/мин и немного осуждения.</div>
+            <div class="fine" style="color:var(--ink);opacity:.7">После 20 минут ожидание платное: 3 ₫/мин и немного осуждения.</div>
           </div>`);
         tick = T.every(() => {
           left--;
@@ -2600,7 +2789,7 @@
             <div class="lf-lane"><span class="car">${car.e}</span></div>
             <div class="lf-row" style="align-items:flex-end">
               <div><div class="lf-mini" style="color:#aaa">К оплате</div><div class="big-num" style="font-size:44px;color:var(--lime)" data-cost>${rub(START_FEE)}</div></div>
-              <div style="text-align:right;font-weight:800;font-size:13px"><div data-km>0,0 км</div><div style="opacity:.6">${dec(car.ppm)} ₽/мин</div></div>
+              <div style="text-align:right;font-weight:800;font-size:13px"><div data-km>0,0 км</div><div style="opacity:.6">${dec(car.ppm)} ₫/мин</div></div>
             </div>
             <button class="btn lime xl block" data-finish style="margin-top:14px">Завершить поездку 🏁</button>
             <div class="fine" style="color:#aaa">Тариф «Время летит»: 1 сек = 1 мин. Поездка застрахована от всего, кроме вас.</div>
@@ -2645,7 +2834,7 @@
           T.to(() => FX.bump(cardEl), 400);
           return;
         }
-        if (e.target.closest("[data-cancel]")) { toList(); FX.sound.pop(); FX.toast("Бронь отменена. Штраф 0 ₽ (в этот раз)", "🙅"); return; }
+        if (e.target.closest("[data-cancel]")) { toList(); FX.sound.pop(); FX.toast("Бронь отменена. Штраф 0 ₫ (в этот раз)", "🙅"); return; }
         if (e.target.closest("[data-unlockstage]")) { FX.bump(e.target.closest("[data-unlockstage]")); unlockStage(); return; }
         const lk = e.target.closest("[data-unlock]");
         if (lk) { unlock(lk); return; }
@@ -2677,9 +2866,9 @@
       <div class="stagger">
         ${Vibe.ui.hero({ title: "Уберём всё, кроме долгов", text: "Клинер приедет в окно с 9:00 до 21:00", emo: "🧽", color: "c-mint", sticker: "✨ −20%" })}
         <div class="card" style="margin-top:14px">
-          <div class="li"><div class="ic c-yellow">🛋️</div><div class="tx"><b>Комнаты</b><small>+900 ₽ за каждую</small></div>
+          <div class="li"><div class="ic c-yellow">🛋️</div><div class="tx"><b>Комнаты</b><small>+900 ₫ за каждую</small></div>
             <div class="stepper"><button data-st="rooms" data-d="-1">−</button><span data-v="rooms">2</span><button data-st="rooms" data-d="1">+</button></div></div>
-          <div class="li"><div class="ic c-sky">🛁</div><div class="tx"><b>Санузлы</b><small>+700 ₽ за каждый</small></div>
+          <div class="li"><div class="ic c-sky">🛁</div><div class="tx"><b>Санузлы</b><small>+700 ₫ за каждый</small></div>
             <div class="stepper"><button data-st="baths" data-d="-1">−</button><span data-v="baths">1</span><button data-st="baths" data-d="1">+</button></div></div>
         </div>
         <h2 class="sec">Дополнительно</h2>

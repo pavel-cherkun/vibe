@@ -21,13 +21,159 @@
     steps: 0, stepsDay: 0, stepsLog: [], sleepLog: [], meals: [],
     fridge: 0, sleeping: null, cur: null, lastMin: null, workoutAt: -9999, sick: false,
     effects: {}, cleanUntil: -1,
+    // Стресс и выгорание
+    stress: 15, burn: 0, leave: null, burnModal: false, workStreak: 0, lastWorkDay: -1,
+    stressLog: [], stressWhy: [],
   });
   const B = () => Object.assign(DEFAULT(), S().body || {});
-  const save = (b) => { Vibe.state.set({ body: b }); listeners.forEach((fn) => fn(b)); };
   const nowMin = () => Vibe.game.minutes();
   const dayOf = (m) => Math.floor(m / 1440);
   const hourOf = (m) => Math.floor((m % 1440) / 60);
   const isNight = (h) => h >= 23 || h < 7;
+
+  /* ---------- Стресс и выгорание ----------
+     stress 0–100. Стадии: 0 «Ок» → 1 «Устал» (≥40, −10%) → 2 «На грани» (≥65, −25%)
+     → 3 «Выгорание» (≥90): больничный 3 игровых дня, работа на паузе.
+     Спуск по стадиям с гистерезисом 8 пунктов. Из выгорания — только через отдых. */
+  const STAGES = [
+    { id: 0, t: "Ок", e: "😌", mult: 1, col: "c-lime" },
+    { id: 1, t: "Устал", e: "😮‍💨", mult: 0.9, col: "c-yellow" },
+    { id: 2, t: "На грани", e: "😵‍💫", mult: 0.75, col: "c-orange" },
+    { id: 3, t: "Выгорание", e: "🫠", mult: 0, col: "c-coral" },
+  ];
+  const UP = [40, 65, 90];
+  const LEAVE_DAYS = 3;
+  const post = [];                  // что сделать после save (события, тосты, модалка)
+  const flush = () => post.splice(0).forEach((fn) => { try { fn(); } catch (e) { console.error(e); } });
+  const save = (b) => { Vibe.state.set({ body: b }); listeners.forEach((fn) => fn(b)); flush(); };
+  const stageOf = (b) => (b.leave ? 3 : b.burn || 0);
+  function addStress(b, d, why, e = "") {
+    b.stress = clamp((b.stress == null ? 15 : b.stress) + d);
+    if (why && Math.abs(d) >= 2) b.stressWhy = [...(b.stressWhy || []), { d: Math.round(d), t: why, e, min: nowMin() }].slice(-12);
+  }
+  const goodWeather = () => {
+    const w = Vibe.weather && Vibe.weather.now ? Vibe.weather.now() : null;
+    return !w || !/rain|storm|snow/.test(w.kind || "");
+  };
+  const MOM_LINES = [
+    "Солнышко, ты как? Голос у тебя по телефону совсем уставший 😟",
+    "Работа не волк. Приезжай на выходных, я пирожки сделаю 🥟",
+    "Я тут прочитала, что выгорание — это серьёзно. Отдохни, пожалуйста. Мама волнуется",
+    "Ты ешь хоть? И спишь? Не отвечай «нормально», я же чувствую 💛",
+  ];
+  function momSays() {
+    const t = MOM_LINES[Math.floor(Math.random() * MOM_LINES.length)];
+    let sent = false;
+    if (Vibe.msg && Vibe.msg.send) { try { Vibe.msg.send("mom", t, { from: "mom" }); sent = true; } catch (e) {} }
+    setTimeout(() => FX.toast(`${sent ? "Сообщение от мамы: " : "Мама: "}${t}`, "👩", 4200), 3000);
+  }
+
+  // Пересчитать стадию; события и тосты — в post (после save)
+  function updateStage(b, notes, quiet) {
+    const m = nowMin();
+    const prev = b.burn || 0;
+    // Больничный: выход, когда срок прошёл и стресс отпустил
+    if (b.leave) {
+      if (m >= b.leave.until) {
+        if (b.stress < 50) {
+          b.leave = null;
+          b.burn = b.stress >= UP[0] ? 1 : 0;
+          notes.push({ e: "🌱", t: "Больничный закончился. Ты вернулся — береги себя, это не спринт" });
+          const st = b.burn;
+          post.push(() => Vibe.emit && Vibe.emit("burnout", { stage: st, recovered: true, stress: Math.round(b.stress) }));
+        } else {
+          b.leave.until = m + 720;
+          notes.push({ e: "🛌", t: `Стресс ещё ${Math.round(b.stress)}%. Больничный продлён на полдня: нужен отдых или психолог` });
+        }
+      }
+      if (b.leave) { b.burn = 3; return; }
+    }
+    let st = prev >= 3 ? 2 : prev;
+    while (st < 3 && b.stress >= UP[st]) st++;
+    while (st > 0 && st < 3 && b.stress < UP[st - 1] - 8) st--;
+    if (st === 3) {
+      b.leave = { from: m, until: m + LEAVE_DAYS * 1440 };
+      b.burnModal = true;
+      b.burn = 3;
+      b.mood = Math.min(b.mood, 45);
+      const leave = Object.assign({}, b.leave);
+      post.push(() => Vibe.emit && Vibe.emit("burnout", { stage: 3, until: leave.until, stress: Math.round(b.stress) }));
+      post.push(() => Vibe.emit && Vibe.emit("stress", { stage: 3, prev }));
+      return;
+    }
+    b.burn = st;
+    if (st !== prev) {
+      post.push(() => Vibe.emit && Vibe.emit("stress", { stage: st, prev }));
+      if (!quiet) {
+        if (st > prev && st === 1) notes.push({ e: "😮‍💨", t: "Браслет: ты устал. Продуктивность −10%. Отдых — это тоже работа" });
+        if (st > prev && st === 2) notes.push({ e: "😵‍💫", t: "Браслет: ты на грани. Продуктивность −25%. Пульс выше, сон хуже. Пора тормозить" });
+        if (st < prev) notes.push({ e: "🌤️", t: `Стресс отступает: «${STAGES[st].t}»` });
+      }
+    }
+    // На грани — браслет и мама напоминают раз в игровой день
+    if (st === 2 && b.effects.warnDay !== dayOf(m)) {
+      b.effects.warnDay = dayOf(m);
+      if (!quiet && st === prev) notes.push({ e: "⌚", t: `Браслет: стресс ${Math.round(b.stress)}%. Выходной, прогулка или психолог — выбери что-нибудь` });
+      post.push(momSays);
+    }
+  }
+
+  /* ---------- Модалка «Тамагочи улетает» ---------- */
+  function injectBurnCss() {
+    if (document.getElementById("bo-style")) return;
+    const st = document.createElement("style");
+    st.id = "bo-style";
+    st.textContent = `
+      .bo-sky { position: relative; height: 210px; margin: -6px -4px 12px; border: var(--line); border-radius: 22px; overflow: hidden;
+        background: linear-gradient(180deg, #8fd8ff 0%, #d9c8ff 70%, #ffe14d 100%); }
+      .bo-cloud { position: absolute; font-size: 38px; opacity: .9; animation: bo-drift 9s linear infinite; }
+      .bo-fly { position: absolute; left: 50%; bottom: 14px; display: flex; flex-direction: column; align-items: center;
+        animation: bo-up 4.2s cubic-bezier(.45,0,.7,1) .5s both; }
+      .bo-fly .bo-bal { font-size: 44px; animation: bo-sway 1.4s ease-in-out infinite; transform-origin: 50% 100%; }
+      .bo-fly .bo-str { width: 2px; height: 22px; background: var(--ink); }
+      .bo-fly .bo-ava { font-size: 58px; animation: bo-sway 1.4s ease-in-out infinite reverse; }
+      .bo-sign { position: absolute; left: 50%; bottom: 10px; transform: translateX(-50%) rotate(-3deg); background: #fff; border: var(--line);
+        border-radius: 10px; padding: 4px 10px; font-weight: 800; font-size: 12px; box-shadow: var(--shadow-sm); opacity: 0;
+        animation: bo-sign .5s var(--spring) 4.3s both; white-space: nowrap; }
+      .bo-puff { position: absolute; left: 50%; top: 18px; transform: translateX(-50%); font-size: 30px; opacity: 0; animation: bo-puff 1s ease 4.4s both; }
+      @keyframes bo-up { 0% { transform: translate(-50%, 0) rotate(0); } 20% { transform: translate(-46%, -20px) rotate(4deg); }
+        100% { transform: translate(-30%, -300px) rotate(-10deg) scale(.45); opacity: .2; } }
+      @keyframes bo-sway { 50% { transform: rotate(8deg); } }
+      @keyframes bo-drift { from { transform: translateX(-60px); } to { transform: translateX(420px); } }
+      @keyframes bo-sign { from { opacity: 0; transform: translateX(-50%) scale(.3); } to { opacity: 1; transform: translateX(-50%) rotate(-3deg); } }
+      @keyframes bo-puff { 0% { opacity: 0; transform: translateX(-50%) scale(.4); } 50% { opacity: 1; } 100% { opacity: 0; transform: translateX(-50%) scale(1.6); } }
+    `;
+    document.head.appendChild(st);
+  }
+  function showBurnModal() {
+    if (!Vibe.modal) return;
+    injectBurnCss();
+    const ava = (S().profile && S().profile.avatar) || "😎";
+    Vibe.modal(`
+      <div class="bo-sky">
+        <span class="bo-cloud" style="top:16px;animation-delay:-2s">☁️</span>
+        <span class="bo-cloud" style="top:70px;animation-delay:-6s;font-size:28px">☁️</span>
+        <div class="bo-fly"><span class="bo-bal">🎈</span><span class="bo-str"></span><span class="bo-ava">${ava}</span></div>
+        <span class="bo-puff">💨</span>
+        <div class="bo-sign">Ушёл в себя. Вернусь через ${LEAVE_DAYS} дня</div>
+      </div>
+      <div class="display" style="font-size:30px">Выгорание</div>
+      <p>Твой тамагочи улетел. Больничный на ${LEAVE_DAYS} игровых дня: рабочие задачи на паузе, продуктивность 0%, настроение не выше 45.</p>
+      <p style="font-weight:700">Вернуть его помогут сон, выходной без телефона, прогулки, близкие и психолог.</p>
+      <div style="display:grid;gap:10px;margin-top:12px">
+        <button class="btn black block" data-go="psy" data-close>🛋️ В Vibe Психолог</button>
+        <button class="btn block" data-close>Просто полежать 😶</button>
+      </div>
+      <div class="fine">Корпорация желает скорейшего возвращения в строй. Твои задачи никуда не денутся 💜</div>`, { sound: "error" });
+    FX.haptic && FX.haptic([40, 60, 40, 60, 120]);
+  }
+  function maybeBurnModal() {
+    const b = B();
+    if (!b.burnModal || document.hidden || document.querySelector(".modal")) return;
+    b.burnModal = false;
+    Vibe.state.set({ body: b });
+    setTimeout(showBurnModal, 400);
+  }
 
   /* ---------- Качество сна зависит от жилья ---------- */
   function sleepQuality(b = B()) {
@@ -59,15 +205,20 @@
     };
     let v = parts.energy * 0.4 + parts.food * 0.2 + parts.mood * 0.25 + parts.health * 0.15;
     if (b.sick) v *= 0.55;
+    const stage = stageOf(b);
+    v *= STAGES[stage].mult;
     if (b.sleeping) v = 0;
-    return { value: Math.round(clamp(v, 0, 100)), parts };
+    parts.stress = Math.round(b.stress || 0);
+    const note = stage === 3 ? "Больничный по выгоранию: работа на паузе"
+      : stage ? `${STAGES[stage].e} ${STAGES[stage].t}: −${Math.round((1 - STAGES[stage].mult) * 100)}% к продуктивности` : "";
+    return { value: Math.round(clamp(v, 0, 100)), parts, stage, note };
   }
 
   function heartRate(b = B()) {
     const sinceWorkout = nowMin() - (b.workoutAt || -9999);
     const workout = sinceWorkout < 60 ? (60 - sinceWorkout) * 0.8 : 0;
     const base = b.sleeping ? 54 : 64;
-    return Math.round(base + (100 - b.energy) * 0.08 + (100 - b.mood) * 0.12 + workout + (b.sick ? 14 : 0));
+    return Math.round(base + (100 - b.energy) * 0.08 + (100 - b.mood) * 0.12 + (b.stress || 0) * 0.15 + workout + (b.sick ? 14 : 0));
   }
 
   /* ---------- Симуляция ---------- */
@@ -80,6 +231,18 @@
       const act = clamp((b.steps / STEP_GOAL) * 100);
       const target = sleepScore * 0.35 + b.nutrition * 0.3 + act * 0.2 + b.mood * 0.15;
       b.health = clamp(b.health + (target - b.health) * 0.25);
+      // Стресс за прошедший день: выходные, переработки, недосып
+      const prevDay = b.stepsDay;
+      if (b.lastWorkDay === prevDay) {
+        b.workStreak = (b.workStreak || 0) + 1;
+        if (b.workStreak > 5) addStress(b, 3 * (b.workStreak - 5), `${b.workStreak} дней без выходных`, "📆");
+      } else {
+        b.workStreak = 0;
+        if (!b.leave) addStress(b, -6, "День без работы", "🛋️");
+      }
+      if (lastSleep && lastSleep.day < prevDay) addStress(b, 6, "Ночь без нормального сна", "🌚");
+      else if (lastSleep && lastSleep.hours < 6) addStress(b, (6 - lastSleep.hours) * 2, `Недосып: ${lastSleep.hours} ч`, "🥱");
+      b.stressLog = [...(b.stressLog || []), { day: prevDay, v: Math.round(b.stress || 0) }].slice(-7);
       b.steps = 0; b.stepsDay = newDay;
       b.meals = (b.meals || []).filter((m) => m.day >= newDay - 6);
       if (b.health < 35 && !b.sick && Math.random() < 0.35) { b.sick = true; b.notes.push({ e: "🤒", t: "Ты заболел. Продуктивность ×0,5. Помогут врач (Vibe Health) и сон" }); }
@@ -142,21 +305,36 @@
       } else if (!b.sleeping) b.steps += (step / 60) * 120;
       const k = step / 60;
       if (b.sleeping) {
-        b.energy = clamp(b.energy + SLEEP_GAIN * b.sleeping.q * k);
+        b.energy = clamp(b.energy + SLEEP_GAIN * b.sleeping.q * (Vibe.skills ? Vibe.skills.mult("sleep") : 1) * k);
         b.food = clamp(b.food - 1.5 * k);
         if (b.cur) b.cur.mins += step;
         if (b.energy >= 100 && !isNight(h)) { const rec = endSleep(b, m); if (rec && !auto) b.notes.push({ e: "☀️", t: `Ты проснулся. Сон ${rec.hours} ч, качество ${Math.round(rec.q * 100)}%` }); }
       } else {
-        b.energy = clamp(b.energy - (b.sick ? DRAIN + 1.5 : DRAIN) * k);
+        b.energy = clamp(b.energy - (b.sick ? DRAIN + 1.5 : DRAIN) * (Vibe.skills ? Vibe.skills.mult("energyDrain") : 1) * k);
         b.food = clamp(b.food - 5 * k);
       }
       // Настроение тянется к базе, голод и усталость его портят
-      const base = 58 + (S().balance < 0 ? -15 : 0) + (Vibe.inv ? Math.min(20, Vibe.inv.bonus("mood")) : 0);
+      const stg = stageOf(b);
+      const base = 58 + (S().balance < 0 ? -15 : 0) + (Vibe.inv ? Math.min(20, Vibe.inv.bonus("mood")) : 0) - [0, 3, 8, 12][stg];
       b.mood = clamp(b.mood + (base - b.mood) * 0.04 * k - (b.food < 20 ? 3 * k : 0) - (b.energy < 20 ? 3 * k : 0));
+      if (b.leave) b.mood = Math.min(b.mood, 45);
+      // Стресс: сон и хорошее настроение снимают, голод, усталость и минус на карте копят
+      let ds = 0;
+      if (b.sleeping) ds -= 1.4 * b.sleeping.q * k;
+      else {
+        ds -= 0.15 * k;
+        if (b.mood > 65) ds -= 0.25 * k;
+        if (b.food < 15) ds += 0.8 * k;
+        if (b.energy < 15) ds += 0.5 * k;
+        if (S().balance < 0) ds += 0.12 * k;
+      }
+      if (b.leave) ds -= 0.6 * k;
+      b.stress = clamp((b.stress == null ? 15 : b.stress) + ds);
       m += step;
     }
     if (dayOf(now) !== b.stepsDay) rollDay(b, dayOf(now));
     b.lastMin = now;
+    updateStage(b, b.notes, auto);
     // Предупреждения, пока игрок в приложении
     if (!auto) {
       const was = S().body || {};
@@ -169,44 +347,95 @@
     const notes = b.notes; delete b.notes;
     save(b);
     notes.forEach((n, i) => setTimeout(() => FX.toast(n.t, n.e, 3200), 600 + i * 1200));
+    maybeBurnModal();
   }
 
   /* ---------- Воздействия: всё, что делает игрок ---------- */
   const EFFECTS = {
     eat_out: (b) => { const M = addMeal(b, "eat_out"); return `${M.e} Сытость +${M.food}%`; },
     junk: (b) => { const M = addMeal(b, "junk"); b.mood = clamp(b.mood + 4); return `${M.e} Сытость +${M.food}%, питание хуже`; },
-    cook: (b) => { if (b.fridge <= 0) return null; b.fridge--; const M = addMeal(b, "cooked"); b.mood = clamp(b.mood + 3); return `${M.e} Сытость +${M.food}%, питание лучше`; },
+    cook: (b) => { if (b.fridge <= 0) return null; b.fridge--; const M = addMeal(b, "cooked"); b.mood = clamp(b.mood + 3); addStress(b, -1); return `${M.e} Сытость +${M.food}%, питание лучше`; },
     healthy: (b) => { const M = addMeal(b, "healthy"); return `${M.e} Сытость +${M.food}%, питание +`; },
-    groceries: (b, o) => { const n = clamp(Math.round((o.amount || 800) / 220), 1, 12); /* ~220 ₽ за порцию */ b.fridge = Math.min(20, (b.fridge || 0) + n); return `🧊 В холодильнике +${n} порц.`; },
+    groceries: (b, o) => { const n = clamp(Math.round((o.amount || 800) / 220), 1, 12); /* ~220 ₫ за порцию */ b.fridge = Math.min(20, (b.fridge || 0) + n); return `🧊 В холодильнике +${n} порц.`; },
     coffee: (b) => { b.energy = clamp(b.energy + 10); if (hourOf(nowMin()) >= 17) b.effects.coffeeLate = dayOf(nowMin()); return "☕ Энергия +10%"; },
-    walk: (b, o) => { const st = Math.round((o.km || 1) * 1350); b.steps += st; b.energy = clamp(b.energy - 3); b.mood = clamp(b.mood + 4); b.health = clamp(b.health + 0.5); return `🚶 +${Vibe.fmt(st)} шагов`; },
+    walk: (b, o) => { const st = Math.round((o.km || 1) * 1350); b.steps += st; b.energy = clamp(b.energy - 3); b.mood = clamp(b.mood + 4); b.health = clamp(b.health + 0.5); const nice = goodWeather(); addStress(b, nice ? -5 : -2, nice ? "Прогулка в хорошую погоду" : "Прогулка", "🚶"); return `🚶 +${Vibe.fmt(st)} шагов${nice ? ", стресс −5" : ""}`; },
     metro: (b, o) => { const st = Math.round(600 + (o.km || 1) * 200); b.steps += st; b.energy = clamp(b.energy - 2); return `🚇 +${Vibe.fmt(st)} шагов`; },
     taxi: (b) => { b.energy = clamp(b.energy + 2); return "🚕 Сберёг силы"; },
-    workout: (b, o) => { const st = 2500 + Math.round((o.score || 0.7) * 2500); b.steps += st; b.energy = clamp(b.energy - 12); b.mood = clamp(b.mood + 10); b.health = clamp(b.health + 2); b.workoutAt = nowMin(); return `🏋️ +${Vibe.fmt(st)} шагов, настроение +10`; },
-    meditate: (b) => { b.mood = clamp(b.mood + 9); return "🧘 Настроение +9"; },
-    concert: (b) => { b.mood = clamp(b.mood + 25); b.energy = clamp(b.energy - 10); b.steps += 3000; return "🎤 Настроение +25"; },
-    music: (b) => { if ((b.effects.music || 0) > nowMin() - 120) return null; b.effects.music = nowMin(); b.mood = clamp(b.mood + 4); return "🎧 Настроение +4"; },
-    games: (b) => { if ((b.effects.games || 0) > nowMin() - 120) return null; b.effects.games = nowMin(); b.mood = clamp(b.mood + 4); b.energy = clamp(b.energy - 2); return "🎮 Настроение +4"; },
-    date: (b) => { if ((b.effects.date || 0) > nowMin() - 180) return null; b.effects.date = nowMin(); b.mood = clamp(b.mood + 6); return "💘 Настроение +6"; },
-    shopping: (b) => { b.mood = clamp(b.mood + 3); return "🛍️ Настроение +3 (ненадолго)"; },
-    doctor: (b) => { b.health = clamp(b.health + 15); b.sick = false; return "🏥 Здоровье +15"; },
+    workout: (b, o) => { const st = 2500 + Math.round((o.score || 0.7) * 2500); b.steps += st; b.energy = clamp(b.energy - 12); b.mood = clamp(b.mood + 10); b.health = clamp(b.health + 2); b.workoutAt = nowMin(); addStress(b, -4, "Тренировка", "🏋️"); return `🏋️ +${Vibe.fmt(st)} шагов, настроение +10`; },
+    meditate: (b) => { b.mood = clamp(b.mood + 9); addStress(b, -6, "Медитация / хобби", "🧘"); return "🧘 Настроение +9, стресс −6"; },
+    concert: (b) => { b.mood = clamp(b.mood + 25); b.energy = clamp(b.energy - 10); b.steps += 3000; addStress(b, -8, "Концерт", "🎤"); return "🎤 Настроение +25"; },
+    music: (b) => { if ((b.effects.music || 0) > nowMin() - 120) return null; b.effects.music = nowMin(); b.mood = clamp(b.mood + 4); addStress(b, -1); return "🎧 Настроение +4"; },
+    games: (b) => { if ((b.effects.games || 0) > nowMin() - 120) return null; b.effects.games = nowMin(); b.mood = clamp(b.mood + 4); b.energy = clamp(b.energy - 2); addStress(b, -1); return "🎮 Настроение +4"; },
+    date: (b) => { if ((b.effects.date || 0) > nowMin() - 180) return null; b.effects.date = nowMin(); b.mood = clamp(b.mood + 6); addStress(b, -5, "Свидание", "💘"); return "💘 Настроение +6"; },
+    shopping: (b) => { b.mood = clamp(b.mood + 3); addStress(b, -1); return "🛍️ Настроение +3 (ненадолго)"; },
+    doctor: (b) => { b.health = clamp(b.health + 15); b.sick = false; addStress(b, -2, "Сходил к врачу", "🏥"); return "🏥 Здоровье +15"; },
     pharmacy: (b) => { b.health = clamp(b.health + 5); return "💊 Здоровье +5"; },
-    clean: (b) => { b.cleanUntil = dayOf(nowMin()) + 3; b.mood = clamp(b.mood + 8); return "🫧 Чисто! Сон лучше 3 дня"; },
-    travel: (b) => { b.mood = 100; b.energy = 100; b.health = clamp(b.health + 10); return "🏝️ Отдохнул на 100%"; },
+    clean: (b) => { b.cleanUntil = dayOf(nowMin()) + 3; b.mood = clamp(b.mood + 8); addStress(b, -3, "Уборка дома", "🫧"); return "🫧 Чисто! Сон лучше 3 дня"; },
+    travel: (b) => { b.mood = 100; b.energy = 100; b.health = clamp(b.health + 10); addStress(b, -35, "Путешествие", "🏝️"); return "🏝️ Отдохнул на 100%, стресс −35"; },
     study: (b) => { b.energy = clamp(b.energy - 5); b.mood = clamp(b.mood + 2); return "🎓 Энергия −5"; },
-    work: (b) => { b.energy = clamp(b.energy - 4); b.mood = clamp(b.mood - 1); b.food = clamp(b.food - 3); return null; },
-    salary: (b) => { b.mood = clamp(b.mood + 15); return null; },
-    bill: (b) => { b.mood = clamp(b.mood - 4); return null; },
-    social: (b) => { b.mood = clamp(b.mood + 10); b.energy = clamp(b.energy - 4); return "🫂 Встреча с близкими: настроение +10"; },
-    mom: (b) => { b.mood = clamp(b.mood + 6); return "📞 Поговорил с мамой. Настроение +6"; },
+    work: (b) => {
+      const m = nowMin(), h = hourOf(m);
+      b.energy = clamp(b.energy - 4); b.mood = clamp(b.mood - 1); b.food = clamp(b.food - 3);
+      b.lastWorkDay = dayOf(m);
+      addStress(b, 2, "Рабочая задача", "💼");
+      if (b.energy < 30) addStress(b, 1.5, "Работа на последнем издыхании", "🪫");
+      if (h >= 19 || h < 8 || dayOf(m) % 7 >= 5) addStress(b, 2, "Переработка", "🌙");
+      if (b.leave) addStress(b, 6, "Работа на больничном", "🚫");
+      return null;
+    },
+    salary: (b) => { b.mood = clamp(b.mood + 15); addStress(b, -6, "Пришла зарплата", "💸"); return null; },
+    bill: (b) => { b.mood = clamp(b.mood - 4); addStress(b, 3, "Счета и списания", "🧾"); return null; },
+    social: (b) => { b.mood = clamp(b.mood + 10); b.energy = clamp(b.energy - 4); addStress(b, -6, "Встреча с близкими", "🫂"); return "🫂 Встреча с близкими: настроение +10"; },
+    mom: (b) => { b.mood = clamp(b.mood + 6); addStress(b, -3, "Разговор с мамой", "📞"); return "📞 Поговорил с мамой. Настроение +6"; },
+    // ---- Стресс и выгорание ----
+    // Сессия с психологом. opts.power: 0.2 (коуч-позитивщик) … 1,3 (очно в клинике)
+    therapy: (b, o) => {
+      const p = o.power == null ? 1 : o.power;
+      const recent = (b.effects.therapy || -9999) > nowMin() - 720;
+      const d = -Math.round(18 * p * (recent ? 0.5 : 1)) - (b.leave ? 6 : 0);
+      b.effects.therapy = nowMin();
+      b.mood = clamp(b.mood + Math.round(6 * p));
+      addStress(b, d, o.why || "Сессия с психологом", "🛋️");
+      return `🛋️ Стресс ${d}, настроение +${Math.round(6 * p)}${recent ? " (вторая сессия за полдня работает слабее)" : ""}`;
+    },
+    // Настоящий выходной: без работы и без телефона
+    rest_day: (b, o) => {
+      const recent = (b.effects.rest || -9999) > nowMin() - 720;
+      b.effects.rest = nowMin();
+      const d = recent ? -4 : -(o.d || 15);
+      b.mood = clamp(b.mood + (recent ? 2 : 8)); b.energy = clamp(b.energy + (recent ? 0 : 10));
+      addStress(b, d, o.why || "Выходной без телефона", "📵");
+      return `📵 Отдых: стресс ${d}${recent ? "" : ", энергия +10"}`;
+    },
+    breathe: (b, o) => {
+      if ((b.effects.breathe || -9999) > nowMin() - 30) { addStress(b, -1); return "🌬️ Ещё подышал. Стресс −1"; }
+      b.effects.breathe = nowMin();
+      const d = -Math.round(5 * (o.power || 1));
+      b.mood = clamp(b.mood + 2); addStress(b, d, "Дыхание 4-7-8", "🌬️");
+      return `🌬️ Стресс ${d}`;
+    },
+    journal: (b) => {
+      const recent = (b.effects.journal || -9999) > nowMin() - 360;
+      b.effects.journal = nowMin();
+      const d = recent ? -1 : -4;
+      addStress(b, d, "Дневник", "📓");
+      return `📓 Записал — стало легче. Стресс ${d}`;
+    },
+    // Универсальный: effect("stress", { d: +4, why: "Опоздал", e: "⏰" })
+    stress: (b, o) => { addStress(b, o.d || 0, o.why, o.e); return null; },
   };
   function effect(kind, opts = {}) {
     if (!S().profile || !EFFECTS[kind]) return;
+    Vibe.emit && Vibe.emit("body", { kind, opts });
     tick();
     const b = B();
     const msg = EFFECTS[kind](b, opts);
+    const notes = [];
+    updateStage(b, notes, false);
     save(b);
     if (msg && !opts.quiet) setTimeout(() => FX.toast(msg, "⌚", 2200), 900);
+    notes.forEach((n, i) => setTimeout(() => FX.toast(n.t, n.e, 3200), 1800 + i * 1200));
+    maybeBurnModal();
   }
 
   /* ---------- Сон по кнопке ---------- */
@@ -233,9 +462,30 @@
     return rec;
   }
 
+  /* ---------- Стресс: публичное API ---------- */
+  function stressInfo(b = B()) {
+    const stage = stageOf(b);
+    const left = b.leave ? Math.max(0, b.leave.until - nowMin()) : 0;
+    return {
+      value: Math.round(b.stress || 0), stage, label: STAGES[stage].t, e: STAGES[stage].e, col: STAGES[stage].col,
+      mult: STAGES[stage].mult, leave: b.leave, leftMin: left, burnedOut: !!b.leave,
+      next: stage < 3 ? UP[stage] : null, why: (b.stressWhy || []).slice().reverse(), log: b.stressLog || [], streak: b.workStreak || 0,
+    };
+  }
+  // Изменить стресс извне: Vibe.body.addStress(+4, "Опоздал на работу", "⏰")
+  function addStressPub(d, why, e) { effect("stress", { d, why, e, quiet: true }); }
+
+  // Чужие события, которые бьют по нервам (если их кто-то эмитит)
+  if (Vibe.on) {
+    Vibe.on("late", (d) => addStressPub(4, (d && d.title) ? `Опоздание: ${d.title}` : "Опоздание", "⏰"));
+    Vibe.on("conflict", (d) => addStressPub((d && d.d) || 5, (d && d.why) || "Конфликт", "⚡"));
+  }
+
   Vibe.body = {
     get: B, tick, effect, sleep, wake, atHome, sleepQuality, productivity, heartRate,
     on: (fn) => (listeners.add(fn), () => listeners.delete(fn)),
     STEP_GOAL, isNight,
+    // стресс и выгорание
+    stress: stressInfo, addStress: addStressPub, burnedOut: () => !!B().leave, STAGES, showBurnout: showBurnModal,
   };
 })();

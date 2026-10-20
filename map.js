@@ -3,8 +3,10 @@
    работы и жилья. Детерминированный город на сетке улиц,
    маршруты по улицам, перетаскивание, зум, анимация машинок.
 
-   Vibe.map.create(el, { pins, ambient, interactive, height })
-     → ctrl { setPins, route, clearRoute, drive, fit, center, destroy }
+   Vibe.map.create(el, { pins, ambient, interactive, height, theme, weather, hud })
+     → ctrl { setPins, route, clearRoute, drive, fit, center, destroy,
+              setTheme("day"|"evening"|"night"), setWeather("rain"|"snow"|null) }
+     Тема по умолчанию — по Vibe.game.info().hour, погода — по Vibe.weather.now().
    Vibe.map.place(key) → { x, y, label, e }      — точки города
    Vibe.map.path(a, b) → [{x,y}, ...]            — маршрут по улицам
    Vibe.map.km(points), Vibe.map.minutes(points, mode)
@@ -136,85 +138,414 @@
   }
 
   /* ---------- Отрисовка города (один раз, строкой) ---------- */
+  const INK = "#0e0e12", ROAD = "#f2eee6", AVE = "#ffe9a3", WALK = "#fffdf7", WATER = "#4fc3ff", GRASS = "#b8ef9f";
+  const isAve = (i) => i === 2 || i === 3;
+  const RW = (i) => (isAve(i) ? 38 : i === 0 || i === 5 ? 30 : 26); // видимая ширина улицы
+  const r1 = (n) => Math.round(n * 10) / 10;
+  // Видимый прямоугольник квартала (проспекты шире, переулки уже; логика маршрутов не меняется)
+  function vblock(col, row) {
+    const x1 = ST[col] + RW(col) / 2, x2 = ST[col + 1] - RW(col + 1) / 2, y1 = ST[row] + RW(row) / 2, y2 = ST[row + 1] - RW(row + 1) / 2;
+    return { x1, x2, y1, y2, w: x2 - x1, h: y2 - y1, cx: (x1 + x2) / 2, cy: (y1 + y2) / 2 };
+  }
+  function rng(seed) {
+    let a = seed >>> 0;
+    return () => { a = (a + 0x6d2b79f5) >>> 0; let t = a; t = Math.imul(t ^ (t >>> 15), t | 1); t ^= t + Math.imul(t ^ (t >>> 7), t | 61); return ((t ^ (t >>> 14)) >>> 0) / 4294967296; };
+  }
+  // Палитры зданий: [крыша, южный фасад, восточный фасад/тень]
+  const PAL = {
+    "Сити": [["#8fd8ff", "#5bb4ea", "#3a86bf"], ["#c9b8ff", "#9a83f0", "#6e55c8"], ["#94f2df", "#4fcbb0", "#2f9a83"], ["#eef2ff", "#b4bfdf", "#8792b6"]],
+    "Центр": [["#ff8a8a", "#ffd6c4", "#e6ab92"], ["#ffb547", "#fff0c4", "#dcc08a"], ["#ff6bcb", "#ffdcee", "#e0a9c6"], ["#7ee0ff", "#fff3df", "#d6c39c"]],
+    "Спальный": [["#ffe14d", "#f6f3ec", "#c8c1b2"], ["#8fd8ff", "#eef5fa", "#b3c3cf"], ["#ff9b9b", "#fbf0ea", "#d3bbb1"], ["#c6ff4d", "#f3f7ea", "#bcc6a8"]],
+  };
+  const GROUND = { "Сити": "#e2e7ff", "Центр": "#ffe8da", "Спальный": "#e4f6da" };
+  const DIAG = 808; // декоративная «Аллея Позитива»: x + y = 808 (не маршрут)
+  const RIVER_D = "M-170 352C-95 352-40 306 30 306L92 306C140 306 150 336 175 336C195 336 200 318 214 318L284 318";
+
   let cityCache = null;
   function cityMarkup() {
     if (cityCache) return cityCache;
-    let s = "";
-    // Земля = улицы
-    s += `<rect x="-200" y="-200" width="${SIZE + 400}" height="${SIZE + 400}" fill="#4fc3ff"/>`;
-    s += `<rect x="${ST[0] - SW}" y="${ST[0] - SW}" width="${ST[5] - ST[0] + SW * 2}" height="${ST[5] - ST[0] + SW * 2}" rx="40" fill="#fbf7ec" stroke="#0e0e12" stroke-width="4"/>`;
-    // Волны вокруг острова
-    for (let i = 0; i < 26; i++) {
-      const x = (i * 97) % (SIZE + 200) - 100, y = (i * 53) % 40 - 30;
-      s += `<path d="M${x} ${y} q12 -8 24 0 t24 0" stroke="#fff" stroke-width="3" fill="none" opacity=".7"/>`;
-      s += `<path d="M${x} ${SIZE + 10 - y} q12 -8 24 0 t24 0" stroke="#fff" stroke-width="3" fill="none" opacity=".7"/>`;
+    const R = rng(20240917);
+    const pick = (a) => a[Math.floor(R() * a.length)];
+    const A = ST[0], Z = ST[5];
+    let sea = "", base = "", grounds = "", water = "", feat = "", top = "";
+    let T1 = "", T2 = "", LIT = "", LAMP = "", BIG = "", NEON = "";
+    const B = [];
+    const tree = (x, y, big) => { const p = `M${r1(x)} ${r1(y)}h0`; if (big) T2 += p; else T1 += p; };
+    const add = (x, y, w, d, h, p, o = {}) => B.push({ x, y, w, d, h, p, o });
+    const boxOf = (x, y, w, d, h) => ({ x1: x - Math.round(h * 0.28), y1: y - h, x2: x + w, y2: y + d });
+    const hit = (ex, b) => ex.some((f) => f(b));
+    const exDiag = (b) => b.x1 + b.y1 < DIAG + 30 && b.x2 + b.y2 > DIAG - 30;
+    const chip = (x, y, e) => { top += `<g transform="translate(${r1(x)} ${r1(y)})"><rect x="-10" y="-10" width="24" height="24" rx="8" fill="${INK}"/><rect x="-12" y="-12" width="24" height="24" rx="8" fill="#fff" stroke="${INK}" stroke-width="2"/><text y="5" font-size="14" text-anchor="middle">${e}</text></g>`; };
+
+    /* --- Море, остров, дамбы --- */
+    sea += `<rect x="-200" y="-200" width="${SIZE + 400}" height="${SIZE + 400}" fill="${WATER}"/>`;
+    let waves = "";
+    for (let i = 0; i < 90 && waves.length < 4000; i++) {
+      const x = Math.round(-190 + R() * (SIZE + 380)), y = Math.round(-190 + R() * (SIZE + 380));
+      if (x > -14 && x < SIZE + 4 && y > -10 && y < SIZE + 4) continue;
+      waves += `M${x} ${y}q6-5 12 0t12 0`;
     }
-    // Разметка улиц
-    ST.forEach((v, i) => {
-      const main = i === 2 || i === 3;
-      s += `<line x1="${ST[0]}" y1="${v}" x2="${ST[5]}" y2="${v}" stroke="${main ? "#ffd84d" : "#e3dccb"}" stroke-width="${main ? 4 : 3}" stroke-dasharray="${main ? "0" : "14 12"}"/>`;
-      s += `<line x1="${v}" y1="${ST[0]}" x2="${v}" y2="${ST[5]}" stroke="${main ? "#ffd84d" : "#e3dccb"}" stroke-width="${main ? 4 : 3}" stroke-dasharray="${main ? "0" : "14 12"}"/>`;
+    sea += `<path d="${waves}" stroke="#fff" stroke-width="2.5" fill="none" stroke-linecap="round" opacity=".65"/>`;
+    sea += `<text x="-40" y="620" font-size="22">⛵</text><text x="935" y="300" font-size="20">🛥️</text><text x="700" y="-22" font-size="18">⛵</text>`;
+    // Песчаный берег и зелёный пояс
+    sea += `<rect x="6" y="6" width="${SIZE - 12}" height="${SIZE - 12}" rx="56" fill="#ffe7a6" stroke="${INK}" stroke-width="3"/>`;
+    sea += `<rect x="16" y="16" width="${SIZE - 32}" height="${SIZE - 32}" rx="46" fill="${GRASS}" stroke="#d8c98f" stroke-width="2"/>`;
+    // Дамбы на материк (по проспектам)
+    [[ST[2], -200, 222], [ST[3], SIZE - 22, 222]].forEach(([x, y, h]) => {
+      sea += `<rect x="${x - 19 + 5}" y="${y}" width="38" height="${h}" fill="${INK}" opacity=".25" transform="translate(0 5)"/>`;
+      sea += `<rect x="${x - 19}" y="${y}" width="38" height="${h}" fill="${AVE}" stroke="${INK}" stroke-width="3"/>`;
+      sea += `<path d="M${x - 1.8} ${y}v${h}M${x + 1.8} ${y}v${h}" stroke="#ff9f1c" stroke-width="1.6"/>`;
     });
-    // Кварталы
-    for (let row = 0; row < 5; row++) {
-      for (let col = 0; col < 5; col++) {
-        const b = block(col, row), w = b.x2 - b.x1, h = b.y2 - b.y1;
-        const sp = SPECIAL[col + "," + row];
-        const pal = BLOCK_COL[b.district];
-        if (sp === "lake") {
-          s += `<rect x="${b.x1}" y="${b.y1}" width="${w}" height="${h}" rx="18" fill="#c8f7c0" stroke="#0e0e12" stroke-width="3"/>`;
-          s += `<ellipse cx="${b.cx}" cy="${b.cy}" rx="${w / 2 - 18}" ry="${h / 2 - 26}" fill="#6fd0ff" stroke="#0e0e12" stroke-width="3"/>`;
-          s += `<text x="${b.cx - 30}" y="${b.cy + 8}" font-size="26">🦆</text><text x="${b.cx + 6}" y="${b.cy - 6}" font-size="20">🛶</text>`;
-          continue;
-        }
-        if (sp === "park" || sp === "park2") {
-          s += `<rect x="${b.x1}" y="${b.y1}" width="${w}" height="${h}" rx="18" fill="#9be58a" stroke="#0e0e12" stroke-width="3"/>`;
-          s += `<path d="M${b.x1 + 14} ${b.cy + 20} Q ${b.cx} ${b.cy - 40} ${b.x2 - 14} ${b.cy + 10}" stroke="#f5e6b8" stroke-width="10" fill="none" stroke-linecap="round"/>`;
-          [[0.2, 0.25], [0.7, 0.2], [0.35, 0.7], [0.8, 0.72], [0.55, 0.45]].forEach(([fx, fy], k) => {
-            s += `<text x="${b.x1 + w * fx - 12}" y="${b.y1 + h * fy + 10}" font-size="${k % 2 ? 26 : 30}">${k === 4 ? "⛲" : "🌳"}</text>`;
-          });
-          continue;
-        }
-        const fill = pal[hash(col + ":" + row) % pal.length];
-        s += `<rect x="${b.x1}" y="${b.y1}" width="${w}" height="${h}" rx="18" fill="${fill}" stroke="#0e0e12" stroke-width="3"/>`;
-        if (sp === "hq") {
-          // Башня Корпорации
-          s += `<rect x="${b.cx - 34}" y="${b.y1 + 14}" width="68" height="${h - 50}" rx="10" fill="#0e0e12" transform="translate(5 5)"/>`;
-          s += `<rect x="${b.cx - 34}" y="${b.y1 + 14}" width="68" height="${h - 50}" rx="10" fill="url(#vibe-grad)" stroke="#0e0e12" stroke-width="3"/>`;
-          for (let wy = b.y1 + 26; wy < b.y2 - 50; wy += 16) for (let wx = b.cx - 24; wx < b.cx + 24; wx += 16) s += `<rect x="${wx}" y="${wy}" width="8" height="8" rx="2" fill="#fff" opacity=".85"/>`;
-          s += `<text x="${b.cx}" y="${b.y1 + 10}" font-size="20" text-anchor="middle">💜</text>`;
-          continue;
-        }
-        // Дома внутри квартала
-        const n = 3 + (hash("n" + col + row) % 2);
-        for (let k = 0; k < n; k++) {
-          const hh = hash(col + "-" + row + "-" + k);
-          const bw = 30 + (hh % 22), bh = (b.district === "Сити" ? 44 : 28) + ((hh >> 3) % 26);
-          const bx = b.x1 + 14 + (k % 2) * (w / 2 - 6) + ((hh >> 5) % 10);
-          const by = b.y1 + 14 + Math.floor(k / 2) * (h / 2 - 8) + ((hh >> 7) % 8);
-          const roof = ["#ff6bcb", "#ffe14d", "#c6ff4d", "#8fd8ff", "#ff8a8a", "#b9a3ff"][(hh >> 9) % 6];
-          s += `<rect x="${bx + 4}" y="${by + 4}" width="${bw}" height="${bh}" rx="6" fill="#0e0e12"/>`;
-          s += `<rect x="${bx}" y="${by}" width="${bw}" height="${bh}" rx="6" fill="#fff" stroke="#0e0e12" stroke-width="2.5"/>`;
-          s += `<rect x="${bx}" y="${by}" width="${bw}" height="9" rx="4" fill="${roof}" stroke="#0e0e12" stroke-width="2.5"/>`;
-          for (let wy = by + 15; wy < by + bh - 6; wy += 11) for (let wx = bx + 6; wx < bx + bw - 6; wx += 10) s += `<rect x="${wx}" y="${wy}" width="5" height="5" rx="1" fill="#0e0e12" opacity=".18"/>`;
-        }
+
+    /* --- Дороги --- */
+    base += `<rect x="${A - 15}" y="${A - 15}" width="${Z - A + 30}" height="${Z - A + 30}" rx="20" fill="${ROAD}" stroke="${INK}" stroke-width="3"/>`;
+    [2, 3].forEach((i) => {
+      base += `<rect x="${A - 15}" y="${ST[i] - 19}" width="${Z - A + 30}" height="38" fill="${AVE}"/><rect x="${ST[i] - 19}" y="${A - 15}" width="38" height="${Z - A + 30}" fill="${AVE}"/>`;
+    });
+    let mC = "", mL = "", mS = "";
+    ST.forEach((v, i) => {
+      if (isAve(i)) {
+        mC += `M${A} ${v - 1.8}H${Z}M${A} ${v + 1.8}H${Z}M${v - 1.8} ${A}V${Z}M${v + 1.8} ${A}V${Z}`;
+        mL += `M${A} ${v - 9.5}H${Z}M${A} ${v + 9.5}H${Z}M${v - 9.5} ${A}V${Z}M${v + 9.5} ${A}V${Z}`;
+      } else mS += `M${A} ${v}H${Z}M${v} ${A}V${Z}`;
+    });
+    base += `<path d="${mS}" stroke="#d6cdb8" stroke-width="2" stroke-dasharray="10 9"/>`;
+    base += `<path d="${mL}" stroke="#fff" stroke-width="1.8" stroke-dasharray="9 8"/>`;
+    base += `<path d="${mC}" stroke="#ff9f1c" stroke-width="1.6"/>`;
+    // Перекрёстки (чистим разметку) и зебры
+    let bxA = "", bxR = "", zeb = "";
+    for (let i = 0; i < 6; i++) for (let j = 0; j < 6; j++) {
+      const x = ST[i], y = ST[j], wi = RW(i), hj = RW(j);
+      if ((i === 0 || i === 5) && (j === 0 || j === 5)) continue;
+      const box = `M${x - wi / 2} ${y - hj / 2}h${wi}v${hj}h${-wi}Z`;
+      if (isAve(i) || isAve(j)) bxA += box; else bxR += box;
+      // Зебра через горизонтальную улицу (слева/справа от перекрёстка) и через вертикальную (сверху/снизу)
+      const zH = (zx) => { for (let k = y - hj / 2 + 3; k <= y + hj / 2 - 3; k += 4.5) zeb += `M${r1(zx - 3.5)} ${r1(k)}h7`; };
+      const zV = (zy) => { for (let k = x - wi / 2 + 3; k <= x + wi / 2 - 3; k += 4.5) zeb += `M${r1(k)} ${r1(zy - 3.5)}v7`; };
+      if (i < 5) zH(x + wi / 2 + 5);
+      if (i > 0) zH(x - wi / 2 - 5);
+      if (j < 5) zV(y + hj / 2 + 5);
+      if (j > 0) zV(y - hj / 2 - 5);
+    }
+    base += `<path d="${bxR}" fill="${ROAD}"/><path d="${bxA}" fill="${AVE}"/>`;
+    base += `<path d="${zeb}" stroke="#fff" stroke-width="2.4"/>`;
+
+    /* --- Фонари вдоль улиц (ночной слой) --- */
+    const nearX = (p) => ST.some((s, k) => Math.abs(s - p) < RW(k) / 2 + 8);
+    ST.forEach((v, i) => {
+      const off = RW(i) / 2 + 3;
+      for (let p = A + 24; p < Z - 10; p += 46) {
+        if (nearX(p)) continue;
+        LAMP += `M${p} ${v - off}h0M${p} ${v + off}h0M${v - off} ${p}h0M${v + off} ${p}h0`;
+      }
+    });
+
+    /* --- Генераторы застройки --- */
+    function towers(I, ex) {
+      const nx = I.w > 100 ? 2 : 1, ny = I.h > 100 ? 2 : 1, cw = I.w / nx, ch = I.h / ny;
+      for (let j = 0; j < ny; j++) for (let i = 0; i < nx; i++) {
+        const cx0 = I.x + i * cw, cy0 = I.y + j * ch;
+        if (nx * ny > 1 && R() < 0.18) { tree(cx0 + cw * 0.35, cy0 + ch * 0.55, 1); tree(cx0 + cw * 0.7, cy0 + ch * 0.4); feat += `<circle cx="${r1(cx0 + cw * 0.6)}" cy="${r1(cy0 + ch * 0.7)}" r="7" fill="${WATER}" stroke="${INK}" stroke-width="2"/>`; continue; }
+        const h = 15 + Math.floor(R() * 14), ox = Math.round(h * 0.28), m = 5;
+        const x = cx0 + m + ox, w = cw - 2 * m - ox - Math.floor(R() * 8);
+        const y = cy0 + m + h, d = cy0 + ch - m - y - Math.floor(R() * 5);
+        if (d < 12 || hit(ex, boxOf(x, y, w, d, h))) continue;
+        add(x, y, w, d, h, pick(PAL["Сити"]), { win: "glass", detail: R() < 0.14 ? "heli" : "ac" });
       }
     }
-    // Названия улиц
+    function houses(I, district, hmin, hmax, ex, cell = 44) {
+      const nx = Math.max(1, Math.round(I.w / cell)), ny = Math.max(1, Math.round(I.h / cell)), cw = I.w / nx, ch = I.h / ny;
+      for (let j = 0; j < ny; j++) for (let i = 0; i < nx; i++) {
+        const cx0 = I.x + i * cw, cy0 = I.y + j * ch, tx = cx0 + cw / 2, ty = cy0 + ch / 2;
+        const treeHere = () => { if (!hit(ex, { x1: tx - 6, y1: ty - 6, x2: tx + 6, y2: ty + 6 })) tree(tx, ty, R() < 0.5); };
+        if (R() < 0.1) { treeHere(); continue; }
+        const h = Math.round(hmin + R() * (hmax - hmin)), ox = Math.round(h * 0.28), m = 4;
+        const x = cx0 + m + ox, w = cw - 2 * m - ox - Math.floor(R() * 6);
+        const y = cy0 + m + h, d = cy0 + ch - m - y - Math.floor(R() * 4);
+        if (d < 8 || w < 10 || hit(ex, boxOf(x, y, w, d, h))) { treeHere(); continue; }
+        add(x, y, w, d, h, pick(PAL[district]), { win: "rows", detail: R() < 0.25 ? "ac" : null });
+      }
+    }
+    function court(r, kind) {
+      if (r.w < 20 || r.h < 18) return;
+      if (kind === "parking") {
+        feat += `<rect x="${r1(r.x)}" y="${r1(r.y)}" width="${r1(r.w)}" height="${r1(r.h)}" rx="4" fill="#dcd8cf" stroke="${INK}" stroke-width="1.5"/>`;
+        let st = "", c1 = "", c2 = "";
+        for (let x = r.x + 5; x <= r.x + r.w - 5; x += 10) {
+          st += `M${r1(x)} ${r1(r.y)}v10M${r1(x)} ${r1(r.y + r.h)}v-10`;
+          if (x + 10 <= r.x + r.w - 2) {
+            const cx = r1(x + 5);
+            if (R() < 0.6) (R() < 0.5 ? (c1 += `M${cx} ${r1(r.y + 3)}v4`) : (c2 += `M${cx} ${r1(r.y + 3)}v4`));
+            if (r.h > 24 && R() < 0.5) (R() < 0.5 ? (c1 += `M${cx} ${r1(r.y + r.h - 7)}v4`) : (c2 += `M${cx} ${r1(r.y + r.h - 7)}v4`));
+          }
+        }
+        feat += `<path d="${st}" stroke="#fff" stroke-width="1.5"/>`;
+        if (c1) feat += `<path d="${c1}" stroke="${INK}" stroke-width="8.5" stroke-linecap="round"/><path d="${c1}" stroke="#ff6bcb" stroke-width="5.5" stroke-linecap="round"/>`;
+        if (c2) feat += `<path d="${c2}" stroke="${INK}" stroke-width="8.5" stroke-linecap="round"/><path d="${c2}" stroke="#8fd8ff" stroke-width="5.5" stroke-linecap="round"/>`;
+        if (r.h > 40) tree(r.x + r.w / 2, r.y + r.h / 2, 1);
+      } else {
+        const pw = Math.min(r.w - 4, 56), ph = Math.min(r.h - 4, 34), px = r.x + 2, py = r.y + 2;
+        feat += `<rect x="${r1(px)}" y="${r1(py)}" width="${r1(pw)}" height="${r1(ph)}" rx="7" fill="#fff1b8" stroke="${INK}" stroke-width="1.5"/>`;
+        feat += `<circle cx="${r1(px + pw * 0.3)}" cy="${r1(py + ph / 2)}" r="5.5" fill="#ff6bcb" stroke="${INK}" stroke-width="1.5"/>`;
+        feat += `<rect x="${r1(px + pw * 0.62)}" y="${r1(py + 4)}" width="7" height="${r1(Math.max(8, ph - 8))}" rx="2" fill="#8fd8ff" stroke="${INK}" stroke-width="1.5"/>`;
+        if (r.w - pw > 20) tree(px + pw + (r.w - pw) / 2, r.y + r.h * 0.35, 1);
+        if (r.h - ph > 16) tree(r.x + r.w * 0.3, py + ph + (r.h - ph) / 2);
+        if (r.h - ph > 16 && r.w > 50) tree(r.x + r.w * 0.7, py + ph + (r.h - ph) / 2, 1);
+      }
+    }
+    function slabs(I, kindIdx) {
+      const h = 12 + Math.floor(R() * 3), ox = Math.round(h * 0.28), p = pick(PAL["Спальный"]);
+      const ax = I.x + 5 + ox, ay = I.y + 4 + h, aw = I.w - 10 - ox;
+      const kind = kindIdx % 2 ? "parking" : "play";
+      if (I.h > 100) {
+        add(ax, ay, aw, 17, h, p, { win: "rows", detail: "stripe" });
+        const by = ay + 17 + h + 10, bd = I.y + I.h - 5 - by;
+        add(ax, by, 18, bd, h, pick(PAL["Спальный"]), { win: "rows", detail: "stripe" });
+        court({ x: ax + 28, y: ay + 27, w: I.x + I.w - 5 - (ax + 28), h: I.y + I.h - 5 - (ay + 27) }, kind);
+      } else {
+        add(ax, ay, aw, 15, h, p, { win: "rows", detail: "stripe" });
+        court({ x: I.x + 5, y: ay + 22, w: I.w - 10, h: I.y + I.h - 4 - (ay + 22) }, kind);
+      }
+    }
+
+    /* --- Кварталы --- */
+    for (let row = 0; row < 5; row++) {
+      for (let col = 0; col < 5; col++) {
+        const b = vblock(col, row), dist = DISTRICT(row), sp = SPECIAL[col + "," + row], key = col + "," + row;
+        const I = { x: b.x1 + 7, y: b.y1 + 7, w: b.w - 14, h: b.h - 14 };
+        const green = sp === "lake" || sp === "park" || sp === "park2";
+        const gfill = green ? "#a8ec8c" : sp === "hq" ? "#efe4ff" : key === "3,2" ? "#ffe9b8" : GROUND[dist];
+        grounds += `<rect x="${b.x1}" y="${b.y1}" width="${b.w}" height="${b.h}" rx="12" fill="${WALK}" stroke="${INK}" stroke-width="2.5"/>`;
+        grounds += `<rect x="${I.x}" y="${I.y}" width="${I.w}" height="${I.h}" rx="7" fill="${gfill}"/>`;
+
+        if (sp === "lake") {
+          feat += `<ellipse cx="${b.cx}" cy="${b.cy + 3}" rx="${I.w / 2 - 6}" ry="${I.h / 2 - 12}" fill="${WATER}" stroke="${INK}" stroke-width="3"/>`;
+          feat += `<ellipse cx="${b.cx}" cy="${b.cy + 3}" rx="${I.w / 2 - 16}" ry="${I.h / 2 - 22}" fill="none" stroke="#bfeaff" stroke-width="2" stroke-dasharray="10 12"/>`;
+          feat += `<path d="M${b.cx + 14} ${b.y2 - 6}v-26" stroke="${INK}" stroke-width="9"/><path d="M${b.cx + 14} ${b.y2 - 6}v-26" stroke="#e8c690" stroke-width="5"/>`;
+          top += `<text x="${b.cx - 34}" y="${b.cy + 12}" font-size="20">🦆</text><text x="${b.cx + 8}" y="${b.cy - 8}" font-size="18">🛶</text>`;
+          [[I.x + 8, I.y + 8], [I.x + I.w - 8, I.y + 8], [I.x + 8, I.y + I.h - 8], [I.x + I.w - 8, I.y + I.h - 8]].forEach(([x, y]) => tree(x, y, 1));
+          continue;
+        }
+        if (sp === "park") {
+          const pd = `M${I.x} ${r1(I.y + I.h * 0.72)}Q${b.cx} ${b.cy - 34} ${I.x + I.w} ${r1(I.y + I.h * 0.32)}M${b.cx} ${I.y + I.h}Q${b.cx + 18} ${b.cy} ${b.cx - 12} ${I.y}`;
+          feat += `<path d="${pd}" stroke="${INK}" stroke-width="11" fill="none"/><path d="${pd}" stroke="#f7e7b4" stroke-width="7" fill="none"/>`;
+          feat += `<circle cx="${b.cx + 2}" cy="${b.cy - 2}" r="13" fill="${WATER}" stroke="${INK}" stroke-width="2.5"/><circle cx="${b.cx + 2}" cy="${b.cy - 2}" r="4" fill="#fff"/>`;
+          [[0.15, 0.15], [0.42, 0.12], [0.85, 0.12], [0.12, 0.45], [0.72, 0.55], [0.9, 0.82], [0.62, 0.86], [0.25, 0.9], [0.32, 0.35], [0.88, 0.45]].forEach(([fx, fy], k) => tree(I.x + I.w * fx, I.y + I.h * fy, k % 3 !== 2));
+          BIG += `M${b.cx + 2} ${b.cy - 2}h0`;
+          continue;
+        }
+        if (sp === "park2") {
+          // Колесо обозрения
+          const wx = b.cx, wy = b.cy - 4, wr = Math.min(I.w / 2 - 6, 28);
+          let sp8 = "", cab = "";
+          for (let k = 0; k < 8; k++) {
+            const a = (k * Math.PI) / 4, ex = r1(wx + Math.cos(a) * wr), ey = r1(wy + Math.sin(a) * wr);
+            sp8 += `M${wx} ${wy}L${ex} ${ey}`; cab += `M${ex} ${ey}h0`;
+            LIT += `M${ex} ${ey}h0`;
+          }
+          feat += `<path d="M${wx} ${wy}L${wx - 15} ${wy + wr + 10}M${wx} ${wy}L${wx + 15} ${wy + wr + 10}" stroke="${INK}" stroke-width="3.5" stroke-linecap="round"/>`;
+          feat += `<circle cx="${wx}" cy="${wy}" r="${wr}" fill="none" stroke="${INK}" stroke-width="3"/><path d="${sp8}" stroke="${INK}" stroke-width="1.5"/>`;
+          feat += `<path d="${cab}" stroke="${INK}" stroke-width="10" stroke-linecap="round"/><path d="${cab}" stroke="#ffe14d" stroke-width="7" stroke-linecap="round"/>`;
+          feat += `<circle cx="${wx}" cy="${wy}" r="5" fill="#ff6bcb" stroke="${INK}" stroke-width="2"/>`;
+          BIG += `M${wx} ${wy}h0`;
+          [[I.x + 10, I.y + 10], [I.x + I.w - 10, I.y + 12], [I.x + 12, I.y + I.h - 12], [I.x + I.w - 10, I.y + I.h - 10], [b.cx, I.y + I.h - 8]].forEach(([x, y], k) => tree(x, y, k % 2 === 0));
+          continue;
+        }
+        if (sp === "hq") {
+          const h = 54, w = 70, d = 40, x = b.cx - 27, y = I.y + I.h - 12 - d;
+          add(x, y, w, d, h, ["url(#vibe-grad)", "#7a5af0", "#4b2fb8"], { win: "glass", detail: "logo" });
+          [[I.x + 9, I.y + I.h - 10], [I.x + I.w - 9, I.y + I.h - 10], [I.x + 9, I.y + 40], [I.x + I.w - 9, I.y + 40]].forEach(([x, y]) => tree(x, y, 1));
+          continue;
+        }
+        if (key === "1,3") {
+          // Vibe Supermarket + парковка
+          const h = 9, x = I.x + 8, y = I.y + 14, w = I.w - 13, d = 50;
+          add(x, y, w, d, h, ["#c6ff4d", "#f7f7f0", "#cfcfc4"], { win: "none", detail: "sign", text: "VIBE MARKET" });
+          court({ x: I.x + 3, y: I.y + 76, w: I.w - 6, h: I.h - 79 }, "parking");
+          chip(I.x + I.w - 18, I.y + 30, "🛒");
+          continue;
+        }
+        if (key === "3,4") {
+          // Стадион
+          const cx = b.cx, cy = b.cy, rx = Math.min(I.w / 2 - 2, 60), ry = I.h / 2 - 2;
+          feat += `<ellipse cx="${cx}" cy="${cy + 4}" rx="${rx}" ry="${ry}" fill="${INK}"/>`;
+          feat += `<ellipse cx="${cx}" cy="${cy}" rx="${rx}" ry="${ry}" fill="#ff6bcb" stroke="${INK}" stroke-width="3"/>`;
+          feat += `<ellipse cx="${cx}" cy="${cy}" rx="${rx - 9}" ry="${ry - 7}" fill="#ffd0ec" stroke="${INK}" stroke-width="1.5"/>`;
+          feat += `<rect x="${cx - 38}" y="${cy - 15}" width="76" height="30" rx="9" fill="#5fd35f" stroke="${INK}" stroke-width="2"/>`;
+          feat += `<path d="M${cx} ${cy - 15}v30M${cx - 38} ${cy - 7}h9v14h-9M${cx + 38} ${cy - 7}h-9v14h9M${cx + 6} ${cy}a6 6 0 1 1 -12 0a6 6 0 1 1 12 0" stroke="#fff" stroke-width="1.4" fill="none"/>`;
+          BIG += `M${cx - rx + 8} ${cy - ry + 6}h0M${cx + rx - 8} ${cy - ry + 6}h0M${cx - rx + 8} ${cy + ry - 6}h0M${cx + rx - 8} ${cy + ry - 6}h0`;
+          chip(cx + rx - 6, cy - ry + 4, "🏟️");
+          continue;
+        }
+        if (key === "3,2") {
+          // Рыночная площадь + клуб
+          const cols = ["#ff6bcb", "#ffe14d", "#8fd8ff", "#c6ff4d", "#ff8a8a", "#b9a3ff"];
+          let aw = "";
+          for (let k = 0; k < 8; k++) {
+            const sx = I.x + 14 + (k % 4) * 26, sy = I.y + 16 + Math.floor(k / 4) * 28;
+            feat += `<rect x="${sx}" y="${sy}" width="20" height="14" rx="3" fill="${cols[k % cols.length]}" stroke="${INK}" stroke-width="1.5"/>`;
+            aw += `M${sx + 2} ${sy + 5}h16`;
+          }
+          feat += `<path d="${aw}" stroke="#fff" stroke-width="4" stroke-dasharray="3 3"/>`;
+          tree(I.x + I.w - 14, I.y + I.h - 20, 1); tree(I.x + I.w - 36, I.y + I.h - 12);
+          add(I.x + 10, I.y + I.h - 6 - 28, 56, 28, 12, ["#2b1c4a", "#8b5cff", "#5a2fd0"], { win: "none", detail: "neon" });
+          chip(I.x + 90, I.y + I.h - 30, "🎤"); chip(I.x + I.w - 14, I.y + 10, "🛍️");
+          continue;
+        }
+        if (key === "0,2") {
+          // Vibe Health + жилые дома
+          const cw = 56, cd = 34, cx = I.x + I.w - cw - 2, cy = I.y + I.h - 4 - cd;
+          add(cx, cy, cw, cd, 14, ["#ffffff", "#e9f6ff", "#b9cfe0"], { win: "rows", detail: "cross" });
+          houses(I, "Центр", 9, 13, [(bx) => bx.x2 > cx - 10 && bx.y2 > cy - 20]);
+          continue;
+        }
+        if (key === "0,1") {
+          // Набережная: низкие дома над рекой, променад снизу
+          for (let k = 0; k < 3; k++) { const cw = I.w / 3; add(I.x + k * cw + 6, I.y + 12, cw - 10, 14, 8, pick(PAL["Центр"]), { win: "rows" }); }
+          for (let x = I.x + 8; x < I.x + I.w; x += 20) tree(x, I.y + I.h - 7);
+          chip(I.x + I.w - 22, I.y + 8, "☕");
+          continue;
+        }
+        if (key === "0,3" || key === "1,2") {
+          houses(I, key === "0,3" ? "Спальный" : "Центр", key === "0,3" ? 11 : 9, key === "0,3" ? 14 : 13, [exDiag]);
+          if (key === "1,2") chip(I.x + 22, I.y + 18, "☕");
+          continue;
+        }
+        if (dist === "Сити") { towers(I, []); continue; }
+        if (dist === "Центр") { houses(I, "Центр", 9, 13, []); continue; }
+        slabs(I, hash(key));
+      }
+    }
+    chip(vblock(1, 0).x1 + 20, vblock(1, 0).y2 - 22, "🏦");
+    chip(vblock(4, 1).cx, vblock(4, 1).y2 - 20, "🏦");
+    chip(vblock(2, 3).x2 - 22, vblock(2, 3).y2 - 22, "💊");
+    chip(vblock(4, 2).cx, vblock(4, 2).y2 - 22, "☕");
+    chip(vblock(0, 2).x2 - 20, vblock(0, 2).y1 + 20, "💊");
+
+    /* --- Река с набережными и два моста --- */
+    water += `<path d="${RIVER_D}" stroke="${INK}" stroke-width="52" fill="none"/>`;
+    water += `<path d="${RIVER_D}" stroke="#d9cfb6" stroke-width="47" fill="none"/>`;
+    water += `<path d="${RIVER_D}" stroke="${WATER}" stroke-width="33" fill="none"/>`;
+    water += `<path d="${RIVER_D}" stroke="#bfeaff" stroke-width="2" fill="none" stroke-dasharray="10 14"/>`;
+    // Озеро поверх устья
+    const lk = vblock(1, 1);
+    water += `<ellipse cx="${lk.cx}" cy="${lk.cy + 3}" rx="${lk.w / 2 - 13}" ry="${lk.h / 2 - 19}" fill="${WATER}"/>`;
+    [[ST[0], 306, RW(0)], [ST[1], 318, RW(1)]].forEach(([x, y, w]) => {
+      water += `<rect x="${x - w / 2 + 4}" y="${y - 29 + 4}" width="${w}" height="58" fill="${INK}" opacity=".3"/>`;
+      water += `<rect x="${x - w / 2}" y="${y - 29}" width="${w}" height="58" fill="${ROAD}"/>`;
+      water += `<path d="M${x} ${y - 29}v58" stroke="#d6cdb8" stroke-width="2" stroke-dasharray="10 9"/>`;
+      water += `<path d="M${x - w / 2} ${y - 29}v58M${x + w / 2} ${y - 29}v58" stroke="${INK}" stroke-width="3.5"/>`;
+      water += `<path d="M${x - w / 2 + 3} ${y - 29}v58M${x + w / 2 - 3} ${y - 29}v58" stroke="#ff6bcb" stroke-width="1.5" stroke-dasharray="2 4"/>`;
+    });
+
+    /* --- Аллея Позитива (диагональ, только декор) --- */
+    let alley = "";
+    [[83, 205], [259, 377]].forEach(([xa, xb]) => {
+      alley += `M${xa} ${DIAG - xa}L${xb} ${DIAG - xb}`;
+      for (let x = xa + 8; x < xb - 4; x += 13) { tree(x - 9, DIAG - x - 9); tree(x + 9, DIAG - x + 9); }
+    });
+    water += `<path d="${alley}" stroke="${INK}" stroke-width="25" fill="none"/><path d="${alley}" stroke="#9be58a" stroke-width="21" fill="none"/><path d="${alley}" stroke="#f7e7b4" stroke-width="5" fill="none" stroke-linecap="round"/>`;
+
+    /* --- Деревья: Бульвар Вайба и зелёный пояс --- */
+    [ST[4] - RW(4) / 2 - 5, ST[4] + RW(4) / 2 + 5].forEach((y) => {
+      for (let x = A + 22; x < Z - 10; x += 21) if (!nearX(x)) tree(x, y);
+    });
+    for (let p = 70; p < SIZE - 60; p += 27) {
+      if (Math.abs(p - ST[2]) > 34) tree(p, 31);
+      if (Math.abs(p - ST[3]) > 34) tree(p, SIZE - 31);
+      if (p < 270 || p > 372) tree(31, p);
+      tree(SIZE - 31, p);
+    }
+    const trees = (d, r) => d ? `<path d="${d}" stroke="${INK}" stroke-width="${r * 2 + 3}" stroke-linecap="round"/><path d="${d}" stroke="#36b856" stroke-width="${r * 2}" stroke-linecap="round"/><path d="${d}" stroke="#86e86e" stroke-width="${r}" stroke-linecap="round" transform="translate(-1.5 -1.5)"/>` : "";
+
+    /* --- Здания: псевдо-3D (крыша смещена вверх-влево, видны южный и восточный фасады) --- */
+    B.sort((a, b) => a.y + a.d - (b.y + b.d) || a.x - b.x);
+    let bs = "";
+    B.forEach(({ x, y, w, d, h, p, o }) => {
+      x = r1(x); y = r1(y); w = r1(w); d = r1(d);
+      const ox = Math.round(h * 0.28), rx = r1(x - ox), ry = y - h;
+      bs += `<path d="M${rx} ${ry}h${w}L${r1(x + w)} ${y}v${d}h${-w}L${rx} ${r1(ry + d)}Z" fill="${p[2]}" stroke="${INK}" stroke-width="2" stroke-linejoin="round"/>`;
+      bs += `<path d="M${rx} ${r1(ry + d)}h${w}L${r1(x + w)} ${r1(y + d)}h${-w}Z" fill="${p[1]}"/>`;
+      if (o.win === "rows") {
+        const nf = Math.max(1, Math.floor(h / 5));
+        let wp = "";
+        for (let f = 0; f < nf; f++) {
+          const t = (f + 0.5) / nf, yy = r1(ry + d + t * h), xs = rx + t * ox;
+          wp += `M${r1(xs + 3)} ${yy}h${r1(w - 6)}`;
+          for (let k = xs + 4.5; k < xs + w - 4; k += 6) if (R() < 0.33) LIT += `M${r1(k)} ${yy}h0`;
+        }
+        bs += `<path d="${wp}" stroke="${p[2]}" stroke-width="2" stroke-dasharray="3 3"/>`;
+      } else if (o.win === "glass") {
+        let wp = "";
+        for (let k = 5; k < w - 2; k += 6) wp += `M${r1(rx + k)} ${r1(ry + d)}L${r1(x + k)} ${r1(y + d)}`;
+        bs += `<path d="${wp}" stroke="#fff" stroke-width="1.2" opacity=".5"/>`;
+        const nf = Math.floor(h / 6);
+        for (let f = 0; f < nf; f++) {
+          const t = (f + 0.5) / nf, yy = r1(ry + d + t * h);
+          for (let k = 8; k < w - 2; k += 6) if (R() < 0.28) LIT += `M${r1(rx + t * ox + k)} ${yy}h0`;
+        }
+      }
+      bs += `<rect x="${rx}" y="${ry}" width="${w}" height="${d}" fill="${p[0]}" stroke="${INK}" stroke-width="2"/>`;
+      const cx = r1(rx + w / 2), cy = r1(ry + d / 2);
+      if (o.win === "glass") bs += `<path d="M${r1(rx + 3)} ${r1(ry + 3)}h${r1(w * 0.4)}" stroke="#fff" stroke-width="2" stroke-linecap="round" opacity=".7"/>`;
+      if (o.detail === "heli" && Math.min(w, d) > 18) bs += `<circle cx="${cx}" cy="${cy}" r="${r1(Math.min(w, d) / 2 - 4)}" fill="none" stroke="#fff" stroke-width="1.6"/><text x="${cx}" y="${r1(cy + 3)}" font-size="8" font-weight="900" fill="#fff" text-anchor="middle" font-family="Manrope, sans-serif">H</text>`;
+      else if (o.detail === "ac" && w > 20 && d > 12) bs += `<rect x="${r1(rx + w - 11)}" y="${r1(ry + 3)}" width="7" height="5" rx="1" fill="${p[1]}" stroke="${INK}" stroke-width="1"/>`;
+      else if (o.detail === "stripe") bs += `<path d="M${r1(rx + 4)} ${cy}h${r1(w - 8)}" stroke="${INK}" stroke-width="1" opacity=".25" stroke-dasharray="6 4"/>`;
+      else if (o.detail === "logo") bs += `<text x="${cx}" y="${r1(cy + 2)}" font-size="16" text-anchor="middle">💜</text><text x="${cx}" y="${r1(cy + 14)}" font-size="8" font-weight="900" fill="#fff" text-anchor="middle" font-family="Manrope, sans-serif" letter-spacing="1.5">VIBE</text>`;
+      else if (o.detail === "cross") bs += `<path d="M${cx - 6} ${cy}h12M${cx} ${cy - 6}v12" stroke="#ff3b5c" stroke-width="4"/>`;
+      else if (o.detail === "sign") bs += `<text x="${cx}" y="${r1(cy + 3)}" font-size="9" font-weight="900" fill="${INK}" text-anchor="middle" font-family="Manrope, sans-serif" letter-spacing="1">${o.text}</text>`;
+      else if (o.detail === "neon") {
+        const nd = `M${r1(rx + 3)} ${r1(ry + 3)}h${r1(w - 6)}v${r1(d - 6)}h${r1(6 - w)}Z`;
+        bs += `<path d="${nd}" stroke="#ff6bcb" stroke-width="2" fill="none"/>`; NEON += nd;
+      }
+    });
+
+    /* --- Подписи улиц, метро, районы --- */
+    const lab = (txt, x, y, rot, ave) => {
+      const tr = rot ? ` transform="rotate(-90 ${x} ${y})"` : "";
+      return `<text x="${x}" y="${y}"${tr} dy="3.6" font-size="${ave ? 10.5 : 9.5}" font-weight="800" letter-spacing=".3" fill="${ave ? "#7a4b00" : "#5b5566"}" text-anchor="middle" font-family="Manrope, sans-serif" paint-order="stroke" stroke="${ave ? AVE : ROAD}" stroke-width="4" stroke-linejoin="round">${txt}</text>`;
+    };
+    const HS = [1, 0, 0, 1, 2, 1], VS = [2, 0, 3, 2, 1, 3];
     ST.forEach((v, i) => {
-      if (i === 0 || i === 5) return;
-      s += `<text x="${ST[0] + 30 + i * 14}" y="${v + 4}" font-size="11" font-weight="800" fill="#0e0e12" opacity=".55" font-family="Manrope, sans-serif" paint-order="stroke" stroke="#fbf7ec" stroke-width="4">${H_NAMES[i]}</text>`;
-      s += `<text transform="translate(${v + 4} ${ST[5] - 30 - i * 14}) rotate(-90)" font-size="11" font-weight="800" fill="#0e0e12" opacity=".55" font-family="Manrope, sans-serif" paint-order="stroke" stroke="#fbf7ec" stroke-width="4">${V_NAMES[i]}</text>`;
+      top += lab(H_NAMES[i], (ST[HS[i]] + ST[HS[i] + 1]) / 2, v, false, isAve(i));
+      top += lab(V_NAMES[i], v, (ST[VS[i]] + ST[VS[i] + 1]) / 2, true, isAve(i));
+      if (isAve(i)) { top += lab(H_NAMES[i], (ST[3] + ST[4]) / 2, v, false, true); top += lab(V_NAMES[i], v, (ST[0] + ST[1]) / 2, true, true); }
     });
-    // Подписи районов
-    [["СИТИ", ST[2] + 86, ST[0] + 38], ["ЦЕНТР", ST[0] + 86, ST[2] + 84], ["СПАЛЬНЫЙ", ST[2] + 86, ST[4] + 92]].forEach(([t, x, y]) => {
-      s += `<text x="${x}" y="${y}" font-size="15" font-family="Dela Gothic One, sans-serif" fill="#0e0e12" opacity=".22" text-anchor="middle">${t}</text>`;
+    [[FIXED.metro1], [FIXED.metro2]].forEach(([m]) => {
+      const x = m.x + 24, y = m.y + 28;
+      top += `<circle cx="${x}" cy="${y}" r="9" fill="#ff3b5c" stroke="${INK}" stroke-width="2"/><text x="${x}" y="${y + 4}" font-size="11" font-weight="900" fill="#fff" text-anchor="middle" font-family="Manrope, sans-serif">M</text>`;
     });
-    // Мосты
-    s += `<rect x="${ST[2] - 16}" y="-60" width="32" height="${ST[0] + 40}" fill="#fbf7ec" stroke="#0e0e12" stroke-width="3"/>`;
-    s += `<rect x="${ST[3] - 16}" y="${ST[5] + 20}" width="32" height="80" fill="#fbf7ec" stroke="#0e0e12" stroke-width="3"/>`;
-    cityCache = s;
-    return s;
+    [["СИТИ", vblock(3, 0).cx, vblock(3, 0).cy], ["ЦЕНТР", vblock(1, 2).cx - 30, vblock(1, 2).y1 + 30], ["СПАЛЬНЫЙ", vblock(1, 4).cx + 30, vblock(1, 4).cy + 8]].forEach(([t, x, y]) => {
+      top += `<text x="${r1(x)}" y="${r1(y)}" font-size="15" letter-spacing="4" font-family="Dela Gothic One, sans-serif" fill="${INK}" opacity=".55" text-anchor="middle" paint-order="stroke" stroke="#fff" stroke-width="5" stroke-linejoin="round">${t}</text>`;
+    });
+
+    const city = sea + base + grounds + water + feat + trees(T1, 5.5) + trees(T2, 8) + bs + top;
+    const lights =
+      `<path d="${LAMP}" stroke="#ffcf5a" stroke-width="14" stroke-linecap="round" opacity=".16"/>` +
+      `<path d="${LAMP}" stroke="#fff3b0" stroke-width="3.6" stroke-linecap="round"/>` +
+      `<path d="${BIG}" stroke="#fff3b0" stroke-width="46" stroke-linecap="round" opacity=".22"/>` +
+      `<path d="${LIT}" stroke="#ffe27a" stroke-width="2.6" stroke-linecap="round"/>` +
+      (NEON ? `<path d="${NEON}" stroke="#ff6bcb" stroke-width="9" fill="none" opacity=".35"/><path d="${NEON}" stroke="#ffc2ec" stroke-width="2" fill="none"/>` : "");
+    cityCache = { city, lights };
+    return cityCache;
+  }
+
+  /* ---------- Время суток и погода ---------- */
+  function autoTheme() {
+    let h = 12;
+    try { h = Vibe.game && Vibe.game.info ? Vibe.game.info().hour : new Date().getHours(); } catch (e) { /* по умолчанию день */ }
+    if (h >= 7 && h < 18) return "day";
+    if ((h >= 18 && h < 21) || (h >= 5 && h < 7)) return "evening";
+    return "night";
+  }
+  function autoWeather() {
+    try {
+      const w = Vibe.weather && Vibe.weather.now();
+      if (!w) return null;
+      if (w.kind === "snow" || (w.kind === "storm" && w.t <= 0)) return "snow";
+      if (w.kind === "rain" || w.kind === "storm") return "rain";
+    } catch (e) { /* без погоды */ }
+    return null;
   }
 
   /* ---------- Компонент ---------- */
@@ -225,14 +556,28 @@
     el.innerHTML = "";
     const svg = document.createElementNS(NS, "svg");
     svg.setAttribute("class", "vmap-svg");
+    const cm = cityMarkup();
     svg.innerHTML = `
       <defs><linearGradient id="vibe-grad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#8b5cff"/><stop offset=".6" stop-color="#ff6bcb"/><stop offset="1" stop-color="#ffb547"/></linearGradient></defs>
-      <g class="vm-city">${cityMarkup()}</g>
+      <g class="vm-city">${cm.city}</g>
+      <rect class="vm-shade" x="-200" y="-200" width="${SIZE + 400}" height="${SIZE + 400}"/>
+      <g class="vm-lights">${cm.lights}</g>
       <g class="vm-traffic"></g>
       <g class="vm-route"></g>
       <g class="vm-pins"></g>
       <g class="vm-veh"></g>`;
     el.appendChild(svg);
+    const wx = document.createElement("div");
+    wx.className = "vmap-wx";
+    el.appendChild(wx);
+    let scaleBar = null;
+    if (interactive || opts.hud) {
+      const hud = document.createElement("div");
+      hud.className = "vmap-hud";
+      hud.innerHTML = `<div class="vm-compass" aria-label="Север сверху"><svg viewBox="-12 -12 24 24" width="24" height="24"><path d="M0 -10L4.5 0H-4.5Z" fill="#ff3b5c" stroke="#0e0e12" stroke-width="1.6" stroke-linejoin="round"/><path d="M0 10L4.5 0H-4.5Z" fill="#fff" stroke="#0e0e12" stroke-width="1.6" stroke-linejoin="round"/></svg><b>С</b></div><div class="vm-scale"><i></i><span>500 м</span></div>`;
+      el.appendChild(hud);
+      scaleBar = hud.querySelector(".vm-scale i");
+    }
     if (interactive) {
       const ui = document.createElement("div");
       ui.className = "vmap-ui";
@@ -245,8 +590,33 @@
     const gPins = svg.querySelector(".vm-pins");
     const gVeh = svg.querySelector(".vm-veh");
 
+    /* --- Тема и погода --- */
+    let theme = null, weather = null, themeManual = !!opts.theme, weatherManual = opts.weather !== undefined;
+    function setTheme(t, auto) {
+      if (!auto) themeManual = true;
+      theme = t === "evening" || t === "night" ? t : "day";
+      el.classList.remove("vm-day", "vm-evening", "vm-night");
+      el.classList.add("vm-" + theme);
+    }
+    function setWeather(w, auto) {
+      if (!auto) weatherManual = true;
+      weather = w === "rain" || w === "snow" ? w : null;
+      wx.className = "vmap-wx" + (weather ? " vm-" + weather : "");
+      el.classList.toggle("vm-wx-snow", weather === "snow");
+    }
+    setTheme(opts.theme || autoTheme(), true);
+    setWeather(weatherManual ? opts.weather : autoWeather(), true);
+    const envTimer = setInterval(() => {
+      if (!themeManual) { const t = autoTheme(); if (t !== theme) setTheme(t, true); }
+      if (!weatherManual) { const w = autoWeather(); if (w !== weather) setWeather(w, true); }
+    }, 20000);
+
     let vb = { x: 0, y: 0, w: SIZE, h: SIZE };
-    const apply = () => svg.setAttribute("viewBox", `${vb.x} ${vb.y} ${vb.w} ${vb.h}`);
+    const SCALE_UNITS = 0.5 / KM_PER_UNIT; // 500 м в единицах карты
+    const apply = () => {
+      svg.setAttribute("viewBox", `${vb.x} ${vb.y} ${vb.w} ${vb.h}`);
+      if (scaleBar && el.clientWidth) scaleBar.style.width = Math.round((SCALE_UNITS * el.clientWidth) / vb.w) + "px";
+    };
     const aspect = () => (el.clientHeight || 300) / (el.clientWidth || 360);
     function clamp() {
       vb.w = Math.max(220, Math.min(SIZE + 200, vb.w));
@@ -280,7 +650,7 @@
     const center = (p, w = 360) => p && fit([{ x: p.x - w / 2, y: p.y - w / 2 }, { x: p.x + w / 2, y: p.y + w / 2 }], 0);
 
     // Начальный вид
-    requestAnimationFrame(() => { if (opts.fit) fit(opts.fit, 70, true); else { vb.h = vb.w * aspect(); apply(); } });
+    const initRaf = requestAnimationFrame(() => { if (opts.fit) fit(opts.fit, 70, true); else { vb.h = vb.w * aspect(); apply(); } });
     vb.h = vb.w * ((opts.height || 300) / 360); apply();
 
     /* --- Пины --- */
@@ -341,26 +711,69 @@
       return ctl;
     }
 
-    /* --- Фоновый трафик --- */
+    /* --- Фоновый трафик: правостороннее движение, повороты на перекрёстках --- */
     let trafficRaf = null;
     if (opts.ambient !== false) {
-      const cars = Array.from({ length: 9 }, (_, i) => {
-        const horiz = i % 2 === 0;
-        const line = ST[1 + (i % 4)];
+      const HL = (x, w) => `<path class="vm-hl" d="M${x} -4L${x + 26} -11V11L${x} 4Z" fill="#fff3a0" fill-opacity=".5"/>`;
+      const KINDS = [
+        ...Array(11).fill("car"), "bus", "bus", "scooter", "scooter", "scooter",
+      ];
+      const CAR_COL = ["#ff6bcb", "#ffe14d", "#8fd8ff", "#c6ff4d", "#ff8a8a", "#ffffff", "#b9a3ff"];
+      const laneOf = (v) => {
+        const ave = isAve(v.li), per = v.li === 0 || v.li === 5;
+        if (v.kind === "scooter") return ave ? 16.5 : per ? 12 : 10.5;
+        if (v.kind === "bus") return ave ? 13.5 : per ? 8 : 6.5;
+        return ave ? v.fast ? 5.5 : 13.5 : per ? 7.5 : 6.5;
+      };
+      const nextIdx = (pos, dir) => { if (dir > 0) { for (let k = 0; k < 6; k++) if (ST[k] > pos) return k; return 5; } for (let k = 5; k >= 0; k--) if (ST[k] < pos) return k; return 0; };
+      const vehs = KINDS.map((kind, i) => {
         const g = document.createElementNS(NS, "g");
-        const col = ["#ff6bcb", "#ffe14d", "#8fd8ff", "#c6ff4d", "#ff8a8a"][i % 5];
-        g.innerHTML = `<rect x="-11" y="-7" width="22" height="14" rx="5" fill="${col}" stroke="#0e0e12" stroke-width="2.5"/><rect x="-4" y="-5" width="7" height="10" rx="2" fill="#0e0e12" opacity=".35"/>`;
+        if (kind === "bus") {
+          g.innerHTML = `${HL(19)}<rect x="-19" y="-7" width="38" height="14" rx="4" fill="${i % 2 ? "#ff5a5a" : "#8b5cff"}" stroke="${INK}" stroke-width="2"/><path d="M-14 -4.2h26M-14 4.2h26" stroke="#fff" stroke-width="2.2" stroke-dasharray="4 2"/><rect x="13" y="-5" width="4" height="10" rx="1" fill="${INK}" opacity=".5"/>`;
+        } else if (kind === "scooter") {
+          g.setAttribute("class", "vm-scoot");
+          g.innerHTML = `${HL(5)}<path d="M-6 0h11" stroke="${INK}" stroke-width="3" stroke-linecap="round"/><circle r="4" fill="${CAR_COL[(i + 3) % 4]}" stroke="${INK}" stroke-width="1.6"/>`;
+        } else {
+          g.innerHTML = `${HL(10)}<rect x="-10" y="-6" width="20" height="12" rx="4" fill="${CAR_COL[i % CAR_COL.length]}" stroke="${INK}" stroke-width="2"/><rect x="1" y="-4.5" width="5" height="9" rx="1.5" fill="${INK}" opacity=".45"/><rect x="-8" y="-4" width="3" height="8" rx="1" fill="${INK}" opacity=".25"/>`;
+        }
         gTraffic.appendChild(g);
-        return { g, horiz, line: line + (i % 3 === 0 ? -7 : 7), pos: Math.random() * SIZE, speed: (0.35 + Math.random() * 0.5) * (i % 3 === 0 ? -1 : 1) };
+        const li = kind === "bus" ? 2 + (i % 2) : Math.floor(Math.random() * 6);
+        const dir = Math.random() < 0.5 ? 1 : -1;
+        const pos = ST[0] + 10 + Math.random() * (ST[5] - ST[0] - 20);
+        const v = {
+          g, kind, li, dir, pos, axis: i % 2 ? "v" : "h", fast: Math.random() < 0.5,
+          speed: kind === "bus" ? 24 : kind === "scooter" ? 17 + Math.random() * 6 : 32 + Math.random() * 22,
+          cont: kind === "bus" ? 0.8 : kind === "scooter" ? 0.55 : 0.65,
+          next: nextIdx(pos, dir), rx: null, ry: null,
+        };
+        v.lane = laneOf(v);
+        return v;
       });
-      (function loop() {
-        cars.forEach((c) => {
-          c.pos += c.speed;
-          if (c.pos > ST[5]) c.pos = ST[0]; if (c.pos < ST[0]) c.pos = ST[5];
-          c.g.setAttribute("transform", c.horiz ? `translate(${c.pos} ${c.line})` : `translate(${c.line} ${c.pos}) rotate(90)`);
+      let last = performance.now();
+      (function loop(t) {
+        const dt = Math.min(0.05, Math.max(0, (t - last) / 1000)); last = t;
+        const f = Math.min(1, dt * 12);
+        vehs.forEach((v) => {
+          v.pos += v.dir * v.speed * dt;
+          const K = v.next;
+          if ((v.dir > 0 && v.pos >= ST[K]) || (v.dir < 0 && v.pos <= ST[K])) {
+            const can = v.dir > 0 ? K < 5 : K > 0;
+            if (!can || Math.random() > v.cont) {
+              const dirs = []; if (v.li < 5) dirs.push(1); if (v.li > 0) dirs.push(-1);
+              const nd = dirs[Math.floor(Math.random() * dirs.length)], old = v.li;
+              v.axis = v.axis === "h" ? "v" : "h"; v.li = K; v.pos = ST[old]; v.dir = nd; v.next = old + nd;
+              v.lane = laneOf(v);
+            } else v.next = K + v.dir;
+          }
+          const L = ST[v.li];
+          const tx = v.axis === "h" ? v.pos : L - v.dir * v.lane;
+          const ty = v.axis === "h" ? L + v.dir * v.lane : v.pos;
+          if (v.rx == null) { v.rx = tx; v.ry = ty; } else { v.rx += (tx - v.rx) * f; v.ry += (ty - v.ry) * f; }
+          const rot = v.axis === "h" ? (v.dir > 0 ? 0 : 180) : v.dir > 0 ? 90 : -90;
+          v.g.setAttribute("transform", `translate(${v.rx.toFixed(1)} ${v.ry.toFixed(1)}) rotate(${rot})`);
         });
         trafficRaf = requestAnimationFrame(loop);
-      })();
+      })(last);
     }
 
     /* --- Жесты: перетаскивание, щипок, колесо --- */
@@ -415,7 +828,11 @@
 
     return {
       el, svg, setPins, route, clearRoute, drive, fit, center,
-      destroy() { cancelAnimationFrame(trafficRaf); cancelAnimationFrame(anim); drives.forEach((d) => d.stop()); el.innerHTML = ""; },
+      setTheme: (t) => setTheme(t),
+      setWeather: (w) => setWeather(w),
+      get theme() { return theme; },
+      get weather() { return weather; },
+      destroy() { clearInterval(envTimer); cancelAnimationFrame(initRaf); cancelAnimationFrame(trafficRaf); cancelAnimationFrame(anim); drives.forEach((d) => d.stop()); el.innerHTML = ""; el.classList.remove("vm-day", "vm-evening", "vm-night", "vm-wx-snow"); },
     };
   }
 
@@ -432,6 +849,11 @@
 
   Vibe.map = { create, place, path, km, minutes, len, pointAt, basePins, door, SIZE, OFFICE_BLOCKS, HOME_BLOCKS };
 
+  const RAIN1 = `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='80'%3E%3Cpath d='M10 2l-3 12M32 30l-3 12M21 56l-3 12' stroke='rgba(235,245,255,.8)' stroke-width='1.4' stroke-linecap='round'/%3E%3C/svg%3E")`;
+  const RAIN2 = `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='60' height='120'%3E%3Cpath d='M14 6l-4.5 18M44 64l-4.5 18' stroke='rgba(220,235,255,.55)' stroke-width='2' stroke-linecap='round'/%3E%3C/svg%3E")`;
+  const SNOW1 = `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='60' height='60'%3E%3Cg fill='%23fff'%3E%3Ccircle cx='8' cy='12' r='1.8'/%3E%3Ccircle cx='38' cy='6' r='1.4'/%3E%3Ccircle cx='26' cy='34' r='2'/%3E%3Ccircle cx='52' cy='44' r='1.5'/%3E%3Ccircle cx='12' cy='52' r='1.3'/%3E%3C/g%3E%3C/svg%3E")`;
+  const SNOW2 = `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='90' height='90'%3E%3Cg fill='%23fff' stroke='rgba(14,14,18,.25)' stroke-width='.8'%3E%3Ccircle cx='20' cy='24' r='3.4'/%3E%3Ccircle cx='66' cy='60' r='3'/%3E%3C/g%3E%3C/svg%3E")`;
+
   const css = `
   .vmap { position: relative; border: var(--line); border-radius: 28px; overflow: hidden; background: #4fc3ff; box-shadow: var(--shadow); touch-action: none; }
   .vmap-svg { display: block; width: 100%; height: 100%; cursor: grab; }
@@ -444,6 +866,42 @@
   @keyframes vm-pulse { 0% { opacity: .9; transform: translateY(-24px) scale(1); } 100% { opacity: 0; transform: translateY(-24px) scale(2.6); } }
   .vm-flow { animation: vm-flow 1s linear infinite; }
   @keyframes vm-flow { to { stroke-dashoffset: -32; } }
+
+  /* Время суток */
+  .vm-shade { fill: #26306e; opacity: 0; mix-blend-mode: multiply; pointer-events: none; transition: opacity .9s, fill .9s; }
+  .vmap.vm-evening .vm-shade { fill: #ff8f6b; opacity: .42; }
+  .vmap.vm-night .vm-shade { fill: #2f3b80; opacity: .72; }
+  .vm-lights { opacity: 0; pointer-events: none; transition: opacity .9s; }
+  .vmap.vm-evening .vm-lights { opacity: .75; }
+  .vmap.vm-night .vm-lights { opacity: 1; }
+  .vm-traffic { pointer-events: none; }
+  .vm-hl { opacity: 0; transition: opacity .9s; }
+  .vmap.vm-evening .vm-hl, .vmap.vm-night .vm-hl { opacity: 1; }
+  .vmap.vm-wx-snow .vm-scoot { display: none; }
+
+  /* Погода */
+  .vmap-wx { position: absolute; inset: 0; z-index: 1; pointer-events: none; overflow: hidden; opacity: 0; transition: opacity .8s, background-color .8s; }
+  .vmap-wx.vm-rain, .vmap-wx.vm-snow { opacity: 1; }
+  .vmap-wx::before, .vmap-wx::after { content: ""; position: absolute; top: -400px; left: -100px; right: -100px; bottom: 0; will-change: transform; }
+  .vmap-wx.vm-rain { background-color: rgba(50, 70, 110, .16); }
+  .vmap-wx.vm-rain::before { background-image: ${RAIN1}; animation: vm-rain1 .5s linear infinite; }
+  .vmap-wx.vm-rain::after { background-image: ${RAIN2}; animation: vm-rain2 .8s linear infinite; }
+  .vmap-wx.vm-snow { background-color: rgba(255, 255, 255, .14); }
+  .vmap-wx.vm-snow::before { background-image: ${SNOW1}; animation: vm-snow1 6s linear infinite; }
+  .vmap-wx.vm-snow::after { background-image: ${SNOW2}; animation: vm-snow2 9s linear infinite; }
+  @keyframes vm-rain1 { to { transform: translate(-40px, 160px); } }
+  @keyframes vm-rain2 { to { transform: translate(-60px, 240px); } }
+  @keyframes vm-snow1 { to { transform: translate(-60px, 240px); } }
+  @keyframes vm-snow2 { to { transform: translate(90px, 360px); } }
+  @media (prefers-reduced-motion: reduce) { .vmap-wx::before, .vmap-wx::after { animation-duration: 0s; } }
+
+  /* Компас и масштаб */
+  .vmap-hud { position: absolute; left: 10px; bottom: 10px; z-index: 2; display: flex; align-items: flex-end; gap: 8px; pointer-events: none; }
+  .vm-compass { position: relative; width: 38px; height: 38px; border-radius: 50%; border: 2.5px solid var(--ink); background: #fff; box-shadow: 0 3px 0 var(--ink); display: grid; place-items: center; }
+  .vm-compass svg { margin-top: 5px; }
+  .vm-compass b { position: absolute; top: 0; left: 0; right: 0; text-align: center; font-size: 9px; font-weight: 900; line-height: 10px; color: #ff3b5c; }
+  .vm-scale { background: rgba(255,255,255,.92); border: 2px solid var(--ink); border-radius: 10px; padding: 3px 7px 4px; font: 800 10px/1 Manrope, sans-serif; color: var(--ink); }
+  .vm-scale i { display: block; height: 5px; border: 2px solid var(--ink); border-top: 0; margin-bottom: 2px; min-width: 16px; max-width: 160px; }
   `;
   const st = document.createElement("style"); st.textContent = css; document.head.appendChild(st);
 })();

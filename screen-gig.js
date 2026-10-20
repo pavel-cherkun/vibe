@@ -184,10 +184,10 @@
       { t: "Остановить ☕", st: 1, tip: 100, say: "«Деплой прошёл! Ну, почти»" }, { t: "«Мы торопимся»", st: -1, say: "«Деплой упал. Из-за вас»" } ] },
   ];
   const FREELANCE = [
-    { id: "logo", e: "🎨", t: "Логотип за 300 ₽", client: "ИП «Шаурма у Ашота»", pay: 300, taps: 24, sec: 7, edit: "А можно логотип побольше, но чтобы он был меньше?" },
+    { id: "logo", e: "🎨", t: "Логотип за 300 ₫", client: "ИП «Шаурма у Ашота»", pay: 300, taps: 24, sec: 7, edit: "А можно логотип побольше, но чтобы он был меньше?" },
     { id: "apple", e: "🍏", t: "Сделать как у «Яблока», но дешевле", client: "Стартап «Груша»", pay: 900, taps: 34, sec: 8, edit: "И чтобы было вау. Вы же понимаете, какое вау?" },
     { id: "land", e: "📝", t: "Текст для лендинга, 3000 знаков", client: "Курсы «Миллион за неделю»", pay: 550, taps: 28, sec: 8, edit: "Добавьте уникальности. И слово «синергия» раз двенадцать" },
-    { id: "reels", e: "🎬", t: "Смонтировать рилс за 200 ₽", client: "Блогер-миллионник (3 тыс. подписчиков)", pay: 200, taps: 18, sec: 6, edit: "А можно сделать вирусным? Просто сделайте вирусным" },
+    { id: "reels", e: "🎬", t: "Смонтировать рилс за 200 ₫", client: "Блогер-миллионник (3 тыс. подписчиков)", pay: 200, taps: 18, sec: 6, edit: "А можно сделать вирусным? Просто сделайте вирусным" },
     { id: "table", e: "🧾", t: "Таблица на 40 000 строк", client: "Бухгалтерия «Сдадим вчера»", pay: 400, taps: 26, sec: 7, edit: "Ой, мы прислали не тот файл. Вот правильный (тоже не тот)" },
     { id: "bot", e: "🤖", t: "Чат-бот, который «как живой»", client: "Застройщик «Вайб-Сити»", pay: 1500, taps: 40, sec: 9, edit: "А пусть бот ещё продаёт квартиры. Сам. И звонит маме" },
     { id: "cat", e: "🐈", t: "Аватарка для кота", client: "Кот Борис (через хозяйку)", pay: 250, taps: 20, sec: 6, edit: null },
@@ -237,14 +237,14 @@
           <div class="card gg-stats">
             <div><b class="big-num">${g.orders}/${MAX_ORDERS}</b><small>заказов</small></div>
             <div><b class="big-num">${dec(g.rating, 2)}</b><small>⭐ рейтинг</small></div>
-            <div><b class="big-num">+${fmt(g.earnedDay)}</b><small>₽ сегодня</small></div>
+            <div><b class="big-num">+${fmt(g.earnedDay)}</b><small>₫ сегодня</small></div>
             <div class="gg-en"><span>⚡ Энергия ${Math.round(b.energy)}%</span><div class="progress"><i style="--p:${Math.round(b.energy)}%;background:${b.energy < 25 ? "var(--coral)" : "var(--lime)"}"></i></div></div>
           </div>
           ${Vibe.ui.marquee(["Комиссия Корпорации 25%", "Ты не сотрудник — ты партнёр", "Чаевые без комиссии (пока)", "Рейтинг ниже 4,3 — до свидания"])}
           <h2 class="sec">Подработки <small>${sg.label || "Будни · обычный спрос"}</small></h2>
           <div class="stack stagger">
             <div class="card c-yellow gg-gig">
-              <div class="gg-gh"><span class="emo float">🚲</span><div><b>Курьер Vibe Eat</b><small>110–280 ₽ за заказ + чаевые</small></div></div>
+              <div class="gg-gh"><span class="emo float">🚲</span><div><b>Курьер Vibe Eat</b><small>110–280 ₫ за заказ + чаевые</small></div></div>
               <p>Забери заказ, довези до клиента, объезжай лужи. Смена — до 5 заказов в игровой день.</p>
               <div class="gg-chips"><span class="badge" style="background:#fff">🏢 Комиссия Корпорации 25%</span><span class="badge" style="background:#fff">🚶 шаги в Vibe Fit</span></div>
               <button class="btn black block" data-courier>${g.orders >= MAX_ORDERS ? "Смена закрыта 😮‍💨" : g.orders ? `Следующий заказ · ${g.orders + 1}/${MAX_ORDERS}` : "Выйти на смену"} <span class="arrow">→</span></button>
@@ -405,7 +405,7 @@
             const k = Math.random() < 0.35 ? pick(kinds.filter((x) => x.good)) : pick(kinds.filter((x) => !x.good));
             hazard({
               e: k.e, label: k.label, good: k.good, life: k.good ? 1300 : 1600,
-              onHit() { if (k.good) { const v = pick([20, 30, 40, 50]); bonus += v; FX.toast(`+${v} ₽ бонус за скорость`, "💰", 1400); } else dodged++; sc(); },
+              onHit() { if (k.good) { const v = pick([20, 30, 40, 50]); bonus += v; FX.toast(`+${v} ₫ бонус за скорость`, "💰", 1400); } else dodged++; sc(); },
               onMiss() { if (!k.good) { missed++; FX.shake($(body, ".gg-mapwrap")); FX.toast(k.e === "🌊" ? "Плюх! Пакет промок" : k.e === "🐕" ? "Собака победила. Котлету отдал" : "Самокатчик подрезал. Суп в пакете", "💥", 1600); sc(); } },
             });
           },
@@ -416,6 +416,7 @@
             const rating = +((g.rating * 19 + stars) / 20).toFixed(2);
             saveGG({ orders: g.orders + 1, n: g.n + 1, rating });
             earn("Vibe Gig · доставка", o.net + bonus, "🚲", "c-lime");
+          if (Vibe.body && Vibe.body.addStress) Vibe.body.addStress(2, "Подработка курьером", "🚲");
             if (tip) earn("Vibe Gig · чаевые", tip, "💜", "c-yellow");
             G().stat("gigs");
             if (Vibe.body) Vibe.body.effect("walk", { km: o.km });
@@ -423,7 +424,7 @@
             Vibe.reward({ vibiki: 8 + stars * 3, xp: 20, silent: true });
             result({
               e: o.R.e, title: "Доставлено!", stars, review: pick(REVIEWS[Math.min(5, stars)] || REVIEWS[2]),
-              lines: [row("Оплата за заказ", rub(o.net)), bonus ? row("💰 Бонусы", "+" + rub(bonus)) : "", row("💜 Чаевые", tip ? "+" + rub(tip) : "0 ₽ (клиент «перевёл мысленно»)"), row("🏢 Комиссия Корпорации 25%", "уже удержана"), row("Итого", "+" + rub(o.net + bonus + tip), true)],
+              lines: [row("Оплата за заказ", rub(o.net)), bonus ? row("💰 Бонусы", "+" + rub(bonus)) : "", row("💜 Чаевые", tip ? "+" + rub(tip) : "0 ₫ (клиент «перевёл мысленно»)"), row("🏢 Комиссия Корпорации 25%", "уже удержана"), row("Итого", "+" + rub(o.net + bonus + tip), true)],
               sub: `🚶 +${fmt(Math.round(o.km * 1350))} шагов · ⚡ −8% энергии · ⭐ рейтинг ${dec(rating, 2)}`,
               next: gg().orders < MAX_ORDERS ? `<button class="btn black xl block" data-next="courier">Следующий заказ · ${gg().orders + 1}/${MAX_ORDERS} 🚲</button>` : `<div class="card c-lilac tight" style="text-align:center;font-weight:800">🏁 Смена закрыта. 5 из 5. Ты машина. Ну, велосипед</div>`,
             });
@@ -522,7 +523,7 @@
             hazard({
               e: "📸", label: "Камера!", good: false, life: 1500,
               onHit() { FX.toast("Притормозил. Камера разочарована", "📸", 1300); },
-              onMiss() { fined++; sc(); addFine({ t: "Превышение на 1 км/ч (поездка Vibe Maps)", e: "📸", a: 500 }, true); FX.shake($(body, ".gg-mapwrap")); FX.toast("Вспышка! Штраф 500 ₽ уже в Госвайбе", "🚔", 2000); },
+              onMiss() { fined++; sc(); addFine({ t: "Превышение на 1 км/ч (поездка Vibe Maps)", e: "📸", a: 500 }, true); FX.shake($(body, ".gg-mapwrap")); FX.toast("Вспышка! Штраф 500 ₫ уже в Госвайбе", "🚔", 2000); },
             });
           },
           onDone() {
@@ -540,8 +541,8 @@
             const tipShown = tip && stars >= 4 ? tip : 0;
             result({
               e: o.car.e, title: "Приехали!", stars, review: stars >= 4 ? `${o.p.n}: «Спасибо, водитель. Пять звёзд, но мысленно шесть»` : `${o.p.n}: «Доехали. Это главное. Наверное»`,
-              lines: [row("Тариф", rub(o.fare)), row("🏢 Комиссия Корпорации 25%", "−" + rub(o.fee)), row("💜 Чаевые", tipShown ? "+" + rub(tipShown) : "0 ₽"), row(`${o.car.electric ? "🔋" : "⛽"} Бак`, `−${o.fuelPct}% (≈ ${rub(o.fuelRub)})`), fined ? row("🚔 Штрафы", `−${rub(fined * 500)} (в Госвайбе)`) : "", row("Чистыми", rub(net + tipShown - o.fuelRub - fined * 250), true)],
-              sub: `${o.car.electric ? "🔋" : "⛽"} Осталось ${Math.round(ga().fuel)}% · ⭐ рейтинг ${dec(rating, 2)} · штраф со скидкой 50% — 250 ₽`,
+              lines: [row("Тариф", rub(o.fare)), row("🏢 Комиссия Корпорации 25%", "−" + rub(o.fee)), row("💜 Чаевые", tipShown ? "+" + rub(tipShown) : "0 ₫"), row(`${o.car.electric ? "🔋" : "⛽"} Бак`, `−${o.fuelPct}% (≈ ${rub(o.fuelRub)})`), fined ? row("🚔 Штрафы", `−${rub(fined * 500)} (в Госвайбе)`) : "", row("Чистыми", rub(net + tipShown - o.fuelRub - fined * 250), true)],
+              sub: `${o.car.electric ? "🔋" : "⛽"} Осталось ${Math.round(ga().fuel)}% · ⭐ рейтинг ${dec(rating, 2)} · штраф со скидкой 50% — 250 ₫`,
               next: gate("driver") ? `<button class="btn block" data-go="auto">${ga().fuel < 12 ? "Заправиться в Vibe Auto ⛽" : "В Vibe Auto 🚗"}</button>` : `<button class="btn black xl block" data-next="driver">Следующий пассажир ${o.car.e}</button>`,
             });
           },
@@ -567,7 +568,7 @@
             <button class="gg-tap" data-tap><span class="emo">${o.e}</span><small>Старт</small></button>
           </div>
           <button class="btn block" data-home>← Отказаться</button>
-          <div class="fine">Оплата приходит через 1–3 игровых дня после сдачи. Комиссия Корпорации 25% — сразу. Права на результат принадлежат клиенту, Корпорации и немного Заботику.</div>
+          <div class="fine">Оплата приходит через 1–3 игровых дня после сдачи. Комиссия Корпорации 25% — сразу. Права на результат принадлежат клиенту, Корпорации и немного Вайботу.</div>
         </div>`);
         const tapBtn = $(body, "[data-tap]"), prog = $(body, "[data-prog]"), cnt = $(body, "[data-cnt]"), tm = $(body, "[data-time]"), msg = $(body, "[data-msg]");
         let phase = "idle";
@@ -667,7 +668,7 @@
             <div class="progress"><i style="--p:${Math.round(a.clean)}%;background:${a.clean < 30 ? "var(--coral)" : "var(--sky)"}"></i></div>
             <div class="grid2" style="margin-top:14px">
               <button class="btn black" data-fuel ${a.fuel >= 99 ? "disabled" : ""}>${car.electric ? "🔌" : "⛽"} ${rub(refuel)}</button>
-              <button class="btn" data-wash ${a.clean >= 99 ? "disabled" : ""}>🫧 Мойка 790 ₽</button>
+              <button class="btn" data-wash ${a.clean >= 99 ? "disabled" : ""}>🫧 Мойка 790 ₫</button>
             </div>
             ${a.clean < 30 ? `<div class="fine">Грязные номера — тоже штраф. Камеры любят чистоту.</div>` : ""}
           </div>
@@ -875,7 +876,7 @@
           <div class="card tight gg-row" data-spravka style="margin-top:12px">
             <span class="emo" style="font-size:36px">📄</span>
             <div style="flex:1"><b>Справка о том, что ты — это ты</b><small>Выдаётся при предъявлении тебя</small></div>
-            <span class="badge" style="background:var(--yellow)">0 ₽</span>
+            <span class="badge" style="background:var(--yellow)">0 ₫</span>
           </div>
 
           <h2 class="sec">Возраст и пенсия</h2>
@@ -1018,7 +1019,7 @@
             function step3() {
               const d = today();
               const slots = [{ dd: 3, h: 9, m: 0 }, { dd: 5, h: 14, m: 40 }, { dd: 41, h: 11, m: 0 }];
-              md.innerHTML = `${dots(3)}<div class="m-emo float">🗓️</div><div class="display" style="font-size:24px">Шаг 3. Госпошлина и запись</div><p>Госпошлина 1 500 ₽. Выдача — лично, в Vibe HQ. Свободные окна:</p><div class="stack">${slots.map((x, i) => `<button class="btn ${i ? "" : "black"} block" data-slot="${i}">Через ${x.dd} ${plural(x.dd, "день", "дня", "дней")} · ${String(x.h).padStart(2, "0")}:${String(x.m).padStart(2, "0")}</button>`).join("")}</div><div class="fine">Неявка = госпошлина сгорает. Явка = вы молодец.</div>`;
+              md.innerHTML = `${dots(3)}<div class="m-emo float">🗓️</div><div class="display" style="font-size:24px">Шаг 3. Госпошлина и запись</div><p>Госпошлина 1 500 ₫. Выдача — лично, в Vibe HQ. Свободные окна:</p><div class="stack">${slots.map((x, i) => `<button class="btn ${i ? "" : "black"} block" data-slot="${i}">Через ${x.dd} ${plural(x.dd, "день", "дня", "дней")} · ${String(x.h).padStart(2, "0")}:${String(x.m).padStart(2, "0")}</button>`).join("")}</div><div class="fine">Неявка = госпошлина сгорает. Явка = вы молодец.</div>`;
               md.querySelectorAll("[data-slot]").forEach((b) => b.addEventListener("click", (e) => {
                 const x = slots[+b.dataset.slot];
                 if (!Vibe.pay(1500, { title: "Госвайб · госпошлина за паспорт", emoji: "🛂", col: "c-lilac", from: e.currentTarget })) return;

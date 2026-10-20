@@ -2,7 +2,7 @@
    Близкие, гардероб, хобби и добрые дела.
    Экраны: people · style · hobby · charity
    Состояние: people (через Vibe.people: last, lastCall, lastGift,
-   lastRemind, owes), pp_hobbies, pp_rep, pp_charity, pp_goodDay,
+   lastRemind, owes; сердечки/подарки/чат — Vibe.chars и Vibe.msg), pp_hobbies, pp_rep, pp_charity, pp_goodDay,
    pp_bday, pp_decayDay.
    ============================================================ */
 (function () {
@@ -52,11 +52,16 @@
   .pp-relrow { display:flex; align-items:center; gap:8px; margin-top:10px; }
   .pp-relrow .progress { flex:1; height:12px; }
   .pp-relrow b { font-size:12px; font-weight:900; min-width:96px; text-align:right; }
-  .pp-acts { display:grid; grid-template-columns:repeat(3,1fr); gap:6px; margin-top:12px; }
+  .pp-acts { display:grid; grid-template-columns:repeat(4,1fr); gap:6px; margin-top:12px; }
   .pp-acts .btn { height:42px; padding:0 6px; font-size:12px; gap:4px; }
   .pp-acts .btn.wide { grid-column:1 / -1; }
   .pp-meet { margin-top:10px; padding:8px 10px; border:2px dashed var(--ink); border-radius:14px; font-size:12px; font-weight:800; background:var(--lilac); }
   .pp-ex { opacity:.55; filter:grayscale(.6); }
+  .pp-top[data-act] { cursor:pointer; }
+  .pp-hearts { font-size:12px; letter-spacing:-2px; margin-top:4px; white-space:nowrap; }
+  .pp-on { display:inline-block; width:9px; height:9px; border-radius:50%; background:#2fd36b; border:1.5px solid var(--ink); margin-right:4px; vertical-align:0; }
+  .pp-ava { position:relative; }
+  .pp-ava .pp-un { position:absolute; top:-7px; right:-7px; }
   .pp-sum { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-top:14px; }
   .pp-sum .card { padding:10px 8px; text-align:center; }
   .pp-sum b { font-family:var(--font-display); font-size:22px; display:block; font-weight:400; }
@@ -119,8 +124,10 @@
   const st = document.createElement("style"); st.textContent = css; document.head.appendChild(st);
 
   /* ================= Близкие: логика ================= */
-  const GRACE = { family: 4, friend: 3, partner: 2 };
-  const DECAY = { family: 1, friend: 2, partner: 3 };
+  const GRACE = { family: 4, friend: 3, partner: 2, date: 2 };
+  const DECAY = { family: 1, friend: 2, partner: 3, date: 2 };
+  const CH = () => Vibe.chars || null;
+  const heartsOf = (p) => (CH() ? CH().hearts(p.id) : Math.floor((p.rel || 0) / 10));
   const relWord = (r) => (r < 20 ? "Холодно 🥶" : r < 40 ? "Прохладно" : r < 60 ? "Норм" : r < 80 ? "Близко 💛" : "Не разлей вода 💞");
   const relCol = (r) => (r < 30 ? "var(--coral)" : r < 60 ? "var(--yellow)" : "var(--lime)");
   const listP = () => Object.entries(Vibe.people.all()).map(([id, p]) => Object.assign({ id }, p));
@@ -139,7 +146,7 @@
     }
     const dd = Math.max(1, d - lastRun);
     listP().forEach((p) => {
-      if (p.kind === "ex") return;
+      if (p.kind === "ex" || p.kind === "acq") return;
       if (p.last == null) { Vibe.people.set(p.id, { last: d }); return; }
       const kind = GRACE[p.kind] ? p.kind : "friend";
       const idle = d - p.last - GRACE[kind];
@@ -154,14 +161,25 @@
   }
   function touch(id) { Vibe.people.set(id, { last: today() }); }
 
-  // ДР мамы — 14-го числа 2-го игрового месяца, ДР папы — 9-го числа 3-го. Ставятся в календарь сами.
-  const BDAYS = { mom: { day: 30 + 13, e: "🎂", t: "ДР мамы", place: "restaurant:3" }, dad: { day: 60 + 8, e: "🎂", t: "ДР папы", place: "restaurant:6" } };
+  // ДР близких: мама — 14 декабря, папа — 9 января (и остальные из Vibe.chars). Ставятся в календарь сами.
+  const BDAYS0 = { mom: { day: 30 + 13, e: "🎂", t: "ДР мамы", place: "restaurant:3" }, dad: { day: 60 + 8, e: "🎂", t: "ДР папы", place: "restaurant:6" } };
+  function bdays() {
+    const out = Object.assign({}, BDAYS0);
+    if (CH()) CH().list().forEach((c) => {
+      if (out[c.id] || !c.birthday) return;
+      const p = Vibe.people.get(c.id);
+      if (!p || !["family", "friend", "partner"].includes(p.kind)) return;
+      const pl = (c.places || []).find((k) => /^restaurant:/.test(k)) || "restaurant:3";
+      out[c.id] = { day: c.birthday.day, e: "🎂", t: `ДР: ${c.n}`, place: pl };
+    });
+    return out;
+  }
   function scheduleBdays() {
     if (!S().game || !Vibe.sched) return;
     const d = today();
     const cur = Object.assign({}, S().pp_bday || {});
     let changed = false;
-    Object.entries(BDAYS).forEach(([pid, b]) => {
+    Object.entries(bdays()).forEach(([pid, b]) => {
       if (cur[pid] != null && cur[pid] >= d) return;
       let day = b.day;
       while (day < d) day += 360;
@@ -242,23 +260,30 @@
     const ex = p.kind === "ex";
     const m = meetingOf(p.id);
     const called = p.lastCall === d;
-    const col = { family: "c-yellow", friend: "c-sky", partner: "c-pink", ex: "c-white" }[p.kind] || "c-mint";
+    const gifted = p.lastGift === d;
+    const col = { family: "c-yellow", friend: "c-sky", partner: "c-pink", date: "c-pink", acq: "c-lilac", ex: "c-white" }[p.kind] || "c-mint";
     const talk = isPartner(p) && p.rel < 30;
+    const h = heartsOf(p);
+    const st = CH() ? CH().status(p.id) : null;
+    const un = Vibe.msg ? Vibe.msg.unread(p.id) : 0;
+    const bd = CH() && CH().isBirthday(p.id);
     return `
     <div class="card pp-person ${ex ? "pp-ex" : ""}" data-pid="${esc(p.id)}">
-      <div class="pp-top">
-        <div class="pp-ava ${col}"><span class="emo ${p.rel >= 80 ? "wobble" : ""}">${p.e || "🙂"}</span></div>
+      <div class="pp-top" data-act="prof">
+        <div class="pp-ava ${col}"><span class="emo ${h >= 8 ? "wobble" : ""}">${p.e || "🙂"}</span>${un ? `<span class="dot-count pp-un">${un}</span>` : ""}</div>
         <div style="flex:1;min-width:0">
-          <div class="pp-name">${esc(p.n)}${isPartner(p) ? ` <span class="badge" style="background:var(--pink)">💘 пара</span>` : ""}${p.owes ? ` <span class="badge" style="background:var(--orange)">должен ${rub(p.owes)}</span>` : ""}</div>
-          <div class="pp-status">${esc(statusLine(p))}</div>
+          <div class="pp-name">${esc(p.n)}${isPartner(p) ? ` <span class="badge" style="background:var(--pink)">💘 пара</span>` : ""}${bd ? ` <span class="badge" style="background:var(--orange)">🎂 ДР сегодня</span>` : ""}${p.owes ? ` <span class="badge" style="background:var(--orange)">должен ${rub(p.owes)}</span>` : ""}</div>
+          <div class="pp-status">${st && !ex ? `${st.online ? `<span class="pp-on"></span>в сети` : esc(st.t)} · ` : ""}${esc(statusLine(p))}</div>
         </div>
       </div>
-      <div class="pp-relrow"><div class="progress"><i style="--p:${Math.round(p.rel)}%;background:${relCol(p.rel)}"></i></div><b>${Math.round(p.rel)} · ${relWord(p.rel)}</b></div>
+      <div class="pp-hearts">${"❤️".repeat(h)}${"🤍".repeat(10 - h)}</div>
+      <div class="pp-relrow"><div class="progress"><i style="--p:${Math.round(p.rel)}%;background:${relCol(p.rel)}"></i></div><b>❤️ ${h}/10 · ${relWord(p.rel)}</b></div>
       ${m ? `<div class="pp-meet">📅 ${esc(m.title)} — ${whenText(m)}${m.place ? ` · ${esc((Vibe.map.place(m.place) || {}).label || "")}` : ""}</div>` : ""}
       ${ex ? "" : `<div class="pp-acts">
-        <button class="btn ${called ? "" : "lime"}" data-act="call" ${called ? "disabled" : ""}>📞 ${called ? "Звонил" : "Позвонить"}</button>
-        <button class="btn yellow" data-act="meet" ${m ? "disabled" : ""}>☕ Встретиться</button>
-        <button class="btn pink" data-act="gift">🎁 Подарить</button>
+        <button class="btn lime" data-act="chat">💬 Чат</button>
+        <button class="btn" data-act="call" ${called ? "disabled" : ""}>📞 ${called ? "Был" : "Звонок"}</button>
+        <button class="btn yellow" data-act="meet" ${m && !/^pp_bday_/.test(m.id) ? "disabled" : ""}>☕ Встреча</button>
+        <button class="btn pink" data-act="gift" ${gifted ? "disabled" : ""}>🎁 ${gifted ? "Был" : "Подарок"}</button>
         ${p.owes ? `<button class="btn wide" data-act="debt" ${p.lastRemind === d ? "disabled" : ""}>💸 ${p.lastRemind === d ? "Уже напоминал сегодня" : `Напомнить про долг · ${rub(p.owes)}`}</button>` : ""}
         ${talk ? `<button class="btn black wide pulse" data-act="talk">💬 «Нам надо поговорить»</button>` : ""}
       </div>`}
@@ -271,21 +296,23 @@
       { t: "Семья", k: (p) => p.kind === "family" },
       { t: "Вторая половинка", k: isPartner },
       { t: "Друзья", k: (p) => p.kind === "friend" },
-      { t: "Свидания и знакомые", k: (p) => !["family", "friend", "partner", "ex"].includes(p.kind) },
+      { t: "Свидания", k: (p) => p.kind === "date" },
+      { t: "Соседи и коллеги", k: (p) => p.kind === "acq" },
+      { t: "Знакомые", k: (p) => !["family", "friend", "partner", "date", "acq", "ex"].includes(p.kind) },
       { t: "Бывшие", k: (p) => p.kind === "ex" },
     ];
     return g.map((x) => Object.assign(x, { list: all.filter(x.k) })).filter((x) => x.list.length);
   }
 
   function peopleBody() {
-    const all = listP().filter((p) => p.kind !== "ex");
+    const all = listP().filter((p) => p.kind !== "ex" && p.kind !== "acq");
     const avg = all.length ? Math.round(all.reduce((s, p) => s + p.rel, 0) / all.length) : 0;
     const due = all.filter((p) => p.lastCall !== today()).length;
     const partner = Vibe.people.partner();
     const fam = Vibe.sched ? Vibe.sched.upcoming(30).filter((e) => e.kind === "family") : [];
     return `
       <div class="pp-sum">
-        <div class="card c-lime"><b>${avg}</b><small>средняя близость</small></div>
+        <div class="card c-lime"><b>${all.length ? (all.reduce((s, p) => s + heartsOf(p), 0) / all.length).toFixed(1) : 0}❤️</b><small>в среднем</small></div>
         <div class="card c-yellow"><b>${due}</b><small>ждут звонка</small></div>
         <div class="card c-pink"><b>${all.length}</b><small>человек</small></div>
       </div>
@@ -340,7 +367,7 @@
     Vibe.ui.sheet(`
       <div class="display" style="font-size:26px">Встреча с ${esc(instr(p.n))} ${p.e || ""}</div>
       <div class="pp-lbl">Где</div>
-      <div class="stack">${PL.map((x, i) => `<button class="pp-opt" data-pl="${i}"><span class="e">${x.e}</span><span class="t">${x.t}<small>${x.sub}</small></span><span class="p">${x.price ? rub(x.price) : "0 ₽"}</span></button>`).join("")}</div>
+      <div class="stack">${PL.map((x, i) => `<button class="pp-opt" data-pl="${i}"><span class="e">${x.e}</span><span class="t">${x.t}<small>${x.sub}</small></span><span class="p">${x.price ? rub(x.price) : "0 ₫"}</span></button>`).join("")}</div>
       <div class="pp-lbl">Когда</div>
       <div class="pp-chips"><button class="chip" data-day="0">Сегодня</button><button class="chip" data-day="1">Завтра</button></div>
       <div class="pp-chips" style="margin-top:8px">${HOURS.map((h) => `<button class="chip" data-h="${h}">${h}:00</button>`).join("")}</div>
@@ -368,53 +395,11 @@
     });
   }
 
-  const QUICK_GIFTS = [
-    { id: "flowers", e: "💐", t: "Букет «Извини, что пропал»", price: 1500, rel: 8 },
-    { id: "cake", e: "🎂", t: "Торт «Ешь, а то худой»", price: 1200, rel: 6 },
-    { id: "cert", e: "🎟️", t: "Сертификат на всё (кроме нужного)", price: 3000, rel: 12 },
-    { id: "socks", e: "🧦", t: "Носки. Классика", price: 390, rel: 3 },
-  ];
+  // Подарки живут в мессенджере (Vibe.msg.giftSheet → Vibe.chars.gift): один в день, любимое/нелюбимое, ДР ×8
   function doGift(p, rerender) {
-    const d = today();
-    if (p.lastGift === d) { FX.toast("Сегодня уже дарил. Два подарка в день — это подозрительно", "🤨"); return; }
-    const items = [...Vibe.inv.list("gadget"), ...Vibe.inv.list("home")];
-    Vibe.ui.sheet(`
-      <div class="display" style="font-size:26px">Подарок для ${esc(p.n)} ${p.e || ""}</div>
-      ${items.length ? `<div class="pp-lbl">Из твоих вещей · передарить</div><div class="stack">${items.map((it) => `<button class="pp-opt" data-inv="${esc(it.id)}"><span class="e">${it.e || "🎁"}</span><span class="t">${esc(it.name)}<small>Бонус у тебя пропадёт</small></span><span class="p">+${giftRel(it)} 💛</span></button>`).join("")}</div>` : `<div class="card flat tight" style="margin-top:12px;font-size:13px;font-weight:700">Дома нечего передарить. Даже кружки «Лучшему сотруднику».</div>`}
-      <div class="pp-lbl">Купить быстро</div>
-      <div class="stack">${QUICK_GIFTS.map((g) => `<button class="pp-opt" data-q="${g.id}"><span class="e">${g.e}</span><span class="t">${g.t}<small>+${g.rel} к близости</small></span><span class="p">${rub(g.price)}</span></button>`).join("")}</div>
-      <div class="fine">Упаковка бесплатно*. *Пакет-майка.</div>
-    `, {
-      onMount(sh, close) {
-        sh.addEventListener("click", (e) => {
-          const iv = e.target.closest("[data-inv]");
-          const q = e.target.closest("[data-q]");
-          if (!iv && !q) return;
-          let gain, emo;
-          if (iv) {
-            const it = Vibe.inv.list().find((x) => x.id === iv.dataset.inv);
-            if (!it) return;
-            Vibe.inv.remove(it.id);
-            gain = giftRel(it); emo = it.e || "🎁";
-          } else {
-            const g = QUICK_GIFTS.find((x) => x.id === q.dataset.q);
-            if (!Vibe.pay(g.price, { title: `Market · подарок: ${g.t}`, emoji: g.e, col: "c-pink", from: q })) return;
-            gain = g.rel; emo = g.e;
-          }
-          if (isPartner(p)) gain += 3;
-          Vibe.people.rel(p.id, gain);
-          Vibe.people.set(p.id, { lastGift: d, last: d });
-          close();
-          FX.burst(iv || q, { emojis: [emo, "💛", "✨", p.e || "🎁"], count: 16 });
-          FX.sound.like();
-          FX.toast(`${esc(p.n)} в восторге! Близость +${gain}`, emo, 2800);
-          moodUp(2);
-          rerender();
-        });
-      },
-    });
+    if (Vibe.msg && Vibe.msg.giftSheet) { Vibe.msg.giftSheet(p.id, () => setTimeout(rerender, 300)); return; }
+    FX.toast("Подарки скоро будут в Vibe Чатах 🎁", "🚧");
   }
-  function giftRel(it) { const b = it.bonus || {}; return Math.min(20, 6 + Object.values(b).reduce((s, v) => s + (+v || 0), 0)); }
 
   function doDebt(p, btn) {
     const d = today();
@@ -461,7 +446,7 @@
             close(); FX.confetti({ count: 80 }); FX.toast("Честный разговор спас отношения. Близость +25", "💞", 3200); moodUp(6);
           } else {
             Vibe.people.set(p.id, { kind: "ex", rel: 10 });
-            close(); FX.sound.error(); FX.toast(`${esc(p.n)} теперь в «Бывших». Заботик уже подобрал 37 анкет в Match`, "💔", 4000); moodUp(-12);
+            close(); FX.sound.error(); FX.toast(`${esc(p.n)} теперь в «Бывших». Вайбот уже подобрал 37 анкет в Match`, "💔", 4000); moodUp(-12);
           }
           rerender();
         });
@@ -490,14 +475,18 @@
         const card = b.closest("[data-pid]");
         const p = Object.assign({ id: card.dataset.pid }, Vibe.people.get(card.dataset.pid));
         const a = b.dataset.act;
-        if (a === "call") { doCall(p, b); setTimeout(rerender, 300); }
-        else if (a === "meet") doMeet(p, rerender);
+        if (a === "chat") Vibe.go("chat", { id: p.id });
+        else if (a === "prof") { if (Vibe.msg && Vibe.msg.profile) Vibe.msg.profile(p.id); else Vibe.go("chat", { id: p.id }); }
+        else if (a === "call") { doCall(p, b); setTimeout(rerender, 300); }
+        else if (a === "meet") { if (Vibe.msg && Vibe.msg.meetSheet) Vibe.msg.meetSheet(p.id, rerender); else doMeet(p, rerender); }
         else if (a === "gift") doGift(p, rerender);
         else if (a === "debt") { doDebt(p, b); setTimeout(rerender, 400); }
         else if (a === "talk") doTalk(p, rerender);
       };
       root.addEventListener("click", onClick);
-      return () => root.removeEventListener("click", onClick);
+      const off = Vibe.msg && Vibe.msg.onChange ? Vibe.msg.onChange(() => { clearTimeout(rt); rt = setTimeout(rerender, 400); }) : null;
+      let rt = null;
+      return () => { root.removeEventListener("click", onClick); off && off(); clearTimeout(rt); };
     },
   });
 

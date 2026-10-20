@@ -1,5 +1,5 @@
 /* ============================================================
-   Чаты, чат с Заботиком, профиль, QR-сканер, подписка
+   Чаты, чат с Вайботом, профиль, QR-сканер, подписка
    «Плюс Вайб», все сервисы.
    ============================================================ */
 (function () {
@@ -8,8 +8,8 @@
 
   /* ================= Чаты ================= */
   const CHATS = {
-    zabotik: { n: "Заботик", e: null, c: "c-lime", last: "Я подобрал тебе 37 предложений 💜", unread: 3, pin: true,
-      hello: ["Привет! Я Заботик, твой персональный помощник 💜", "Я знаю о тебе всё. Ну, почти всё. Спроси меня о чём угодно!"] },
+    zabotik: { n: "Вайбот", e: null, c: "c-lime", last: "Я подобрал тебе 37 предложений 💜", unread: 3, pin: true,
+      hello: ["Привет! Я Вайбот, твой персональный помощник 💜", "Я знаю о тебе всё. Ну, почти всё. Спроси меня о чём угодно!"] },
     courier: { n: "Курьер Тимур", e: "🛵", c: "c-pink", last: "Я у подъезда. Какой подъезд?", unread: 1,
       hello: ["Я у подъезда.", "Какой подъезд?", "А, это не тот дом."] },
     bank: { n: "Vibe Pay · поддержка", e: "🏦", c: "c-yellow", last: "Ваше обращение очень важно для нас", unread: 0,
@@ -24,7 +24,7 @@
     "Как сэкономить?": ["Отличный вопрос! Подключи «Плюс Вайб» — и экономь кэшбеком 💎", "А ещё можно не покупать. Но это не наш метод 😅"],
     "Хочу кредит": ["Уже одобрено! Ещё до того, как ты спросил 🤑", "Перейди в Vibe Pay → Кредит. Или я сам всё сделаю?"],
     "Мне грустно": ["Понимаю. Вот 3 вещи, которые помогут: рамен 🍜, новые кроссовки 👟, ещё один рамен 🍜", "Шучу. Иногда помогает просто выйти на улицу. Но такси туда — в Vibe Maps 🚕"],
-    "Кто ты?": ["Я Заботик. Я забочусь о тебе. И о показателях выручки 📈", "Но в первую очередь о тебе! Наверное."],
+    "Кто ты?": ["Я Вайбот. Я забочусь о тебе. И о показателях выручки 📈", "Но в первую очередь о тебе! Наверное."],
     "Подари вайбики": ["Ладно, ладно. Держи 🪙", "__reward__"],
     "Что скажешь обо мне?": ["__insight__"],
   };
@@ -189,7 +189,7 @@
       <h2 class="sec">Настройки</h2>
       <div class="card" style="padding:4px 16px">
         <div class="li"><div class="ic c-yellow">🔊</div><div class="tx"><b>Звуки и вибрация</b><small>Дофамин на максимум</small></div><button class="switch ${s.sound ? "on" : ""}" data-act="sound"></button></div>
-        <button class="li" data-go="plus" style="width:100%;text-align:left"><div class="ic c-lilac">💎</div><div class="tx"><b>Плюс Вайб</b><small>${s.plus ? "Активна · 299 ₽/мес" : "Не подключена"}</small></div><span>›</span></button>
+        <button class="li" data-go="plus" style="width:100%;text-align:left"><div class="ic c-lilac">💎</div><div class="tx"><b>Плюс Вайб</b><small>${s.plus ? "Активна · 299 ₫/мес" : "Не подключена"}</small></div><span>›</span></button>
         <button class="li" data-act="name" style="width:100%;text-align:left"><div class="ic c-mint">✏️</div><div class="tx"><b>Имя</b><small>${Vibe.esc(s.name)}</small></div><span>›</span></button>
         <button class="li" data-act="save" style="width:100%;text-align:left"><div class="ic c-lime">💾</div><div class="tx"><b>Сохранение</b><small>Перенести жизнь на другой телефон</small></div><span>›</span></button>
         <button class="li" data-act="cheats" style="width:100%;text-align:left"><div class="ic c-black" style="color:#c6ff4d">🎮</div><div class="tx"><b>Консоль</b><small>Для тех, кто помнит motherlode</small></div><span>›</span></button>
@@ -341,32 +341,38 @@
   /* ================= Плюс Вайб ================= */
   const MAZE = [
     { t: "Вы уверены?", p: "Без Плюса кэшбек станет обычным. Как у всех.", yes: "Да, уверен", no: "Остаться 💎", e: "🥺" },
-    { t: "Точно-точно?", p: "Заботик будет скучать. Он уже немного грустит.", yes: "Точно", no: "Ладно, останусь", e: "😢" },
-    { t: "Скидка 50%!", p: "Только для тебя: 149 ₽ в месяц. Навсегда*. *На 1 месяц", yes: "Нет, отменить", no: "Беру за 149 ₽", e: "🎁" },
+    { t: "Точно-точно?", p: "Вайбот будет скучать. Он уже немного грустит.", yes: "Точно", no: "Ладно, останусь", e: "😢" },
+    { t: "Скидка 50%!", p: "Только для тебя: 149 ₫ в месяц. Навсегда*. *На 1 месяц", yes: "Нет, отменить", no: "Беру за 149 ₫", e: "🎁" },
     { t: "Опрос", p: "Почему уходите? Выберите причину, иначе мы не поймём.", yes: "Просто хочу уйти", no: "Передумал", e: "📋" },
     { t: "Последний шанс", p: "Подтвердите отмену, введя слово «ОТМЕНИТЬ» задом наперёд. Шутка. Просто нажмите.", yes: "ОТМЕНИТЬ", no: "Ой, нет", e: "🚪" },
   ];
   Vibe.screen("plus", {
-    render() {
+    render(p) {
+      if (Vibe.screens.media) return Vibe.screens.media.render(p || {});
       const s = S();
       return `
       ${Vibe.ui.head("Плюс Вайб", s.plus ? "Ты в Плюсе 💎" : "Подписка на всё")}
       <div class="hero c-holo" style="min-height:220px">
-        <div class="sticker" style="top:16px;right:16px;background:var(--lime)">${s.plus ? "АКТИВНА" : "1 ₽"}</div>
+        <div class="sticker" style="top:16px;right:16px;background:var(--lime)">${s.plus ? "АКТИВНА" : "1 ₫"}</div>
         <div class="display" style="font-size:40px">Плюс<br>Вайб</div>
         <p style="max-width:60%">Жизнь, но в два раза выгоднее*</p>
         <div class="hero-emo emo float" style="font-size:110px">💎</div>
       </div>
       <div class="stack stagger" style="margin-top:16px">
-        ${[["🪙", "c-yellow", "Кэшбек ×2", "Все вайбики удваиваются"], ["🛵", "c-pink", "Доставка 0 ₽", "Из Eat и Supermarket*"], ["🎧", "c-violet", "Музыка без рекламы", "Только реклама Vibe"], ["💘", "c-coral", "Кто тебя лайкнул", "В Vibe Match"], ["🚕", "c-sky", "−5% на такси", "Кроме часов пик. Час пик — всегда"]]
+        ${[["🪙", "c-yellow", "Кэшбек ×2", "Все вайбики удваиваются"], ["🛵", "c-pink", "Доставка 0 ₫", "Из Eat и Supermarket*"], ["🎧", "c-violet", "Музыка без рекламы", "Только реклама Vibe"], ["💘", "c-coral", "Кто тебя лайкнул", "В Vibe Match"], ["🚕", "c-sky", "−5% на такси", "Кроме часов пик. Час пик — всегда"]]
           .map(([e, c, t, d]) => `<div class="card tight" style="display:flex;gap:12px;align-items:center"><div class="li-ic ${c}" style="width:50px;height:50px;border-radius:16px;border:2px solid var(--ink);display:grid;place-items:center;font-size:26px"><span class="emo">${e}</span></div><div style="flex:1"><b>${t}</b><div class="muted" style="font-size:13px">${d}</div></div><span class="badge">✓</span></div>`).join("")}
       </div>
       ${s.plus
         ? `<button class="btn block" style="margin-top:20px" data-act="cancel">Отменить подписку</button>`
-        : `<button class="btn grad xl block" style="margin-top:20px" data-act="sub">Подключить за 1 ₽ <span class="arrow">→</span></button>`}
-      <div class="fine">*Первый месяц 1 ₽, далее 299 ₽/мес. Автопродление. Отменить можно в любой момент: Профиль → Плюс Вайб → Отменить → и ещё пара шагов.</div>`;
+        : `<button class="btn grad xl block" style="margin-top:20px" data-act="sub">Подключить за 1 ₫ <span class="arrow">→</span></button>`}
+      <div class="fine">*Первый месяц 1 ₫, далее 299 ₫/мес. Автопродление. Отменить можно в любой момент: Профиль → Плюс Вайб → Отменить → и ещё пара шагов.</div>`;
     },
-    mount(root) {
+    mount(root, p) {
+      if (Vibe.screens.media) return Vibe.screens.media.mount ? Vibe.screens.media.mount(root, p || {}) : null;
+      return plusMount(root);
+    },
+  });
+  function plusMount(root) {
       root.addEventListener("click", (e) => {
         const a = e.target.closest("[data-act]");
         if (!a) return;
@@ -375,19 +381,18 @@
           Vibe.state.set({ plus: true });
           if (Vibe.subs) Vibe.subs.add({ id: "plus", name: "Плюс Вайб", e: "💎", price: 299 });
           FX.confetti();
-          Vibe.modal(`<div class="m-emo float">💎</div><div class="display">Ты в Плюсе!</div><p>Кэшбек ×2 включён. Через месяц спишем 299 ₽ — ты даже не заметишь.</p><button class="btn black block" data-close>Я особенный</button>`, { onClose: () => Vibe.replace("plus") });
+          Vibe.modal(`<div class="m-emo float">💎</div><div class="display">Ты в Плюсе!</div><p>Кэшбек ×2 включён. Через месяц спишем 299 ₫ — ты даже не заметишь.</p><button class="btn black block" data-close>Я особенный</button>`, { onClose: () => Vibe.replace("plus") });
         }
         if (a.dataset.act === "cancel") maze(0);
       });
-    },
-  });
+  }
   function maze(i) {
     if (i >= MAZE.length) {
       Vibe.state.set({ plus: false });
       if (Vibe.subs) Vibe.subs.remove("plus");
       Vibe.achieve("cancel");
       FX.confetti();
-      Vibe.modal(`<div class="m-emo float">🏆</div><div class="display">Получилось!</div><p>Ты отменил подписку. Это удаётся 3% пользователей. Заботик гордится тобой. И немного обижен.</p><button class="btn black block" data-close>Я свободен</button>`, { sound: "levelup", onClose: () => Vibe.replace("plus") });
+      Vibe.modal(`<div class="m-emo float">🏆</div><div class="display">Получилось!</div><p>Ты отменил подписку. Это удаётся 3% пользователей. Вайбот гордится тобой. И немного обижен.</p><button class="btn black block" data-close>Я свободен</button>`, { sound: "levelup", onClose: () => Vibe.replace("plus") });
       return;
     }
     const m = MAZE[i];
@@ -401,7 +406,7 @@
       sound: "pop",
       onMount(el, close) {
         el.querySelector("[data-yes]").addEventListener("click", () => { close(); setTimeout(() => maze(i + 1), 260); });
-        el.querySelector("[data-no]").addEventListener("click", () => { close(); FX.burst({ x: innerWidth / 2, y: innerHeight / 2 }, { emojis: ["💎", "💜"], count: 12 }); FX.toast("Правильный выбор! Заботик рад", "💜"); });
+        el.querySelector("[data-no]").addEventListener("click", () => { close(); FX.burst({ x: innerWidth / 2, y: innerHeight / 2 }, { emojis: ["💎", "💜"], count: 12 }); FX.toast("Правильный выбор! Вайбот рад", "💜"); });
       },
     });
   }
@@ -412,7 +417,9 @@
     ["Еда и покупки", [["eat", "Eat", "🍜", "c-pink"], ["supermarket", "Supermarket", "🥑", "c-lime"], ["market", "Market", "🛍️", "c-pink"], ["pets", "Pets", "🐶", "c-yellow"]]],
     ["Передвижение", [["maps", "Maps", "🚕", "c-sky"], ["drive", "Drive", "🚗", "c-coral"], ["auto", "Auto", "🚙", "c-sky"], ["travel", "Travel", "🏝️", "c-orange"]]],
     ["Деньги на стороне", [["gig", "Gig", "🚲", "c-lime"], ["gov", "Госвайб", "🏛️", "c-white"], ["charity", "Добро", "💝", "c-mint"], ["wheel", "Колесо", "🎡", "c-holo"]]],
-    ["Люди и я", [["people", "Близкие", "🫂", "c-pink"], ["style", "Style", "🧥", "c-violet"], ["hobby", "Hobby", "🎸", "c-orange"], ["fit", "Fit", "⌚", "c-lime"], ["calendar", "Календарь", "📅", "c-yellow"], ["chats", "Чаты", "💬", "c-sky"]]],
+    ["Люди и я", [["people", "Близкие", "🫂", "c-pink"], ["chats", "Мессенджер", "💬", "c-sky"], ["gram", "Vibegram", "📸", "c-grad"], ["mail", "Почта", "✉️", "c-sky"], ["skills", "Навыки", "⭐", "c-yellow"], ["style", "Style", "🧥", "c-violet"], ["hobby", "Hobby", "🎸", "c-orange"], ["psy", "Психолог", "🛋️", "c-lilac"]]],
+    ["Тело и время", [["fit", "Fit", "⌚", "c-lime"], ["fitness", "Фитнес", "🏋️", "c-orange"], ["calendar", "Календарь", "📅", "c-yellow"], ["search", "Поиск", "🔍", "c-white"]]],
+    ["Подписки и связь", [["media", "Плюс", "🍿", "c-violet"], ["books", "Книги", "📚", "c-yellow"], ["cinema", "Кино", "🎬", "c-black"], ["telecom", "Телеком", "📶", "c-lime"], ["insure", "Страхование", "☂️", "c-sky"], ["cola", "Vibe Cola", "🥤", "c-coral"], ["flowers", "Цветы", "💐", "c-pink"]]],
     ["Жильё", [["rent", "Rent", "🔑", "c-mint"], ["home-buy", "Home", "🏠", "c-yellow"], ["clean", "Clean", "🫧", "c-sky"], ["style", "Style", "🧥", "c-orange"]]],
     ["Жизнь", [["job", "Job", "💼", "c-blue"], ["match", "Match", "💘", "c-pink"], ["health", "Health", "💊", "c-white"], ["learn", "Learn", "🎓", "c-lilac"], ["hobby", "Hobby", "🎸", "c-coral"], ["fit", "Fitness", "🏋️", "c-lime"], ["people", "Семья", "🧸", "c-yellow"], ["charity", "Добро", "💝", "c-black"]]],
     ["Развлечения", [["music", "Music", "🎧", "c-violet"], ["tickets", "Tickets", "🎤", "c-orange"], ["games", "Games", "🎮", "c-lime"], ["invest", "Invest", "🚀", "c-black"]]],

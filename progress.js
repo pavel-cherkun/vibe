@@ -12,17 +12,18 @@
   /* ================= Постепенное открытие ================= */
   // Ступени: что открывается и за что
   const TIERS = [
-    { id: "t0", t: "Старт", e: "🐣", screens: ["home", "fit", "calendar", "profile", "pay", "chats", "chat", "qr", "all", "job", "eat", "eat-place", "eat-track", "supermarket", "maps", "wheel", "plus", "welcome", "notfound", "locked"], cond: () => true, hint: "" },
-    { id: "t1", t: "Первый отклик", e: "📨", screens: ["gig", "learn", "people"], cond: (s) => (s.life_apps || []).length > 0 || !!s.job, hint: "Откликнись на любую вакансию в Vibe Job" },
-    { id: "t2", t: "Нашёл работу", e: "💼", screens: ["market", "music", "games", "rent", "health", "clean", "drive", "gov"], cond: (s) => !!s.job || ((s.stats || {}).salaries || 0) > 0, hint: "Устройся на работу" },
+    { id: "t0", t: "Старт", e: "🐣", screens: ["home", "fit", "calendar", "profile", "pay", "chats", "chat", "qr", "all", "job", "eat", "eat-place", "eat-track", "supermarket", "maps", "wheel", "plus", "welcome", "notfound", "locked", "search", "mail", "skills", "ending", "telecom"], cond: () => true, hint: "" },
+    { id: "t1", t: "Первый отклик", e: "📨", screens: ["gig", "learn", "people", "gram", "gram-profile", "reels", "flowers", "cola"], cond: (s) => (s.life_apps || []).length > 0 || !!s.job, hint: "Откликнись на любую вакансию в Vibe Job" },
+    { id: "t2", t: "Нашёл работу", e: "💼", screens: ["market", "music", "games", "rent", "health", "clean", "drive", "gov", "psy", "insure", "fitness", "media", "books", "cinema"], cond: (s) => !!s.job || ((s.stats || {}).salaries || 0) > 0, hint: "Устройся на работу" },
     { id: "t3", t: "Первая зарплата", e: "💸", screens: ["tickets", "match", "style", "hobby", "invest", "pets", "charity", "travel"], cond: (s) => ((s.stats || {}).salaries || 0) > 0, hint: "Дождись первой зарплаты (аванс 15-го)" },
-    { id: "t4", t: "Взрослая жизнь", e: "🏠", screens: ["home-buy", "auto"], cond: (s) => ((s.stats || {}).promotions || 0) > 0 || s.balance >= 100000, hint: "Получи повышение или накопи 100 000 ₽" },
+    { id: "t4", t: "Взрослая жизнь", e: "🏠", screens: ["home-buy", "auto"], cond: (s) => ((s.stats || {}).promotions || 0) > 0 || s.balance >= 100000, hint: "Получи повышение или накопи 100 000 ₫" },
   ];
   const NAMES = {
     gig: ["Vibe Gig", "🚲"], learn: ["Vibe Learn", "🎓"], people: ["Близкие", "🫂"], market: ["Vibe Market", "🛍️"], music: ["Vibe Music", "🎧"],
     games: ["Vibe Games", "🎮"], rent: ["Vibe Rent", "🔑"], health: ["Vibe Health", "💊"], clean: ["Vibe Clean", "🫧"], drive: ["Vibe Drive", "🚗"],
     gov: ["Госвайб", "🏛️"], tickets: ["Vibe Tickets", "🎤"], match: ["Vibe Match", "💘"], style: ["Vibe Style", "🧥"], hobby: ["Хобби", "🎸"],
-    invest: ["Vibe Invest", "🚀"], pets: ["Vibe Pets", "🐶"], charity: ["Добрые дела", "💝"], travel: ["Vibe Travel", "🏝️"], "home-buy": ["Vibe Home", "🏠"], auto: ["Vibe Auto", "🚙"],
+    invest: ["Vibe Invest", "🚀"], gram: ["Vibegram", "📸"], flowers: ["Vibe Цветы", "💐"], cola: ["Vibe Cola", "🥤"], psy: ["Vibe Психолог", "🛋️"],
+    insure: ["Vibe Страхование", "☂️"], fitness: ["Vibe Фитнес", "🏋️"], media: ["Плюс Вайб", "🍿"], books: ["Vibe Книги", "📚"], cinema: ["Vibe Кино", "🎬"], pets: ["Vibe Pets", "🐶"], charity: ["Добрые дела", "💝"], travel: ["Vibe Travel", "🏝️"], "home-buy": ["Vibe Home", "🏠"], auto: ["Vibe Auto", "🚙"],
   };
   const tierOf = (name) => TIERS.find((t) => t.screens.includes(name));
 
@@ -56,7 +57,7 @@
       <div class="badge" style="background:var(--lime)">${t.e} ${t.t}</div>
       <div class="display" style="font-size:28px;margin:10px 0 4px">Открыто в Vibe!</div>
       <p>Новые сервисы уже на главной. Корпорация рада, что ты растёшь. И тратишь.</p>
-      <div class="grid3" style="margin-bottom:16px">${t.screens.map((n) => `<button class="card tight tap" data-go="${n}" data-close style="text-align:center"><div style="font-size:30px">${(NAMES[n] || ["", "✨"])[1]}</div><b style="font-size:11px">${(NAMES[n] || [n])[0]}</b></button>`).join("")}</div>
+      <div class="grid3" style="margin-bottom:16px">${t.screens.filter((n) => NAMES[n] && Vibe.screens[n]).map((n) => `<button class="card tight tap" data-go="${n}" data-close style="text-align:center"><div style="font-size:30px">${(NAMES[n] || ["", "✨"])[1]}</div><b style="font-size:11px">${(NAMES[n] || [n])[0]}</b></button>`).join("")}</div>
       <button class="btn black block" data-close>Ого 🔥</button>`, { sound: "levelup" });
   }
 
@@ -175,18 +176,108 @@
     },
   });
 
+  /* ================= Кэшбек-категории ================= */
+  // Каждый игровой месяц игрок выбирает 3 категории (с «Плюс Вайб» — 4) из 8 предложенных
+  const CATS = [
+    { id: "food", t: "Еда и доставка", e: "🍜", r: 0.05, re: /Eat|Supermarket|Кофе|латте|Шаурма|Cola/i },
+    { id: "move", t: "Такси и самокаты", e: "🛴", r: 0.07, re: /такси|Maps|Самокат|Метро|Drive|Бензин/i },
+    { id: "shop", t: "Шопинг", e: "🛍️", r: 0.04, re: /Market|Style|Pets/i },
+    { id: "fun", t: "Развлечения", e: "🎤", r: 0.10, re: /Tickets|концерт|Music|Кино|Книг|Games|Плюс/i },
+    { id: "health", t: "Здоровье", e: "💊", r: 0.06, re: /Health|Клиника|аптек|Психолог|Фитнес/i },
+    { id: "home", t: "Дом и уют", e: "🏠", r: 0.03, re: /Clean|Цветы|Rent|аренд/i },
+    { id: "learn", t: "Саморазвитие", e: "🎓", r: 0.08, re: /Learn|курс|Хобби/i },
+    { id: "cola", t: "Vibe Cola", e: "🥤", r: 0.20, re: /Cola/i },
+    { id: "night", t: "Ночные заказы (23:00–05:00)", e: "🌙", r: 0.12, re: /Eat|Market|Supermarket/i, night: true },
+    { id: "rain", t: "Самокаты в дождь", e: "🌧️", r: 0.15, re: /Самокат/i, rain: true },
+    { id: "sigh", t: "Вздохи", e: "😮‍💨", r: 0.05, re: /^$/, joke: "Вздохи пока не тарифицируются. Но скоро" },
+    { id: "anxiety", t: "Тревога", e: "🫨", r: 0.15, re: /^$/, joke: "Начисляется в конце жизни" },
+    { id: "cb", t: "Кэшбек на кэшбек", e: "♾️", r: 0.01, re: /./ },
+    { id: "monday", t: "Понедельники", e: "🗓️", r: 0.09, re: /./, monday: true },
+  ];
+  const BASE = 0.005;
+  const month = () => Math.floor(Vibe.game.info().day / 30);
+  const cashback = (Vibe.cashback = {
+    CATS,
+    offer() {
+      const m = month();
+      let h = (S().game && S().game.start) ? (S().game.start / 1000 + m * 7919) >>> 0 : m;
+      const pool = CATS.slice(); const out = [];
+      while (out.length < 8 && pool.length) { h = (h * 1103515245 + 12345) >>> 0; out.push(pool.splice(h % pool.length, 1)[0]); }
+      return out;
+    },
+    limit: () => (S().plus ? 4 : 3),
+    chosen() { const c = S().cbChoice; return c && c.m === month() ? c.ids : null; },
+    choose(ids) { set({ cbChoice: { m: month(), ids: ids.slice(0, cashback.limit()) } }); },
+    rate(title, forced) {
+      if (forced != null) return { rate: forced };
+      const ids = cashback.chosen() || [];
+      const i = Vibe.game.info();
+      const w = Vibe.weather ? Vibe.weather.now() : null;
+      let best = { rate: BASE, cat: null };
+      ids.forEach((id) => {
+        const c = CATS.find((x) => x.id === id); if (!c || !c.re.test(title)) return;
+        if (c.night && !(i.hour >= 23 || i.hour < 5)) return;
+        if (c.rain && !(w && (w.kind === "rain" || w.kind === "storm"))) return;
+        if (c.monday && i.day % 7 !== 0) return;
+        if (c.r > best.rate) best = { rate: c.r, cat: c.t, e: c.e };
+      });
+      return best;
+    },
+    sheet() {
+      const offer = cashback.offer();
+      const cur = cashback.chosen();
+      const pick = new Set(cur || []);
+      const lim = cashback.limit();
+      Vibe.ui.sheet(`
+        <div class="display" style="font-size:26px">Кэшбек на ${Vibe.game.info().monthName.toLowerCase()}</div>
+        <p class="muted" style="font-weight:700;margin:6px 0 12px">${cur ? "Категории выбраны до конца месяца. Мы уважаем твой выбор. Почти." : `Выбери ${lim} категории. Без выбора — ${BASE * 100}% на всё. Подумай хорошо: передумать нельзя.`}</p>
+        <div class="cb-grid">${offer.map((c) => `<button class="cb-card ${pick.has(c.id) ? "on" : ""}" data-cb="${c.id}" ${cur ? "disabled" : ""}><span class="emo">${c.e}</span><b>${Math.round(c.r * 100)}%</b><small>${c.t}</small></button>`).join("")}</div>
+        ${cur ? "" : `<button class="btn black block" style="margin-top:14px" data-cbok disabled>Выбрать 0 из ${lim}</button>`}
+        <div class="fine">Кэшбек начисляется вайбиками. 1 вайбик = 1 ₫ при оплате до 30% покупки. «Вздохи» и «Тревога» пока не тарифицируются. ${S().plus ? "С «Плюс Вайб» — 4 категории и кэшбек ×2." : "С «Плюс Вайб» — 4 категории и кэшбек ×2."}</div>`, {
+        onMount(sh, close) {
+          if (cur) return;
+          const ok = sh.querySelector("[data-cbok]");
+          sh.addEventListener("click", (e) => {
+            const b = e.target.closest("[data-cb]");
+            if (b) {
+              const id = b.dataset.cb;
+              if (pick.has(id)) pick.delete(id); else if (pick.size < lim) pick.add(id); else { FX.shake(b); return; }
+              b.classList.toggle("on", pick.has(id)); FX.bump(b);
+              const c = CATS.find((x) => x.id === id);
+              if (pick.has(id) && c.joke) FX.toast(c.joke, c.e);
+              ok.disabled = pick.size !== lim; ok.textContent = pick.size === lim ? "Подтвердить выбор" : `Выбрать ${pick.size} из ${lim}`;
+            }
+            if (e.target.closest("[data-cbok]")) {
+              cashback.choose([...pick]); close(); FX.confetti({ count: 80 });
+              FX.toast("Категории выбраны. Самое время за ними сходить", "🪙");
+              Vibe.emit("cashback", [...pick]);
+            }
+          });
+        },
+      });
+    },
+  });
+  // Напоминание выбрать категории в начале месяца
+  setInterval(() => {
+    const s = S();
+    if (!s.profile || !s.game || document.querySelector(".modal,.sheet")) return;
+    if (cashback.chosen() || s.cbNag === month()) return;
+    set({ cbNag: month() });
+    FX.toast("Новый месяц — новые категории кэшбека! Выбери в Vibe Pay", "🪙", 3500);
+  }, 15000);
+
   /* ================= Чит-коды ================= */
   const money = (n, why) => { Vibe.game.tx(why, n, "🎮", "c-lime"); Vibe.refreshCounters(); };
   const body = (patch) => { if (!Vibe.body) return; const b = Vibe.body.get(); Vibe.state.set({ body: Object.assign({}, b, patch) }); };
   const CHEATS = {
     // The Sims
     rosebud: { src: "The Sims", run: () => { money(1000, "Чит rosebud · 1 000 симолеонов"); return "§1 000 по курсу Корпорации. Комиссия за курс — ваше чувство вины"; } },
-    kaching: { src: "The Sims", run: () => { money(1000, "Чит kaching"); return "Ка-чинг! +1 000 ₽"; } },
-    motherlode: { src: "The Sims", run: () => { money(50000, "Чит motherlode"); return "+50 000 ₽. Налоговая уже открыла Госвайб"; } },
+    kaching: { src: "The Sims", run: () => { money(1000, "Чит kaching"); return "Ка-чинг! +1 000 ₫"; } },
+    motherlode: { src: "The Sims", run: () => { money(50000, "Чит motherlode"); return "+50 000 ₫. Налоговая уже открыла Госвайб"; } },
     freerealestate: { src: "The Sims 4", run: () => {
       if (S().home && S().home.own) return "У тебя уже своя квартира. Жадность — не вайб";
       Vibe.game.buyHome({ title: "Квартира по читу", rent: 0, emoji: "🏡", key: "cheat-home" });
-      return "Бесплатная недвижимость! Ипотека 0 ₽. Налог на имущество — всё остальное";
+      return "Бесплатная недвижимость! Ипотека 0 ₫. Налог на имущество — всё остальное";
     } },
     "testingcheats true": { src: "The Sims", run: () => { set({ devMode: true }); return "Режим тестировщика включён. В профиле появилась перемотка времени"; } },
     "testingcheats false": { src: "The Sims", run: () => { set({ devMode: false }); return "Режим тестировщика выключен"; } },
@@ -199,7 +290,7 @@
     fillmotive: { src: "The Sims 3", run: () => { body({ energy: 100, food: 100, mood: 100 }); return "Все потребности на максимум. Ты как после отпуска"; } },
     "sims.fill_all_commodities": { src: "The Sims 4", run: () => { body({ energy: 100, food: 100, mood: 100 }); return "Все потребности заполнены"; } },
     // GTA San Andreas
-    hesoyam: { src: "GTA: San Andreas", run: () => { money(250000, "Чит HESOYAM"); body({ health: 100, energy: 100, food: 100, sick: false }); return "Здоровье, энергия и 250 000 ₽. Си-Джей бы одобрил"; } },
+    hesoyam: { src: "GTA: San Andreas", run: () => { money(250000, "Чит HESOYAM"); body({ health: 100, energy: 100, food: 100, sick: false }); return "Здоровье, энергия и 250 000 ₫. Си-Джей бы одобрил"; } },
     baguvix: { src: "GTA: San Andreas", run: () => { body({ health: 100, sick: false }); return "Бессмертие (почти). Здоровье 100, болезни прошли"; } },
     aezakmi: { src: "GTA: San Andreas", run: () => {
       const gv = S().gv; if (gv && gv.fines) set({ gv: Object.assign({}, gv, { fines: gv.fines.map((f) => Object.assign({}, f, { st: "annul" })) }) });
@@ -235,7 +326,7 @@
           <div class="cheat-in"><span>&gt;</span><input data-cheat autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="motherlode"></div>
         </div>
         <button class="btn lime block" style="margin-top:12px" data-run>Ввести</button>
-        <div class="fine">Читы делают жизнь проще, но Заботик всё видит. Использовано: ${(S().cheatsUsed || []).length}.</div>`, {
+        <div class="fine">Читы делают жизнь проще, но Вайбот всё видит. Использовано: ${(S().cheatsUsed || []).length}.</div>`, {
         onMount(sh) {
           const inp = sh.querySelector("[data-cheat]");
           const log = sh.querySelector("[data-log]");
@@ -295,6 +386,11 @@
   .cheat-in { display: flex; gap: 8px; align-items: center; padding: 10px 12px; border-top: 1px solid #2a2a35; }
   .cheat-in input { flex: 1; background: none; border: 0; outline: 0; color: #fff; font: inherit; font-size: 16px; }
   .locked-tile { filter: grayscale(1); opacity: .55; }
+  .cb-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .cb-card { border: var(--line); border-radius: 20px; background: #fff; padding: 12px; text-align: left; display: flex; flex-direction: column; gap: 2px; box-shadow: var(--shadow-sm); transition: transform .2s var(--spring), background .2s; }
+  .cb-card .emo { font-size: 28px; } .cb-card b { font-family: var(--font-display); font-weight: 400; font-size: 24px; } .cb-card small { font-size: 12px; font-weight: 800; line-height: 1.2; }
+  .cb-card.on { background: var(--lime); transform: rotate(-2deg) scale(1.03); }
+  .cb-card[disabled] { opacity: .85; }
   `;
   const st = document.createElement("style"); st.textContent = css; document.head.appendChild(st);
 })();

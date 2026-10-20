@@ -377,3 +377,6 @@ input[type=range]::-moz-range-thumb { width: 28px; height: 28px; border-radius: 
 .c-holo { background: var(--holo); background-size: 300% 300%; animation: holo 6s linear infinite; }
 @keyframes holo { to { background-position: 300% 0; } }
 
+
+/* Игровые часы в шапках */
+.gclock { font-variant-numeric: tabular-nums; white-space: nowrap; }

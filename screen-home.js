@@ -6,7 +6,7 @@
 
   const STORIES = [
     { t: "Новое", e: "✨" }, { t: "Плюс", e: "💎" }, { t: "Концерты", e: "🎤" }, { t: "Кэшбек", e: "🤑" },
-    { t: "Заботик", e: "🤖" }, { t: "Ипотека", e: "🏠" }, { t: "Вакансии", e: "💼" },
+    { t: "Вайбот", e: "🤖" }, { t: "Ипотека", e: "🏠" }, { t: "Вакансии", e: "💼" },
   ];
 
   const BIG = [
@@ -19,34 +19,27 @@
   const GRID = [
     { go: "market", s: "Market", ru: "Маркетплейс", e: "🛍️", c: "c-pink" },
     { go: "job", s: "Job", ru: "Работа", e: "💼", c: "c-blue" },
-    { go: "music", s: "Music", ru: "Музыка", e: "🎧", c: "c-violet" },
-    { go: "tickets", s: "Tickets", ru: "Концерты", e: "🎤", c: "c-orange", badge: "new" },
+    { go: "gig", s: "Gig", ru: "Подработки", e: "🚲", c: "c-lime", badge: "₫" },
+    { go: "gram", s: "Vibegram", ru: "Соцсеть", e: "📸", c: "c-grad", badge: "new" },
+    { go: "flowers", s: "Цветы", ru: "Букеты", e: "💐", c: "c-pink" },
+    { go: "match", s: "Match", ru: "Знакомства", e: "💘", c: "c-coral" },
+    { go: "tickets", s: "Tickets", ru: "Концерты", e: "🎤", c: "c-orange" },
     { go: "rent", s: "Rent", ru: "Аренда", e: "🔑", c: "c-mint" },
-    { go: "home-buy", s: "Home", ru: "Купить жильё", e: "🏠", c: "c-yellow" },
-    { go: "games", s: "Games", ru: "Игры", e: "🎮", c: "c-lime", badge: "🔥" },
-    { go: "drive", s: "Drive", ru: "Каршеринг", e: "🚗", c: "c-coral" },
-    { go: "clean", s: "Clean", ru: "Уборка", e: "🫧", c: "c-sky" },
+    { go: "media", s: "Плюс", ru: "Музыка, кино, книги", e: "🍿", c: "c-violet" },
+    { go: "skills", s: "Навыки", ru: "Прокачка", e: "⭐", c: "c-yellow" },
+    { go: "psy", s: "Психолог", ru: "Выгорание", e: "🛋️", c: "c-lilac" },
     { go: "health", s: "Health", ru: "Врачи, аптека", e: "💊", c: "c-white" },
-    { go: "match", s: "Match", ru: "Знакомства", e: "💘", c: "c-pink" },
-    { go: "travel", s: "Travel", ru: "Путешествия", e: "🏝️", c: "c-orange" },
-    { go: "learn", s: "Learn", ru: "Курсы", e: "🎓", c: "c-lilac" },
     { go: "invest", s: "Invest", ru: "Инвестиции", e: "🚀", c: "c-black" },
-    { go: "pets", s: "Pets", ru: "Питомцы", e: "🐶", c: "c-yellow" },
-    { go: "gig", s: "Gig", ru: "Подработки", e: "🚲", c: "c-lime", badge: "₽" },
-    { go: "people", s: "Близкие", ru: "Друзья, семья", e: "🫂", c: "c-pink" },
-    { go: "style", s: "Style", ru: "Гардероб", e: "🧥", c: "c-violet" },
-    { go: "auto", s: "Auto", ru: "Своя машина", e: "🚙", c: "c-sky" },
-    { go: "gov", s: "Госвайб", ru: "Госуслуги", e: "🏛️", c: "c-white" },
-    { go: "hobby", s: "Hobby", ru: "Хобби", e: "🎸", c: "c-orange" },
-    { go: "charity", s: "Добро", ru: "Добрые дела", e: "💝", c: "c-mint" },
+    { go: "mail", s: "Почта", ru: "Письма", e: "✉️", c: "c-sky" },
+    { go: "telecom", s: "Телеком", ru: "Связь", e: "📶", c: "c-lime" },
     { go: "all", s: "Ещё", ru: "Все сервисы", e: "🪐", c: "c-holo" },
   ];
 
   const FEED = [
-    { go: "tickets", k: "Vibe Tickets", t: "Концерт в пятницу. Осталось 2 билета", m: "от 3 900 ₽", e: "🎤", c: "c-orange" },
-    { go: "job", k: "Vibe Job", t: "Тебе подходит 14 вакансий. Одна — мечты", m: "от 180 000 ₽", e: "💼", c: "c-blue" },
+    { go: "tickets", k: "Vibe Tickets", t: "Концерт в пятницу. Осталось 2 билета", m: "от 3 900 ₫", e: "🎤", c: "c-orange" },
+    { go: "job", k: "Vibe Job", t: "Тебе подходит 14 вакансий. Одна — мечты", m: "от 180 000 ₫", e: "💼", c: "c-blue" },
     { go: "music", k: "Vibe Music", t: "Твой вайб на вечер: лоу-фай для тревоги", m: "42 трека", e: "🎧", c: "c-violet" },
-    { go: "rent", k: "Vibe Rent", t: "Студия у метро. Без залога*", m: "54 000 ₽/мес", e: "🔑", c: "c-mint" },
+    { go: "rent", k: "Vibe Rent", t: "Студия у метро. Без залога*", m: "54 000 ₫/мес", e: "🔑", c: "c-mint" },
     { go: "match", k: "Vibe Match", t: "3 человека лайкнули тебя. Узнать кто — в Плюсе", m: "🔒 Плюс Вайб", e: "💘", c: "c-pink" },
   ];
 
@@ -146,8 +139,8 @@
         <div class="logo home-logo">Vibe</div>
         <div style="display:flex;gap:10px;align-items:center">
           ${Vibe.ui.vibikiPill()}
-          <button class="icon-btn" data-go="chats" aria-label="Чаты">💬<span class="dot-count" style="background:var(--lime)">3</span></button>
-          <button class="icon-btn" data-act="bell" aria-label="Уведомления">🔔<span class="dot-count">99+</span></button>
+          <button class="icon-btn" data-go="chats" aria-label="Чаты">💬${Vibe.msg && Vibe.msg.unread() ? `<span class="dot-count" style="background:var(--lime)">${Vibe.msg.unread()}</span>` : ""}</button>
+          <button class="icon-btn" ${Vibe.screens.mail ? 'data-go="mail"' : 'data-act="bell"'} aria-label="Почта">${Vibe.screens.mail ? "✉️" : "🔔"}${Vibe.mail && Vibe.mail.unread() ? `<span class="dot-count">${Vibe.mail.unread() > 99 ? "99+" : Vibe.mail.unread()}</span>` : ""}</button>
         </div>
       </div>
 
@@ -163,7 +156,7 @@
         </div>
       </div>
 
-      <button class="field search tap" data-go="all" style="width:100%;margin:14px 0 16px;text-align:left">🔍 <span class="muted">Найди что угодно. Мы уже нашли тебя</span></button>
+      <button class="field search tap" data-go="search" style="width:100%;margin:14px 0 16px;text-align:left">🔍 <span class="muted">Найди что угодно. Мы уже нашли тебя</span></button>
 
       <div class="stories">
         ${STORIES.map((st, i) => `
@@ -212,7 +205,7 @@
           </button>`).join("")}
       </div>
 
-      ${Vibe.ui.marquee(["КЭШБЕК ДО 30%*", "ПРЕДОДОБРЕНО", "−50% НА ВСЁ", "ДОСТАВКА 0 ₽*", "ТЫ ЗАСЛУЖИЛ"])}
+      ${Vibe.ui.marquee(["КЭШБЕК ДО 30%*", "ПРЕДОДОБРЕНО", "−50% НА ВСЁ", "ДОСТАВКА 0 ₫*", "ТЫ ЗАСЛУЖИЛ"])}
 
       <div class="svc-grid stagger">
         ${GRID.map((g) => { const lk = Vibe.unlock && !Vibe.unlock.isOpen(g.go); return `
@@ -224,7 +217,7 @@
 
       <div class="card c-black promo">
         <div class="badge" style="background:var(--lime)">⚡ Персонально для тебя</div>
-        <div class="display" style="font-size:30px;margin:12px 0 6px;color:var(--lime)">Предодобрено<br>500&nbsp;000&nbsp;₽</div>
+        <div class="display" style="font-size:30px;margin:12px 0 6px;color:var(--lime)">Предодобрено<br>500&nbsp;000&nbsp;₫</div>
         <p style="color:#bdbac8;font-size:14px">Кредит на всё, о чём ты мечтал. Даже на то, о чём не мечтал.</p>
         <div style="display:flex;justify-content:space-between;align-items:center;margin-top:16px">
           <button class="btn lime" data-go="pay" data-params='{"credit":"1"}'>Забрать <span class="arrow">→</span></button>
@@ -236,12 +229,12 @@
 
       <button class="card c-holo plus-card tap" data-go="plus">
         <div class="display" style="font-size:28px">Плюс Вайб</div>
-        <div style="font-weight:800;margin:6px 0 12px">${s.plus ? "Ты в Плюсе. Кэшбек ×2 💎" : "Кэшбек ×2, доставка 0 ₽, музыка без рекламы"}</div>
-        <span class="btn black sm">${s.plus ? "Управлять" : "Первый месяц за 1 ₽"}</span>
+        <div style="font-weight:800;margin:6px 0 12px">${s.plus ? "Ты в Плюсе. Кэшбек ×2 💎" : "Кэшбек ×2, доставка 0 ₫, музыка без рекламы"}</div>
+        <span class="btn black sm">${s.plus ? "Управлять" : "Первый месяц за 1 ₫"}</span>
         <div class="emo plus-emo wobble">💎</div>
       </button>
 
-      <h2 class="sec">Для тебя <small>подобрано Заботиком</small></h2>
+      <h2 class="sec">Для тебя <small>подобрано Вайботом</small></h2>
       <div class="hscroll">
         ${FEED.map((f) => `
           <button class="card feed-card ${f.c} tap" data-go="${f.go}">
@@ -253,7 +246,7 @@
 
       <button class="zab-bubble tap card" data-go="chat" data-params='{"id":"zabotik"}'>
         ${Vibe.zabotik(60)}
-        <div class="zab-text"><b>Заботик</b><span data-zab>${(Vibe.insight ? Vibe.insight() : ZAB_LINES)[0]}</span></div>
+        <div class="zab-text"><b>Вайбот</b><span data-zab>${(Vibe.insight ? Vibe.insight() : ZAB_LINES)[0]}</span></div>
       </button>
       `;
     },
@@ -289,9 +282,9 @@
             <div class="display" style="font-size:28px;margin-bottom:12px">Уведомления <span class="badge" style="vertical-align:middle">99+</span></div>
             <div class="stack stagger">
               ${[
-                ["🤑", "c-lime", "Кредит предодобрен", "500 000 ₽ ждут тебя. Уже 3 минуты ждут."],
+                ["🤑", "c-lime", "Кредит предодобрен", "500 000 ₫ ждут тебя. Уже 3 минуты ждут."],
                 ["🍜", "c-pink", "Ты давно не заказывал рамен", "Целых 4 часа. Всё в порядке?"],
-                ["💎", "c-lilac", "Плюс Вайб", "Ты мог бы сэкономить 12 ₽ в этом месяце"],
+                ["💎", "c-lilac", "Плюс Вайб", "Ты мог бы сэкономить 12 ₫ в этом месяце"],
                 ["🎡", "c-yellow", "Колесо вайба", "Спин сгорит через 02:00"],
                 ["📉", "c-coral", "Вайбкоин упал на 30%", "Отличный момент докупить!"],
               ].map(([e, c, t, d]) => `<div class="card tight" style="display:flex;gap:12px;align-items:center"><div class="li-ic ${c}"><span class="emo">${e}</span></div><div><b>${t}</b><div class="muted" style="font-size:13px">${d}</div></div></div>`).join("")}

@@ -8,7 +8,7 @@
   const CARDS = [
     { name: "Vibe Black", c: "c-black", num: "4521", e: "🖤", sub: "Дебетовая" },
     { name: "Vibe Neon", c: "c-grad", num: "7730", e: "💜", sub: "Кэшбек до 30%*" },
-    { name: "Vibe Credit", c: "c-holo", num: "0001", e: "🤑", sub: "Лимит 500 000 ₽" },
+    { name: "Vibe Credit", c: "c-holo", num: "0001", e: "🤑", sub: "Лимит 500 000 ₫" },
   ];
 
   const CONTACTS = [
@@ -91,6 +91,12 @@
         <div class="emo float" style="position:absolute;right:16px;top:14px;font-size:54px">💰</div>
       </div>
 
+      <button class="card tap cb-strip ${Vibe.cashback && !Vibe.cashback.chosen() ? "c-lime" : ""}" data-act="cashback">
+        <span class="emo" style="font-size:28px">🪙</span>
+        <div style="flex:1;text-align:left"><b>Кэшбек на ${Vibe.game.info().monthName.toLowerCase()}</b><small>${Vibe.cashback && Vibe.cashback.chosen() ? Vibe.cashback.chosen().map((id) => { const c = Vibe.cashback.CATS.find((x) => x.id === id); return c ? `${c.e} ${Math.round(c.r * 100)}%` : ""; }).join(" · ") : "Выбери категории — иначе всего 0,5%"}</small></div>
+        <span>›</span>
+      </button>
+
       <div class="pay-actions stagger">
         <button class="pa c-lime" data-act="transfer"><span class="emo">↗️</span>Перевести</button>
         <button class="pa c-sky" data-act="topup"><span class="emo">👩</span>У мамы</button>
@@ -147,10 +153,11 @@
         if (act === "topup") askMom(a);
         if (act === "credit") openCredit();
         if (act === "jar") openJar();
+        if (act === "cashback") Vibe.cashback.sheet();
         if (act === "cat") {
           FX.bump(a.querySelector(".bar-v"));
           FX.burst(a, { emojis: [a.querySelector(".emo").textContent], count: 8 });
-          FX.toast(`${a.dataset.t}: Заботик советует тратить больше, чтобы получить больше кэшбека`, "🤖");
+          FX.toast(`${a.dataset.t}: Вайбот советует тратить больше, чтобы получить больше кэшбека`, "🤖");
         }
       });
 
@@ -168,7 +175,7 @@
       <div class="hscroll" style="margin-top:12px">
         ${CONTACTS.map((c, i) => `<button class="contact ${i === 0 ? "on" : ""}" data-who="${i}"><span class="emo">${c.e}</span><small>${c.n}</small></button>`).join("")}
       </div>
-      <div class="amount-display big-num" data-amount>0 ₽</div>
+      <div class="amount-display big-num" data-amount>0 ₫</div>
       <div class="chips" style="justify-content:center;margin:0">
         ${[500, 1000, 5000].map((v) => `<button class="chip" data-quick="${v}">+${Vibe.fmt(v)}</button>`).join("")}
       </div>
@@ -176,7 +183,7 @@
         ${[1, 2, 3, 4, 5, 6, 7, 8, 9, "", 0, "⌫"].map((k) => k === "" ? "<span></span>" : `<button data-key="${k}">${k}</button>`).join("")}
       </div>
       <button class="btn black xl block" data-send disabled>Отправить <span class="arrow">→</span></button>
-      <div class="fine">Комиссия 0 ₽*. *Комиссия за отсутствие комиссии — 1%.</div>
+      <div class="fine">Комиссия 0 ₫*. *Комиссия за отсутствие комиссии — 1%.</div>
     `, {
       onMount(sh, close) {
         const disp = sh.querySelector("[data-amount]");
@@ -353,6 +360,8 @@
   .bank-card.c-black .mag { background: #444; }
   .chip-gold { width: 42px; height: 32px; border-radius: 8px; background: linear-gradient(135deg, #ffe14d, #ffb547); border: 2px solid var(--ink); }
   .bal-card { margin-top: 6px; }
+  .cb-strip { display: flex; gap: 12px; align-items: center; width: 100%; margin-top: 12px; padding: 12px 14px; }
+  .cb-strip b { display: block; font-size: 15px; } .cb-strip small { display: block; font-size: 12px; font-weight: 800; }
   .pay-actions { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-top: 14px; }
   .pa { border: var(--line); border-radius: 22px; box-shadow: var(--shadow-sm); padding: 12px 0 10px; font-size: 12px; font-weight: 900; display: flex; flex-direction: column; align-items: center; gap: 4px; transition: transform .15s var(--spring), box-shadow .15s; }
   .pa .emo { font-size: 28px; }

@@ -7,8 +7,13 @@
 
   /* ---------- Форматирование ---------- */
   Vibe.fmt = (n) => Math.round(n).toString().replace(/\B(?=(\d{3})+(?!\d))/g, " ");
-  Vibe.rub = (n) => Vibe.fmt(n) + " ₽";
+  Vibe.rub = (n) => Vibe.fmt(n) + " ₫";
   Vibe.esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+
+  /* ---------- Шина событий: Vibe.on("pay"|"track"|"work"|"body"|"attend"|"post"|..., fn), Vibe.emit(name, data) ---------- */
+  const bus = {};
+  Vibe.on = (name, fn) => { (bus[name] = bus[name] || []).push(fn); return () => (bus[name] = bus[name].filter((f) => f !== fn)); };
+  Vibe.emit = (name, data) => (bus[name] || []).slice().forEach((fn) => { try { fn(data); } catch (e) { console.error(e); } });
 
   /* ---------- Состояние (сохраняется в localStorage) ---------- */
   const KEY = "vibe-state-v2";
@@ -64,7 +69,7 @@
     gamer: { e: "🎮", t: "Геймер", d: "Сыграл в игру" },
     lvl10: { e: "👑", t: "Вайб-лорд", d: "10 уровень" },
     cancel: { e: "🏆", t: "Невозможное", d: "Отменил подписку" },
-    rich: { e: "💸", t: "Транжира", d: "Потратил 50 000 ₽" },
+    rich: { e: "💸", t: "Транжира", d: "Потратил 50 000 ₫" },
   };
   Vibe.ACH = ACH;
 
@@ -107,7 +112,7 @@
   };
 
   // Списать деньги, записать операцию, начислить кэшбек
-  Vibe.pay = function (amount, { title, emoji = "💳", col = "c-white", from = null, cashback = 0.03 } = {}) {
+  Vibe.pay = function (amount, { title, emoji = "💳", col = "c-white", from = null, cashback = null } = {}) {
     if (amount > S.balance) {
       FX.shake(from && from.closest ? from.closest(".btn") || from : document.body);
       FX.toast("Недостаточно средств. Но кредит уже предодобрен 😉", "🫠");
@@ -140,8 +145,12 @@
       else if (/Learn|курс/i.test(t)) B("study");
       else if (/Market|Pets/.test(t)) B("shopping");
     }
-    const vib = Math.max(5, Math.round(amount * cashback * (S.plus ? 2 : 1)));
-    Vibe.reward({ vibiki: vib, xp: Math.min(60, 10 + Math.round(amount / 200)), from });
+    const cb = Vibe.cashback ? Vibe.cashback.rate(String(title || ""), cashback) : { rate: cashback == null ? 0.03 : cashback };
+    const vib = Math.round(amount * cb.rate * (S.plus ? 2 : 1));
+    if (vib > 0) Vibe.reward({ vibiki: vib, xp: Math.min(60, 10 + Math.round(amount / 200)), from });
+    else Vibe.reward({ xp: Math.min(60, 10 + Math.round(amount / 200)), silent: true });
+    if (cb.cat && vib > 0) setTimeout(() => FX.toast(`Кэшбек ${Math.round(cb.rate * 100)}% «${cb.cat}»: +${Vibe.fmt(vib)} вайбиков`, cb.e || "🪙", 2200), 1200);
+    Vibe.emit("pay", { amount, title: String(title || "") });
     return true;
   };
 
@@ -285,10 +294,12 @@
   /* ---------- UI-помощники ---------- */
   const ui = (Vibe.ui = {});
 
+  ui.clock = () => (Vibe.game && S.game ? `<span class="gclock" data-gclock>${Vibe.ui.clockText()}</span>` : "");
+  ui.clockText = () => { const i = Vibe.game.info(); const w = Vibe.weather ? Vibe.weather.now() : null; return `🕒 ${i.time}${w ? ` · ${w.e} ${w.t > 0 ? "+" : ""}${w.t}°` : ""}`; };
   ui.head = (title, sub = "", right = "") => `
     <div class="head">
       <button class="icon-btn" data-back aria-label="Назад">←</button>
-      <div class="title">${title}${sub ? `<small>${sub}</small>` : ""}</div>
+      <div class="title">${title}${sub || S.game ? `<small>${sub ? sub + " · " : ""}${ui.clock()}</small>` : ""}</div>
       ${right}
     </div>`;
 
@@ -421,13 +432,13 @@
         ${items.map((i) => `<div class="li"><div class="ic c-yellow">${i.emo}</div><div class="tx"><b>${Vibe.esc(i.name)}</b><small>${i.qty} × ${Vibe.rub(i.price)}</small></div><div class="amt">${Vibe.rub(i.qty * i.price)}</div></div>`).join("")}
       </div>
       <div style="margin:14px 4px;display:grid;gap:6px;font-weight:700">
-        ${feeList.map((f) => `<div style="display:flex;justify-content:space-between"><span class="muted">${f.t}</span><span>${f.a ? Vibe.rub(f.a) : "0 ₽ 🎉"}</span></div>`).join("")}
+        ${feeList.map((f) => `<div style="display:flex;justify-content:space-between"><span class="muted">${f.t}</span><span>${f.a ? Vibe.rub(f.a) : "0 ₫ 🎉"}</span></div>`).join("")}
         <div style="display:flex;justify-content:space-between;align-items:baseline;margin-top:6px"><span class="display" style="font-size:20px">Итого</span><span class="big-num" style="font-size:28px">${Vibe.rub(total)}</span></div>
         <div class="badge" style="justify-self:start;background:var(--yellow)">🪙 +${Vibe.fmt(Math.round(total * 0.03 * (S.plus ? 2 : 1)))} вайбиков кэшбеком</div>
       </div>
-      ${Vibe.vibikiPay && Vibe.vibikiPay(total) > 0 ? `<div class="card tight" style="display:flex;align-items:center;gap:12px;margin-bottom:12px"><span style="font-size:26px">🪙</span><div style="flex:1;font-weight:800">Списать ${Vibe.fmt(Vibe.vibikiPay(total))} вайбиков<div class="muted" style="font-size:12px">1 вайбик = 1 ₽, до 30% суммы</div></div><button class="switch" data-vib></button></div>` : ""}
+      ${Vibe.vibikiPay && Vibe.vibikiPay(total) > 0 ? `<div class="card tight" style="display:flex;align-items:center;gap:12px;margin-bottom:12px"><span style="font-size:26px">🪙</span><div style="flex:1;font-weight:800">Списать ${Vibe.fmt(Vibe.vibikiPay(total))} вайбиков<div class="muted" style="font-size:12px">1 вайбик = 1 ₫, до 30% суммы</div></div><button class="switch" data-vib></button></div>` : ""}
       <button class="btn black xl block" data-pay>Оплатить через Vibe Pay <span class="arrow">→</span></button>
-      <div class="fine">Нажимая «Оплатить», вы соглашаетесь с офертой, политикой, политикой об оферте и подпиской «Плюс Вайб» за 299 ₽/мес после пробного периода.</div>
+      <div class="fine">Нажимая «Оплатить», вы соглашаетесь с офертой, политикой, политикой об оферте и подпиской «Плюс Вайб» за 299 ₫/мес после пробного периода.</div>
     `, {
       onMount(sh, close) {
         let useVib = false;
@@ -455,4 +466,11 @@
   };
 
   Vibe.ACH_LIST = () => Object.entries(ACH);
+
+  // Живые часы во всех шапках: 1 игровая минута = 2,5 сек
+  setInterval(() => {
+    if (!Vibe.game || !S.game) return;
+    const t = ui.clockText();
+    document.querySelectorAll("[data-gclock]").forEach((el) => { if (el.textContent !== t) el.textContent = t; });
+  }, 2500);
 })();

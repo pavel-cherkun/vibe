@@ -247,6 +247,42 @@
   .fz-amts .chip { justify-content: center; padding: 0 6px; height: 46px; font-size: 13px; }
   .fz-amts .chip.on { background: var(--lime); color: var(--ink); box-shadow: var(--shadow-sm); }
 
+  .fz-mini { font-size: 10px !important; padding: 2px 6px !important; vertical-align: 2px; margin-left: 2px; }
+  .fz-lvl { margin-top: 10px; height: 34px; padding: 0 12px; font-size: 12px; background: #fff; box-shadow: var(--shadow-sm); max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .fz-tabs { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin: 14px 0 4px; }
+  .fz-tabs .chip { justify-content: center; padding: 0 6px; font-size: 13px; position: relative; }
+  .fz-dot { position: absolute; top: 4px; right: 6px; width: 10px; height: 10px; border-radius: 50%; background: #ff3b3b; border: 2px solid var(--ink); animation: pulse 1.2s ease-in-out infinite; }
+  .fz-dot[hidden] { display: none; }
+  .fz-depo, .fz-coach { display: flex; align-items: center; gap: 12px; width: 100%; margin-top: 12px; position: relative; font: inherit; color: inherit; }
+  .fz-coach { margin-top: 18px; }
+  .fz-news { margin-bottom: 12px; padding: 14px; }
+  .fz-news-e { font-size: 30px; line-height: 1; }
+  .fz-news-t { display: block; font-size: 15px; line-height: 1.3; margin: 6px 0 8px; }
+  .fz-fx { display: flex; flex-wrap: wrap; gap: 6px; }
+  .fz-fx .badge { font-size: 11px; padding: 3px 8px; }
+  .fz-bup { background: #c9f7d9 !important; } .fz-bdown { background: #ffd0d0 !important; }
+  .fz-an { display: flex; gap: 8px; margin-top: 10px; padding: 8px 10px; border-radius: 14px; background: rgba(255,255,255,.7); border: 2px dashed rgba(14,14,18,.25); font-size: 12px; font-weight: 700; line-height: 1.35; }
+  .fz-insider { display: flex; align-items: center; gap: 12px; margin-top: 4px; }
+  .fz-lvlcard { cursor: pointer; }
+  .fz-alloc, .fz-risk { padding: 12px; min-width: 0; }
+  .fz-donut { width: 100%; max-width: 130px; display: block; margin: 6px auto; }
+  .fz-legend { display: flex; flex-direction: column; gap: 3px; font-size: 11px; font-weight: 800; }
+  .fz-legend i { display: inline-block; width: 10px; height: 10px; border-radius: 3px; border: 1.5px solid var(--ink); margin-right: 5px; vertical-align: -1px; }
+  .fz-gauge { width: 100%; display: block; margin: 8px 0 2px; }
+  .fz-needle { transform-origin: 60px 62px; transform-box: view-box; transition: transform 1.2s var(--spring); animation: fz-needle 1.4s var(--spring) both; }
+  @keyframes fz-needle { from { transform: rotate(-90deg); } }
+  .fz-pl { width: 100%; height: 110px; display: block; }
+  .fz-pl rect { transform-box: fill-box; transform-origin: center; animation: fz-grow .6s var(--spring) both; animation-delay: calc(var(--i) * 25ms); }
+  @keyframes fz-grow { from { transform: scaleY(0); } }
+  .fz-cal { display: grid; grid-template-columns: repeat(10, 1fr); gap: 4px; }
+  .fz-cal div { aspect-ratio: 1 / 1; border-radius: 8px; border: 2px solid rgba(14,14,18,.2); background: rgba(255,255,255,.55); display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 11px; line-height: 1; min-width: 0; overflow: hidden; }
+  .fz-cal div small { font-size: 9px; font-weight: 800; opacity: .6; }
+  .fz-cal div.on { background: var(--yellow); border-color: var(--ink); animation: jelly .7s var(--spring); }
+  .fz-ach { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+  .fz-ach .card { padding: 12px; display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+  .fz-ach b { font-size: 13px; } .fz-ach small { font-size: 11px; font-weight: 700; }
+  .fz-tax { display: flex; gap: 10px; align-items: flex-start; margin-top: 14px; }
+
   /* WHEEL */
   .fz-wheel-box { position: relative; padding: 30px 0 18px; border-radius: 34px; overflow: hidden; }
   .fz-wheel-wrap { position: relative; width: min(310px, 82vw); aspect-ratio: 1 / 1; margin: 0 auto; }
@@ -320,34 +356,49 @@
   const MODES_BASE = [
     { id: "walk", e: "🚶", n: "Пешком", note: "Кардио бесплатно", veh: "🚶", col: "#c6ff4d", route: "#12a150" },
     { id: "metro", e: "🚇", n: "Метро", note: "Час пик 24/7", veh: "🚇", col: "#8fd8ff", route: "#3d7bff" },
+    { id: "scooter", e: "🛴", n: "Самокат", note: "50 ₫ + 7 ₫/мин", veh: "🛴", col: "#7cf5c8", route: "#12a150" },
     { id: "eco", e: "🚕", n: "Эконом", note: "Кондиционер — опция", veh: "🚕", col: "#ffe14d", m: 1, sub: 3, taxi: true },
-    { id: "comfort", e: "✨", n: "Комфорт", note: "Молчание за 49 ₽", veh: "🚙", col: "#ffffff", m: 1.4, sub: 5, taxi: true },
+    { id: "comfort", e: "✨", n: "Комфорт", note: "Молчание за 49 ₫", veh: "🚙", col: "#ffffff", m: 1.4, sub: 5, taxi: true },
     { id: "vibe", e: "💜", n: "Вайб", note: "Неон, бас и пенка", veh: "🚗", col: "#ff6bcb", m: 1.9, sub: 6, taxi: true, neon: true },
     { id: "biz", e: "🖤", n: "Бизнес", note: "Вода и лёгкий снобизм", veh: "🚘", col: "#d9c8ff", m: 3, sub: 8, taxi: true },
   ];
   const METRO_PRICE = 61;
-  // Своя машина (если в Vibe.inv есть cat:"car"): бензин 8 ₽/км, без сёрджа, но с риском штрафа
+  // Кикшеринг: 50 ₫ старт + 7 ₫/мин, ~16 км/ч
+  const SCOOT_START = 50, SCOOT_MIN = 7;
+  // Своя машина (если в Vibe.inv есть cat:"car"): бензин 8 ₫/км, без сёрджа, но с риском штрафа
   const FUEL_PER_KM = 8;
   const PARK_FINE = 1000;
-  const CAR_MODE = { id: "car", e: "🚗", n: "Своя машина", note: "Бензин 8 ₽/км", veh: "🚗", col: "#7cf5c8", route: "#ff6b2c", own: true };
+  const CAR_MODE = { id: "car", e: "🚗", n: "Своя машина", note: "Бензин 8 ₫/км", veh: "🚗", col: "#7cf5c8", route: "#ff6b2c", own: true };
   const CAR_LINES = ["Ищешь, куда приткнуться 🅿️", "Навигатор: «через 200 м — пробка» 🚦", "Подпеваешь радио. Никто не слышит 🎶", "Бензин дорожает прямо на глазах ⛽", "Самокат подрезал. Ты выше этого 🛴", "Камера подмигнула вспышкой 📸"];
   const EV_PIN = "#8b5cff";
   const DRIVERS = [
     { n: "Рустам", ava: "🧔🏻", car: "Лада Вайбина · жёлтая", plate: "В 777 ИБ", reg: "77", r: "4,98", perks: ["Знает короткий путь (длинный)", "Шансон по запросу"] },
     { n: "Валерий", ava: "👨🏼‍🦳", car: "Кия Чилл · белая", plate: "А 404 НЕ", reg: "99", r: "4,97", perks: ["Молчит, если попросить", "Зарядка Type-C"] },
     { n: "Алина", ava: "👩🏻‍🦰", car: "Тесля, но не та · синяя", plate: "М 001 ВБ", reg: "777", r: "5,00", perks: ["Ароматизатор «Вайб»", "Подкаст про крипту"] },
-    { n: "Гоша", ava: "🧑🏽", car: "Солярис Про Макс · серый", plate: "О 123 КК", reg: "197", r: "4,91", perks: ["Едет как в последний раз", "Водичка — 89 ₽"] },
+    { n: "Гоша", ava: "🧑🏽", car: "Солярис Про Макс · серый", plate: "О 123 КК", reg: "197", r: "4,91", perks: ["Едет как в последний раз", "Водичка — 89 ₫"] },
   ];
   const CARS = { vibe: "Солярис с диско-шаром · неон", biz: "Майбах (в рассрочку) · чёрный" };
   const SEARCH_LINES = ["Уговариваем водителя…", "Водитель доедает шаурму…", "Сравниваем ваш рейтинг с его…", "Повышаем спрос вручную…", "Ищем ближайшего (в 7 км)…", "Почти нашли. Честно."];
   const RIDE_LINES = ["Водитель включил шансон 🎶", "Объезжаем пробку через другую пробку 🚦", "Ароматизатор «Новая машина 2009» 🌲", "Водитель рассказывает про крипту 📈", "Едем по навигатору. Почти 🧭", "Окно не закрывается. Это фича 🌬️"];
-  const WALK_LINES = ["Шаги засчитаны. Страховка довольна 👟", "Обогнал самокат. Самокат стоял 🛴", "Голубь уступил дорогу. Уважение 🐦", "Пульс 112. Это кардио или цены? 💓", "Ускорили прогулку в 300 раз для демонстрации ⏩"];
+  const WALK_LINES = ["Шаги засчитаны. Страховка довольна 👟", "Обогнал самокат. Самокат стоял 🛴", "Голубь уступил дорогу. Уважение 🐦", "Пульс 112. Это кардио или цены? 💓", "Время идёт по-настоящему. Как и жизнь ⏳", "Светофор: 90 секунд красного. Медитация 🚦"];
   const METRO_LINES = ["Осторожно, двери закрываются. Как и вакансии 🚪", "Сигнала нет. Наконец-то тишина 📵", "Кто-то читает книгу. Бумажную! 📖", "Пересадка на станции «Кредитная» 💳", "Поезд следует до конечной. Как и зарплата 🚇"];
+  const SCOOT_LINES = ["Ветер в лицо, тариф в спину 🛴", "Объехал лужу. Почти 💦", "Пешеходы смотрят с осуждением 👀", "Минута — 7 ₫. Каждая кочка — бесплатно 🪨", "Самокат пищит: «аккумулятор 12%» 🔋"];
+  const LATE_TXT = {
+    interview: (e) => `HR записал опоздание в «soft skills». Шанс на оффер −${Math.round((Vibe.sched.latePenalty ? Vibe.sched.latePenalty(e) : 0.1) * 100)}%`,
+    date: () => "Тебя ждали с улыбкой. Улыбка немного устала",
+    friend: () => "Друзья уже заказали. И съели. Твоё тоже",
+    family: () => "Мама сказала «ничего страшного» тем самым голосом",
+    concert: () => "Первую песню слышал из гардероба",
+  };
 
   const kmTxt = (k) => String(k).replace(".", ",") + " км";
   const hhmm = (min) => { const m = ((Math.round(min) % 1440) + 1440) % 1440; return `${String(Math.floor(m / 60)).padStart(2, "0")}:${String(m % 60).padStart(2, "0")}`; };
+  const fmtD = (n) => { n = Math.max(0, Math.round(n)); return n >= 60 ? `${Math.floor(n / 60)} ч${n % 60 ? ` ${n % 60} мин` : ""}` : `${n} мин`; };
   const gameInfo = () => (Vibe.game && Vibe.game.info ? Vibe.game.info() : null);
+  const gNow = () => (Vibe.game && Vibe.game.minutes ? Vibe.game.minutes() : 0);
   const isRush = (i) => !!i && ((i.hour >= 8 && i.hour < 10) || (i.hour >= 18 && i.hour < 20));
+  const wxNow = () => (Vibe.weather ? Vibe.weather.now() : { e: "☁️", t: 3, kind: "cloud", label: "пасмурно" });
+  const tDeg = (t) => `${t > 0 ? "+" : ""}${t}°`;
   function placeName(k) {
     const s = S();
     if (k === "home") return s.home && s.home.title ? `Дом · ${s.home.title}` : "Дом · ул. Ипотечная, 25";
@@ -377,8 +428,10 @@
     const label = (p && p.label) || "Точка на карте";
     return { e: (p && p.e) || (ev && ev.e) || "📍", t: label, s: label, note: ev ? `${ev.e} ${ev.title} · ${evWhen(ev)}` : "Точка из твоего календаря" };
   }
-  // Откуда стартуем: последняя точка поездки или дом
+  // Где игрок: последняя точка поездки или дом (в пути — точка старта поездки)
   function loadFrom() {
+    const tr = Vibe.trip && Vibe.trip.current();
+    if (tr) return tr.from;
     const k = S().fz_lastPos;
     return k && Vibe.map.place(k) ? k : "home";
   }
@@ -392,31 +445,65 @@
     }
     return Vibe.map.door(col > 0 ? col - 1 : col + 1, row, 1);
   }
+  const MAPS_CSS = `
+  .fz-top { position: absolute; z-index: 5; top: 10px; left: 10px; right: 10px; display: flex; align-items: center; gap: 6px; padding: 8px 12px; border: 2.5px solid var(--ink); border-radius: 16px; background: var(--ink); color: #fff; font-weight: 900; font-size: 13px; box-shadow: 0 3px 0 rgba(0,0,0,.25); pointer-events: none; font-variant-numeric: tabular-nums; }
+  .fz-top b { color: var(--lime); }
+  .fz-top .tr { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; opacity: .95; }
+  .fz-top.moving { background: #8b5cff; }
+  .fz-wx { top: 56px; left: 10px; display: flex; gap: 8px; align-items: center; padding: 6px 10px 6px 8px; background: #fff; border: 2.5px solid var(--ink); border-radius: 16px; box-shadow: var(--shadow-sm); font-weight: 900; font-size: 12px; max-width: 70%; }
+  .fz-wx .we { font-size: 26px; line-height: 1; }
+  .fz-wx small { display: block; font-weight: 800; font-size: 10.5px; opacity: .75; }
+  .fz-wx.wet { background: #d9ecff; } .fz-wx.sun { background: #fff6bf; } .fz-wx.storm { background: #e6dcff; }
+  .fz-chip-ev small { display: block; font-size: 10.5px; font-weight: 800; opacity: .85; margin-top: 1px; }
+  .fz-chip-ev.ok small { color: #0b7a3a; } .fz-chip-ev.warn small { color: #b25b00; } .fz-chip-ev.late small { color: #c0182a; }
+  .fz-chip-ev.on small { color: #fff; }
+  .fz-chip-ev { height: auto; min-height: 40px; padding-top: 5px; padding-bottom: 5px; text-align: left; line-height: 1.15; }
+  .fz-clock { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 8px; margin: 10px 0 12px; padding: 10px 12px; border: var(--line); border-radius: 20px; background: var(--ink); color: #fff; }
+  .fz-clock small { display: block; font-size: 11px; font-weight: 800; opacity: .7; }
+  .fz-clock b { display: block; font-family: var(--display, inherit); font-size: 30px; line-height: 1.05; font-variant-numeric: tabular-nums; }
+  .fz-clock .ar { font-size: 22px; } .fz-clock .r { text-align: right; } .fz-clock .r b { color: var(--lime); }
+  .fz-tar.off { opacity: .55; filter: grayscale(.7); }
+  .fz-tar.off .pr { text-decoration: line-through; }
+  .fz-wait { margin-top: 12px; text-align: left; }
+  .fz-wait .cd { display: inline-block; margin-top: 6px; }
+  .fz-fit { display: block; margin-top: 8px; padding: 8px 12px; border: 2px solid var(--ink); border-radius: 14px; font-weight: 800; font-size: 13px; background: var(--paper); }
+  .fz-fit.ok { background: var(--lime); } .fz-fit.warn { background: var(--yellow); } .fz-fit.late { background: #ffd0d0; }
+  `;
+  if (!document.getElementById("fz-style-trip")) {
+    const stl = document.createElement("style");
+    stl.id = "fz-style-trip"; stl.textContent = MAPS_CSS;
+    document.head.appendChild(stl);
+  }
 
   Vibe.screen("maps", {
     render() {
       const i = gameInfo();
       const rush = isRush(i);
       return `
-        ${Vibe.ui.head("Vibe Maps", i ? `🕒 ${i.time} · ${rush ? "час пик, держись" : "такси за 3 мин (обычно за 7)"}` : "такси за 3 мин (обычно за 7)", Vibe.ui.vibikiPill())}
+        ${Vibe.ui.head("Vibe Maps", rush ? "час пик, держись" : "такси за 3 мин (обычно за 7)", Vibe.ui.vibikiPill())}
         <div class="fz-map">
           <div class="fz-vm" data-vmhost></div>
-          <div class="fz-map-tag badge" style="top:12px;left:12px;background:#fff;font-size:12px;padding:6px 10px">${i && i.night ? "🌙 +9°" : "☀️ +18°"} · вайбово</div>
+          <div class="fz-top" data-top></div>
+          <div class="fz-map-tag fz-wx" data-wx></div>
           <div class="fz-map-tag sticker" style="left:12px;bottom:46px;top:auto;background:#ff3b3b;color:#fff;font-size:12px">Пробки: ${rush ? 9 : ri(4, 7)} баллов 🔥</div>
         </div>
         <div class="card fz-panel" data-panel></div>
-        <div class="fine" style="text-align:center">Стоимость поездки может измениться в любую сторону, но обычно вверх. Повышенный спрос создаётся вашим интересом. Шаги считаются, только если телефон в руке.</div>`;
+        <div class="fine" style="text-align:center">Время в пути — настоящее игровое: 1 минута = 2,5 секунды. Перемотки нет, есть такси. Стоимость поездки может измениться в любую сторону, но обычно вверх.</div>`;
     },
     mount(root, params = {}) {
       const sc = scope();
       const MP = Vibe.map;
+      const TR = Vibe.trip;
       const panel = root.querySelector("[data-panel]");
       const pt = (k) => MP.place(k);
       const rush = isRush(gameInfo());
       const car = ownCar();
-      const MODES = car ? [...MODES_BASE, Object.assign({}, CAR_MODE, { note: `${short(car.name, 14)} · 8 ₽/км` })] : MODES_BASE;
-      const baseSurge = () => MODES.map((m) => (m.taxi && rush ? 1.2 : 1));
-      const st = { phase: "pick", from: loadFrom(), to: null, trip: null, mode: 2, surge: baseSurge(), driver: null, price: 0, rated: 0, tipped: false, run: 0, sgen: 0, drv: null, arr: null, kind: null };
+      const MODES = car ? [...MODES_BASE, Object.assign({}, CAR_MODE, { note: `${short(car.name, 14)} · 8 ₫/км` })] : MODES_BASE;
+      const TAXI_IDX = MODES.map((m, i) => (m.taxi ? i : -1)).filter((i) => i >= 0);
+      const wxSurge = () => (Vibe.weather ? Vibe.weather.surge() : 1);
+      const baseSurge = () => MODES.map((m) => (m.taxi ? Math.round((rush ? 1.2 : 1) * wxSurge() * 10) / 10 : 1));
+      const scootOk = () => (Vibe.weather ? Vibe.weather.scooter() : { ok: true });
+      const st = { phase: "pick", from: loadFrom(), to: null, trip: null, mode: MODES.findIndex((m) => m.id === "eco"), surge: baseSurge(), driver: null, price: 0, rated: 0, tipped: false, run: 0, sgen: 0, drv: null, last: null, veh: null, tick: 0 };
 
       const ctrl = MP.create(root.querySelector("[data-vmhost]"), {
         pins: [],
@@ -425,55 +512,71 @@
       });
 
       /* ----- Расчёты ----- */
-      function trip() {
-        const pts = MP.path(pt(st.from), pt(st.to));
-        return { pts, km: Math.max(0.3, MP.km(pts)), walk: MP.minutes(pts, "walk"), metro: MP.minutes(pts, "metro"), taxi: MP.minutes(pts, "taxi") };
+      function trip(from = st.from, to = st.to) {
+        const pts = MP.path(pt(from), pt(to));
+        const km = Math.max(0.3, MP.km(pts));
+        return { pts, km, walk: MP.minutes(pts, "walk"), metro: MP.minutes(pts, "metro"), taxi: MP.minutes(pts, "taxi"), scooter: Math.max(3, Math.round((km / 16) * 60) + 2) };
       }
-      const modeMin = (i, T = st.trip) => { const m = MODES[i]; return m.id === "walk" ? T.walk : m.id === "metro" ? T.metro : m.id === "car" ? Math.max(3, T.taxi - 2) : T.taxi + m.sub; };
+      const modeMin = (i, T = st.trip) => { const m = MODES[i]; return m.id === "walk" ? T.walk : m.id === "metro" ? T.metro : m.id === "scooter" ? T.scooter : m.id === "car" ? Math.max(3, T.taxi - 2) : T.taxi + m.sub; };
+      const taxiPrice = (km, mult, surge) => Math.ceil(((99 + 18 * km) * mult * surge) / 10) * 10 - 1;
       const price = (i, T = st.trip) => {
         const m = MODES[i];
         if (m.id === "walk") return 0;
         if (m.id === "metro") return METRO_PRICE;
+        if (m.id === "scooter") return SCOOT_START + SCOOT_MIN * T.scooter;
         if (m.id === "car") return Math.max(FUEL_PER_KM, Math.round(T.km * FUEL_PER_KM));
-        return Math.ceil(((99 + 18 * T.km) * m.m * st.surge[i]) / 10) * 10 - 1;
+        return taxiPrice(T.km, m.m, st.surge[i]);
       };
-      const steps = (T = st.trip) => Math.round(T.km * 1350);
-      const walkVib = (T = st.trip) => clamp(Math.round(T.km * 8), 5, 50);
+      const steps = (km) => Math.round(km * 1350);
+      const walkVib = (km) => clamp(Math.round(km * 8), 5, 50);
       const surging = () => st.surge.some((s) => s > 1.001);
+      const kindOf = (m) => (m.taxi ? "taxi" : m.id);
+
+      /* ----- Успеваешь ли к событию ----- */
+      // Чип события: «через 1 ч 10 мин · успеваешь пешком / только на такси»
+      function evReach(e) {
+        const left = smin(e) - gNow();
+        if (left <= 0) { const since = -left; return { t: since <= e.dur ? `идёт уже ${fmtD(since)}` : "уже закончилось", c: "late" }; }
+        const head = `через ${fmtD(left)}`;
+        if (!pt(st.from) || st.from === e.place) return { t: `${head} · ты на месте`, c: "ok" };
+        const T = trip(st.from, e.place);
+        if (T.walk <= left) return { t: `${head} · успеваешь пешком`, c: "ok" };
+        if (T.metro <= left) return { t: `${head} · успеваешь на метро`, c: "ok" };
+        if (T.taxi + 3 <= left) return { t: `${head} · только на такси`, c: "warn" };
+        return { t: `${head} · опоздаешь на ${fmtD(T.taxi + 3 - left)}`, c: "late" };
+      }
+      // Для выбранного транспорта: во сколько приедешь относительно начала
+      function fitFor(e, arriveAt) {
+        if (!e) return null;
+        const s0 = smin(e), W = (Vibe.sched && Vibe.sched.WINDOW) || 120, at = hhmm(s0);
+        if (arriveAt < s0 - W) return { c: "warn", t: `⏰ Приедешь в ${hhmm(arriveAt)} — рано. Зал ожидания откроется в ${hhmm(s0 - W)}, начало в ${at}` };
+        if (arriveAt <= s0) return { c: "ok", t: `✅ Приедешь в ${hhmm(arriveAt)} — за ${fmtD(s0 - arriveAt)} до начала. Подождёшь и отметишься` };
+        if (arriveAt <= s0 + e.dur) return { c: "late", t: `😬 Опоздаешь на ${fmtD(arriveAt - s0)} — начало в ${at}` };
+        return { c: "late", t: `🥀 Всё закончится в ${hhmm(s0 + e.dur)}, до твоего приезда` };
+      }
+      const fitHtml = (f) => (f ? `<span class="fz-fit ${f.c}" data-fit>${f.t}</span>` : "");
 
       /* ----- Пины ----- */
-      // Все ключи пинов: базовые + места событий календаря + текущие откуда/куда
       function pinKeys() {
         const evs = evList();
         return [...new Set([...PIN_KEYS, ...evs.map((e) => e.place), st.from, st.to].filter(Boolean))];
       }
       function pins() {
         const evs = evList();
+        const moving = st.phase === "ride";
         return pinKeys().map((k) => {
           const p = pt(k); if (!p) return null;
           const isFrom = k === st.from, isTo = k === st.to;
           const ev = evs.find((e) => e.place === k);
           return {
             id: k, x: p.x, y: p.y, e: ev && !isFrom ? ev.e : p.e || pinfo(k).e,
-            label: isFrom ? "Ты здесь" : ev ? `${short(ev.title, 14)} · ${hhmm(ev.hour * 60 + (ev.min || 0))}` : isTo ? pinfo(k).s : k === "home" || k === "work" ? pinfo(k).s : "",
+            label: isFrom ? (moving ? "Старт" : "Ты здесь") : ev ? `${short(ev.title, 14)} · ${hhmm(ev.hour * 60 + (ev.min || 0))}` : isTo ? pinfo(k).s : k === "home" || k === "work" ? pinfo(k).s : "",
             color: isTo ? "#ff6bcb" : isFrom ? "#c6ff4d" : ev ? EV_PIN : PIN_COL[k] || "#ffffff",
             pulse: isFrom || isTo || !!ev || k === "home" || k === "work",
             big: isFrom || isTo || !!ev,
             o: isFrom || isTo ? 2 : ev ? 1 : 0,
           };
         }).filter(Boolean).sort((a, b) => a.o - b.o);
-      }
-      // Успеваешь ли к событию в точке назначения
-      function evFit(k) {
-        const ev = evAt(k); if (!ev) return "";
-        const nm = Vibe.game.minutes(), s0 = smin(ev);
-        const at = hhmm(ev.hour * 60 + (ev.min || 0));
-        if (nm < s0 - 60) {
-          const w = Math.round(s0 - 60 - nm);
-          return `<span class="badge" style="background:var(--yellow)">⏰ ${short(ev.title, 18)} в ${at} — вход через ${w >= 60 ? Math.floor(w / 60) + " ч " : ""}${w % 60} мин</span>`;
-        }
-        if (nm <= s0) return `<span class="badge" style="background:var(--lime)">✅ Успеваешь на ${short(ev.title, 18)} · ${at}</span>`;
-        return `<span class="badge" style="background:#ffd0d0">🏃 ${short(ev.title, 18)} уже идёт с ${at} — беги!</span>`;
       }
 
       // Радар поиска — прямо в SVG карты, вокруг точки посадки
@@ -490,45 +593,141 @@
       }
       function stopDrive() { if (st.drv) { st.drv.stop(); st.drv = null; } }
 
+      /* ----- Машинка поездки: позиция = Vibe.trip.progress() по игровому времени ----- */
+      function vehStop() { if (st.veh) { st.veh.g.remove(); st.veh = null; } }
+      function vehStart(t) {
+        vehStop();
+        const host = ctrl.svg.querySelector(".vm-veh");
+        if (!host) return;
+        const g = document.createElementNS("http://www.w3.org/2000/svg", "g");
+        host.appendChild(g);
+        st.veh = { g, emoji: null, pts: MP.path(pt(t.from), pt(t.to)) };
+        (function loop(ts) {
+          if (!st.veh || st.veh.g !== g) return;
+          const tr = TR.current();
+          if (tr) {
+            const M = MODES.find((m) => m.id === tr.mode) || MODES[0];
+            if (st.veh.emoji !== tr.emoji) {
+              st.veh.emoji = tr.emoji;
+              g.innerHTML = `<circle r="17" fill="${M.col || "#ffe14d"}" stroke="#0e0e12" stroke-width="3"/><text class="vm-emo" y="7" font-size="20" text-anchor="middle">${tr.emoji}</text>`;
+            }
+            const p = MP.pointAt(st.veh.pts, TR.progress(tr));
+            g.setAttribute("transform", `translate(${p.x} ${p.y})`);
+            const em = g.querySelector(".vm-emo");
+            if (em) em.setAttribute("transform", `scale(${p.dx < 0 ? -1 : 1} 1) translate(0 ${Math.sin(ts / 90) * 1.2})`);
+          }
+          sc.raf(loop);
+        })(performance.now());
+      }
+
+      /* ----- Верхняя плашка и погода ----- */
+      function topHtml() {
+        const i = gameInfo(), w = wxNow(), tr = TR.current();
+        const where = tr ? `в пути: ${tr.emoji} → ${short(pinfo(tr.to).s, 14)}, прибытие ${hhmm(tr.endMin)}` : `ты: ${pinfo(st.from).e} ${short(pinfo(st.from).s, 16)}`;
+        return `<span>🕒 <b>${i ? i.time : "--:--"}</b></span><span>· ${w.e} ${tDeg(w.t)}</span><span class="tr">· ${Vibe.esc(where)}</span>`;
+      }
+      function wxHtml() {
+        const w = wxNow(), sg = wxSurge(), sk = scootOk();
+        const fx = sg > 1 ? `такси ×${String(sg).replace(".", ",")} · пешком −настроение` : w.kind === "sun" ? "гулять — настроение +2" : !sk.ok ? "самокаты убрали" : "пешком — норм";
+        return `<span class="we">${w.e}</span><div><div>${tDeg(w.t)} · ${w.label}</div><small>${fx}</small></div>`;
+      }
+      function paintTop() {
+        const top = root.querySelector("[data-top]");
+        if (top) { const h = topHtml(); if (top.innerHTML !== h) top.innerHTML = h; top.classList.toggle("moving", !!TR.current()); }
+        const wx = root.querySelector("[data-wx]");
+        if (wx) {
+          const h = wxHtml(); if (wx.innerHTML !== h) wx.innerHTML = h;
+          const k = wxNow().kind;
+          wx.className = `fz-map-tag fz-wx ${k === "sun" ? "sun" : k === "storm" ? "storm" : k === "rain" || k === "snow" ? "wet" : ""}`;
+        }
+      }
+
+      /* ----- Карточки событий на месте: зал ожидания / опоздал / вовремя ----- */
+      function placeEvCards(place, lastEvents = []) {
+        if (!Vibe.sched) return "";
+        const now = gNow(), out = [];
+        lastEvents.forEach((x) => {
+          const e = Vibe.sched.get ? Vibe.sched.get(x.id) : Vibe.sched.list().find((y) => y.id === x.id);
+          if (!e || x.arrival === "early") return;
+          if (x.arrival === "late") out.push(`<div class="card flat c-coral fz-workcard"><span class="emo wobble" style="font-size:34px">⏱️</span><div style="flex:1"><b style="display:block;font-size:15px">Опоздал на ${fmtD(x.late)}: ${Vibe.esc(short(e.title, 22))}</b><small style="font-weight:700;opacity:.85">${(LATE_TXT[e.kind] || (() => "Пришёл, но календарь всё запомнил. +8 🪙 вместо 20"))(e)}</small></div></div>`);
+          else out.push(`<div class="card flat c-violet fz-workcard"><span class="emo wobble" style="font-size:34px">${e.e}</span><div style="flex:1"><b style="display:block;font-size:15px">Пришёл вовремя: ${Vibe.esc(short(e.title, 26))}</b><small style="font-weight:700;opacity:.85">Отмечено в календаре ✅ +20 🪙</small></div></div>`);
+        });
+        // Предстоящие здесь (в ближайшие 12 часов) — зал ожидания
+        Vibe.sched.list().filter((e) => e.place === place && e.status === "planned" && smin(e) - now < 720 && smin(e) + e.dur >= now).sort((a, b) => smin(a) - smin(b)).slice(0, 2).forEach((e) => {
+          const ph = Vibe.sched.phase ? Vibe.sched.phase(e, now) : { phase: now < smin(e) ? "wait" : "live" };
+          const at = hhmm(smin(e));
+          if (ph.phase === "live") {
+            out.push(`<div class="card flat c-lime fz-workcard"><span class="emo wobble" style="font-size:34px">${e.e}</span><div style="flex:1"><b style="display:block;font-size:15px">${Vibe.esc(short(e.title, 24))} уже идёт</b><small style="font-weight:700;opacity:.85">Началось в ${at}. Заходи, пока не поздно</small></div><button class="btn sm black" data-act="checkin" data-id="${e.id}">Зайти</button></div>`);
+          } else if (e.checkedIn) {
+            out.push(`<div class="card c-yellow fz-wait"><div class="fz-between"><b style="font-size:16px">🛋️ Зал ожидания</b><span class="badge" style="background:var(--lime)">Отмечен ✅</span></div><div style="font-weight:800;font-size:14px;margin-top:4px">${e.e} ${Vibe.esc(e.title)} · начало в ${at}</div><span class="timer-pill cd" data-cd="${smin(e)}">через ${fmtD(smin(e) - now)}</span><div class="fine" style="margin-top:6px">Начнётся само, если ты здесь. Уйдёшь — отметка сгорит. Кулер с водой платный.</div></div>`);
+          } else {
+            const open = ph.phase !== "far";
+            out.push(`<div class="card c-yellow fz-wait"><div class="fz-between"><b style="font-size:16px">🛋️ Зал ожидания</b><span class="timer-pill cd" data-cd="${smin(e)}">через ${fmtD(smin(e) - now)}</span></div><div style="font-weight:800;font-size:14px;margin-top:4px">${e.e} ${Vibe.esc(e.title)} · начало в ${at}</div>
+              <button class="btn ${open ? "lime" : ""} xl block" data-act="checkin" data-id="${e.id}" style="margin-top:10px">${open ? "Отметиться ✅" : `Отметиться можно с ${hhmm(smin(e) - ((Vibe.sched && Vibe.sched.WINDOW) || 120))}`}</button>
+              <div class="fine" style="margin-top:6px">Пришёл раньше — молодец. Корпорация ценит тех, кто ждёт.</div></div>`);
+          }
+        });
+        return out.join("");
+      }
+
       /* ----- Панель по фазам ----- */
-      const tarHtml = (m, i) => `
-        <button class="fz-tar ${m.neon ? "neon" : ""} ${i === st.mode ? "on" : ""} ${st.surge[i] > 1.001 ? "surging" : ""}" data-tar="${i}">
+      const tarHtml = (m, i) => {
+        const off = m.id === "scooter" && !scootOk().ok;
+        return `
+        <button class="fz-tar ${m.neon ? "neon" : ""} ${i === st.mode ? "on" : ""} ${st.surge[i] > 1.001 ? "surging" : ""} ${off ? "off" : ""}" data-tar="${i}">
           ${m.taxi ? `<span class="badge surge" data-sg="${i}">⚡ ×${st.surge[i].toFixed(1).replace(".", ",")}</span>` : ""}
           <span class="e emo ${i === st.mode ? "wobble" : ""}">${m.e}</span>
-          <b>${m.n}</b><small>${m.note}</small>
+          <b>${m.n}</b><small>${off ? "Убрали на зиму" : m.note}</small>
           <span class="tm">🕒 ${m.taxi ? `подача ${m.sub} мин · ${st.trip.taxi} в пути` : `${modeMin(i)} мин`}</span>
           <span class="pr" data-pr="${i}">${m.own ? "⛽ " : ""}${Vibe.rub(price(i))}</span>
-          ${m.id === "walk" ? `<small>+${walkVib()} 🪙 за ${Vibe.fmt(steps())} шагов</small>` : ""}
+          ${m.id === "walk" ? `<small>+${walkVib(st.trip.km)} 🪙 за ${Vibe.fmt(steps(st.trip.km))} шагов</small>` : ""}
+          ${m.id === "scooter" && !off ? `<small>${scootOk().risky ? "💦 мокро — можно упасть" : "🌤️ настроение +2"}</small>` : ""}
           ${m.own ? `<small>🅿️ шанс штрафа есть всегда</small>` : ""}
         </button>`;
+      };
       const orderLabel = () => {
         const m = MODES[st.mode];
         if (m.id === "walk") return "Пойти пешком 🚶";
+        if (m.id === "scooter") return scootOk().ok ? `Взять самокат · ~${Vibe.rub(price(st.mode))}` : "Самокатов нет 🥶";
         if (m.id === "car") return `Сесть за руль · ⛽ ${Vibe.rub(price(st.mode))}`;
         if (m.id === "metro") return `Спуститься в метро · ${Vibe.rub(METRO_PRICE)}`;
         return `Заказать ${m.n} · <span data-oprice>${Vibe.rub(price(st.mode))}</span>`;
       };
-      const arriveTxt = () => { const i = gameInfo(); return i ? `🕒 будешь в ${hhmm(i.hour * 60 + i.minute + modeMin(st.mode))}` : `🕒 ${modeMin(st.mode)} мин`; };
+      const arriveAt = () => gNow() + modeMin(st.mode);
+      const arriveTxt = () => `🕒 будешь в ${hhmm(arriveAt())}`;
+
+      // Предложение «ускориться» — только за деньги: пересесть в такси эконом
+      function boostOffer(t) {
+        if (!t || !["walk", "metro", "scooter"].includes(t.kind)) return null;
+        const left = t.km * (1 - TR.progress(t));
+        if (left < 0.4) return null;
+        const minutes = Math.max(4, Math.round((left / 28) * 60 + 3)) + 3;
+        const endAt = gNow() + minutes;
+        if (endAt >= t.endMin - 2) return null;
+        const sg = Math.round((isRush(gameInfo()) ? 1.2 : 1) * wxSurge() * 10) / 10;
+        return { minutes, endAt, price: taxiPrice(left, 1, sg) + 50, km: left };
+      }
 
       function render() {
         const M = MODES[st.mode];
         if (st.phase === "pick") {
           const to = st.to;
           const evs = evList();
-          const hereEv = Vibe.sched ? Vibe.sched.active(st.from) : [];
+          const evTo = to ? evAt(to) : null;
           panel.innerHTML = `
             <div class="fz-between"><div class="display" style="font-size:26px">Куда едем?</div><span class="emo wobble" style="font-size:34px">${to ? M.e : "🧭"}</span></div>
-            <div class="fz-dest" style="margin-top:12px"><span class="dot"></span><div style="min-width:0;flex:1"><small class="muted" style="font-size:11px;display:block">Откуда</small><span class="fz-ell">${Vibe.esc(placeName(st.from))}</span></div>${st.from !== "home" ? `<button class="fz-x" data-act="fromhome">🏠 Из дома</button>` : ""}</div>
+            <div class="fz-dest" style="margin-top:12px"><span class="dot"></span><div style="min-width:0;flex:1"><small class="muted" style="font-size:11px;display:block">Откуда · ты здесь</small><span class="fz-ell">${Vibe.esc(placeName(st.from))}</span></div></div>
             <div class="fz-dest" style="margin-top:8px"><span class="dot" style="background:var(--pink);border-radius:5px"></span><div style="min-width:0;flex:1"><small class="muted" style="font-size:11px;display:block">Куда</small><span class="fz-ell">${to ? Vibe.esc(placeName(to)) : "Выбери ниже или тапни пин на карте"}</span>${to ? `<small class="muted fz-ell" style="font-size:11px">${pinfo(to).note}</small>` : ""}</div></div>
-            ${hereEv.length ? `<div class="card flat tight c-violet" style="margin-top:10px;display:flex;gap:10px;align-items:center"><span class="emo wobble" style="font-size:28px">${hereEv[0].e}</span><b style="flex:1;font-size:13px">Ты уже на месте: ${Vibe.esc(short(hereEv[0].title, 26))}</b><button class="btn sm lime" data-act="checkin">Отметиться</button></div>` : ""}
+            ${placeEvCards(st.from)}
             <div class="chips" style="margin-top:10px">
-              ${evs.map((e) => `<button class="chip fz-chip-ev ${e.place === to ? "on" : ""}" data-dest="${Vibe.esc(e.place)}" ${e.place === st.from ? 'style="opacity:.45"' : ""}>${e.e} ${Vibe.esc(short(e.title))} · ${evWhen(e)}</button>`).join("")}
+              ${evs.map((e) => { const r = evReach(e); return `<button class="chip fz-chip-ev ${r.c} ${e.place === to ? "on" : ""}" data-dest="${Vibe.esc(e.place)}" ${e.place === st.from ? 'style="opacity:.45"' : ""}>${e.e} ${Vibe.esc(short(e.title))} · ${evWhen(e)}<small data-reach="${e.id}">${r.t}</small></button>`; }).join("")}
               ${DEST_CHIPS.filter((k) => pt(k)).map((k) => `<button class="chip fz-chip-dest ${k === to ? "on" : ""}" data-dest="${k}" ${k === st.from ? 'style="opacity:.45"' : ""}>${pinfo(k).e} ${pinfo(k).t}</button>`).join("")}
             </div>
             ${to ? `
-            <div class="fz-trip"><span class="badge">📏 ${kmTxt(st.trip.km)}</span><span class="badge" data-arrive>${arriveTxt()}</span>${evFit(to)}</div>
+            <div class="fz-trip"><span class="badge">📏 ${kmTxt(st.trip.km)}</span><span class="badge" data-arrive>${arriveTxt()}</span></div>
+            ${fitHtml(fitFor(evTo, arriveAt()))}
             <div class="hscroll fz-tars">${MODES.map(tarHtml).join("")}</div>
-            <div class="fz-surge-bar" data-surgebar style="display:${surging() ? "flex" : "none"}"><span class="emo">⚡</span><span>Повышенный спрос. Цены растут, пока вы думаете</span></div>
+            <div class="fz-surge-bar" data-surgebar style="display:${surging() ? "flex" : "none"}"><span class="emo">⚡</span><span>${wxSurge() > 1 ? `${wxNow().label[0].toUpperCase() + wxNow().label.slice(1)}: все хотят такси. Цены ×${String(wxSurge()).replace(".", ",")}` : "Повышенный спрос. Цены растут, пока вы думаете"}</span></div>
             <button class="btn black xl block" data-act="order" style="margin-top:14px">${orderLabel()}</button>` : `
             <div class="card flat tight c-lilac" style="margin-top:10px;display:flex;gap:10px;align-items:center;font-weight:800;font-size:13px"><span class="emo wobble" style="font-size:28px">🗺️</span><span>Пины на карте — тоже кнопки. Тапай всё, это бесплатно (пока)</span></div>`}`;
         } else if (st.phase === "search") {
@@ -567,16 +766,25 @@
               ${arrived ? `<button class="btn lime block" data-act="go">Поехали! 🚀</button>` : `<button class="btn block" data-act="cancel">Отменить</button>`}
             </div>`;
         } else if (st.phase === "ride") {
-          const k = st.kind;
-          const title = k === "walk" ? "Идём пешком" : k === "metro" ? "Едем в метро" : k === "car" ? "За рулём" : "В пути";
+          const t = TR.current();
+          if (!t) return;
+          const k = t.kind;
+          const title = k === "walk" ? "Идём пешком" : k === "metro" ? "Едем в метро" : k === "scooter" ? "На самокате" : k === "car" ? "За рулём" : "В такси";
+          const lines = k === "walk" ? WALK_LINES : k === "metro" ? METRO_LINES : k === "scooter" ? SCOOT_LINES : k === "car" ? CAR_LINES : RIDE_LINES;
+          const b = boostOffer(t);
+          const i = gameInfo();
           panel.innerHTML = `
-            <div class="fz-between"><div class="display" style="font-size:26px">${title} ${M.veh}</div><span class="timer-pill" data-eta>${modeMin(st.mode) - (M.sub || 0)} мин</span></div>
-            <div class="muted fz-ell" style="font-weight:800;font-size:13px;margin:4px 0 12px">${pinfo(st.to).e} ${Vibe.esc(placeName(st.to))} · ${kmTxt(st.trip.km)}</div>
-            <div class="progress" style="height:18px"><i data-rprog style="--p:0%;transition:none"></i></div>
-            <div class="card flat tight c-lilac" style="margin-top:12px;display:flex;align-items:center;gap:10px"><span class="emo wobble" style="font-size:28px">${k === "walk" ? "👟" : k === "metro" ? "🚇" : k === "car" ? "🛞" : "📻"}</span><b data-rline style="font-size:14px">${(k === "walk" ? WALK_LINES : k === "metro" ? METRO_LINES : k === "car" ? CAR_LINES : RIDE_LINES)[0]}</b></div>
-            ${k === "taxi" || k === "car" ? `<button class="btn block" data-go="music" style="margin-top:12px">🎧 Включить свой вайб в Vibe Music</button>` : ""}`;
+            <div class="fz-between"><div class="display" style="font-size:26px">${title} ${t.emoji}</div><span class="timer-pill" data-eta>ещё ${fmtD(TR.eta(t))}</span></div>
+            <div class="muted fz-ell" style="font-weight:800;font-size:13px;margin-top:4px">${pinfo(t.to).e} ${Vibe.esc(placeName(t.to))} · ${kmTxt(t.km)}${t.boosted ? " · пересел 🚕" : ""}</div>
+            <div class="fz-clock"><div><small>Сейчас</small><b data-now>${i ? i.time : "--:--"}</b></div><span class="ar emo">${t.emoji}</span><div class="r"><small>Прибытие</small><b>${hhmm(t.endMin)}</b></div></div>
+            <div class="progress" style="height:18px"><i data-rprog style="--p:${Math.round(TR.progress(t) * 100)}%;transition:none"></i></div>
+            <span data-rfit>${fitHtml(fitFor(evAt(t.to), t.endMin))}</span>
+            <div class="card flat tight c-lilac" style="margin-top:12px;display:flex;align-items:center;gap:10px"><span class="emo wobble" style="font-size:28px">${k === "walk" ? "👟" : k === "metro" ? "🚇" : k === "scooter" ? "🛴" : k === "car" ? "🛞" : "📻"}</span><b data-rline style="font-size:14px">${lines[st.tick % lines.length]}</b></div>
+            ${b ? `<button class="btn yellow block" data-act="boost" style="margin-top:12px;white-space:normal;height:auto;min-height:52px">🚕 Ускориться: такси · ${Vibe.rub(b.price)} · будешь в ${hhmm(b.endAt)}</button>` : ""}
+            ${k === "taxi" || k === "car" ? `<button class="btn block" data-go="music" style="margin-top:12px">🎧 Включить свой вайб в Vibe Music</button>` : ""}
+            <div class="fine">Карту можно закрыть — поездка идёт в игровом времени и закончится сама. Бесплатной перемотки нет: время — единственное, что Корпорация пока не продаёт.</div>`;
         } else if (st.phase === "done") {
-          const k = st.kind, arr = st.arr, T = st.trip;
+          const L = st.last || {}, k = L.kind || "walk", arr = L.to || st.from, res = L.res || {};
           const i = gameInfo();
           let work = "";
           if (arr === "work") {
@@ -595,35 +803,45 @@
           } else if (arr === "wheel") {
             work = `<button class="btn lime block" data-go="wheel" style="margin-top:12px">Крутить колесо вайба 🎡</button>`;
           }
-          const n = st.evNote;
-          let evCard = "";
-          if (n && n.kind === "ok") evCard = `<div class="card flat c-violet fz-workcard"><span class="emo wobble" style="font-size:34px">${n.list[0].e}</span><div style="flex:1"><b style="display:block;font-size:15px">Пришёл вовремя: ${Vibe.esc(short(n.list[0].title, 28))}</b><small style="font-weight:700;opacity:.85">Отмечено в календаре ✅ +20 🪙</small></div></div>`;
-          else if (n && n.kind === "early") evCard = `<div class="card flat c-yellow fz-workcard"><span class="emo wobble" style="font-size:34px">⏰</span><div style="flex:1"><b style="display:block;font-size:15px">Рано! ${Vibe.esc(short(n.e.title, 24))} в ${hhmm(n.e.hour * 60 + (n.e.min || 0))}</b><small style="font-weight:700;opacity:.8">Вход откроют через ${n.wait >= 60 ? Math.floor(n.wait / 60) + " ч " : ""}${n.wait % 60} мин. Загляни сюда снова и жми «Отметиться»</small></div></div>`;
-          else if (n && n.kind === "late") evCard = `<div class="card flat c-coral fz-workcard"><span class="emo" style="font-size:34px">😬</span><div style="flex:1"><b style="display:block;font-size:15px">Опоздал: ${Vibe.esc(short(n.e.title, 24))}</b><small style="font-weight:700;opacity:.8">Всё закончилось в ${hhmm(n.e.hour * 60 + (n.e.min || 0) + (n.e.dur || 0))}. Календарь всё помнит</small></div></div>`;
-          const fineCard = st.fined ? `<div class="card flat c-coral fz-workcard"><span class="emo wobble" style="font-size:34px">🚔</span><div style="flex:1"><b style="display:block;font-size:15px">Штраф за парковку −${Vibe.rub(PARK_FINE)}</b><small style="font-weight:700;opacity:.8">Ты встал там, где нельзя. Нельзя — везде</small></div></div>` : "";
+          // Событие уже закончилось к приезду
+          let missCard = "";
+          if (Vibe.sched && !(L.events || []).length) {
+            const at = L.at || gNow();
+            const gone = Vibe.sched.list().filter((e) => e.place === arr && smin(e) + (e.dur || 0) < at && at - smin(e) - (e.dur || 0) < 720 && e.status !== "done").sort((a, b) => smin(b) - smin(a))[0];
+            if (gone) missCard = `<div class="card flat c-coral fz-workcard"><span class="emo" style="font-size:34px">🥀</span><div style="flex:1"><b style="display:block;font-size:15px">Не успел: ${Vibe.esc(short(gone.title, 24))}</b><small style="font-weight:700;opacity:.8">Всё закончилось в ${hhmm(smin(gone) + (gone.dur || 0))}. Календарь всё помнит</small></div></div>`;
+          }
+          const fineCard = res.fined ? `<div class="card flat c-coral fz-workcard"><span class="emo wobble" style="font-size:34px">🚔</span><div style="flex:1"><b style="display:block;font-size:15px">Штраф за парковку −${Vibe.rub(PARK_FINE)}</b><small style="font-weight:700;opacity:.8">Ты встал там, где нельзя. Нельзя — везде</small></div></div>` : "";
+          const fellCard = res.fell ? `<div class="card flat c-coral fz-workcard"><span class="emo wobble" style="font-size:34px">🤕</span><div style="flex:1"><b style="display:block;font-size:15px">Упал с самоката · здоровье −3</b><small style="font-weight:700;opacity:.8">Лужа победила. Страховка «Вайб Здоровье» уже звонит</small></div></div>` : "";
+          const W = L.weather;
+          const wxLine = W && (k === "walk" || k === "scooter") && res.mood ? `<span class="badge" style="background:${res.mood > 0 ? "var(--yellow)" : "var(--sky)"};margin-top:8px">${W.e} ${W.label} · настроение ${res.mood > 0 ? "+" : ""}${res.mood}</span>` : "";
+          const total = (L.price || 0) + (L.extra || 0);
+          const driver = L.driver;
           panel.innerHTML = `
             <div style="text-align:center">
-              <div class="emo float" style="font-size:72px">${k === "walk" ? "🏅" : k === "metro" ? "🚇" : k === "car" ? "🅿️" : "🎉"}</div>
+              <div class="emo float" style="font-size:72px">${k === "walk" ? "🏅" : k === "metro" ? "🚇" : k === "scooter" ? "🛴" : k === "car" ? "🅿️" : "🎉"}</div>
               <div class="display" style="font-size:30px">${k === "walk" ? "Дошёл!" : k === "car" ? "Припарковался!" : "Приехали!"}</div>
-              <div class="muted fz-ell" style="font-weight:800;font-size:13px;margin-top:2px">${pinfo(arr).e} ${Vibe.esc(placeName(arr))}</div>
-              <div class="big-num" style="font-size:36px;margin-top:8px">${k === "walk" ? `${Vibe.fmt(steps(T))} шагов` : (k === "car" ? "⛽ " : "") + Vibe.rub(st.price)}</div>
-              <div class="muted" style="font-weight:800;font-size:13px;margin-top:4px">${k === "walk" ? `+${walkVib(T)} вайбиков · страховка не подорожала` : k === "metro" ? "Оплачено на турникете. Лицом" : k === "car" ? `${Vibe.esc(car ? car.name : "Своя машина")} · ${kmTxt(T.km)} · бензин по 8 ₽/км` : `${M.n} · ${st.driver.n} · ${kmTxt(T.km)} · списано с Vibe Pay`}</div>
-              ${evCard}${fineCard}${work}
-              ${k === "taxi" ? `
+              <div class="muted fz-ell" style="font-weight:800;font-size:13px;margin-top:2px">${pinfo(arr).e} ${Vibe.esc(placeName(arr))} · в ${hhmm(L.at || gNow())}</div>
+              <div class="big-num" style="font-size:36px;margin-top:8px">${k === "walk" ? `${Vibe.fmt(steps(L.km || 1))} шагов` : (k === "car" ? "⛽ " : "") + Vibe.rub(total)}</div>
+              <div class="muted" style="font-weight:800;font-size:13px;margin-top:4px">${k === "walk" ? `+${res.vib || walkVib(L.km || 1)} вайбиков · страховка не подорожала` : k === "metro" ? "Оплачено на турникете. Лицом" : k === "scooter" ? `${kmTxt(L.km || 1)} · ${SCOOT_START} ₫ старт + ${SCOOT_MIN} ₫/мин` : k === "car" ? `${Vibe.esc(car ? car.name : "Своя машина")} · ${kmTxt(L.km || 1)} · бензин по 8 ₫/км` : `${driver ? driver.n + " · " : ""}${kmTxt(L.km || 1)} · списано с Vibe Pay`}</div>
+              ${wxLine}
+              <div style="text-align:left">${placeEvCards(arr, L.events || [])}${missCard}${fineCard}${fellCard}${work}</div>
+              ${k === "taxi" && driver ? `
               <div style="font-weight:900;margin-top:16px">Как вам поездка?</div>
               <div class="fz-stars" data-stars>${[1, 2, 3, 4, 5].map((n) => `<button data-star="${n}" aria-label="${n} звёзд">⭐</button>`).join("")}</div>
               <div class="fz-row" style="justify-content:center;gap:8px" data-tips>
-                ${[50, 100, 200].map((a) => `<button class="chip" data-tip="${a}">💸 ${a} ₽</button>`).join("")}
+                ${[50, 100, 200].map((a) => `<button class="chip" data-tip="${a}">💸 ${a} ₫</button>`).join("")}
               </div>` : ""}
               <button class="btn black xl block" data-act="again" style="margin-top:16px">Ещё поездка ${k === "taxi" ? "🚕" : k === "car" ? "🚗" : "🗺️"}</button>
               <div class="fine">${k === "taxi" ? "Оценка влияет на рейтинг водителя, ваш рейтинг и рейтинг вашего рейтинга." : "Маршрут построен по улицам. Дворы пока платные."}</div>
             </div>`;
         }
         panel.classList.remove("fz-popin"); void panel.offsetWidth; panel.classList.add("fz-popin");
+        paintTop();
       }
 
       /* ----- Выбор точки назначения ----- */
       function setDest(k, srcEl, quiet) {
+        if (st.phase === "done") reset(true);
         if (st.phase !== "pick") { FX.toast("Сначала доедь. Потом мечтай", "🛣️"); return; }
         if (!pt(k)) return;
         if (k === st.from) { FX.toast("Ты уже здесь. Поздравляем с прибытием!", "📍"); if (srcEl) FX.bump(srcEl); return; }
@@ -640,7 +858,7 @@
       }
       function onPin(id) {
         if (!pinKeys().includes(id)) return;
-        if (st.phase !== "pick") { FX.toast("Сначала доедь. Потом мечтай", "🛣️"); return; }
+        if (st.phase !== "pick" && st.phase !== "done") { FX.toast("Сначала доедь. Потом мечтай", "🛣️"); return; }
         const chip = panel.querySelector(`[data-dest="${id}"]`);
         if (chip) chip.scrollIntoView({ behavior: "smooth", inline: "center", block: "nearest" });
         setDest(id, null, true);
@@ -650,7 +868,7 @@
       function startSurge() { const g = ++st.sgen; sc.to(() => surgeTick(g), rand(2200, 3200)); }
       function surgeTick(g) {
         if (g !== st.sgen || st.phase !== "pick" || !st.to) return;
-        const i = ri(2, 5);
+        const i = pick(TAXI_IDX);
         st.surge[i] = Math.min(2.6, st.surge[i] + rand(0.06, 0.2));
         const card = panel.querySelector(`.fz-tar[data-tar="${i}"]`);
         const pr = panel.querySelector(`[data-pr="${i}"]`);
@@ -671,22 +889,41 @@
       }
 
       /* ----- Сценарий поездки ----- */
+      function startTrip(kind, extra = {}) {
+        const M = MODES[st.mode], T = st.trip;
+        const t = TR.start(Object.assign({
+          from: st.from, to: st.to, mode: M.id, kind, emoji: M.veh, km: T.km, title: M.n,
+          minutes: kind === "taxi" ? T.taxi : modeMin(st.mode),
+        }, extra));
+        if (!t) { FX.toast("Ты уже в пути. Телепорт — в следующем обновлении", "🛣️"); return; }
+        showRide(t, true);
+      }
       function order(btn) {
         const M = MODES[st.mode];
         if (!st.to) return;
-        if (M.id === "walk") { st.run++; st.sgen++; return go("walk"); }
+        if (TR.current()) { FX.toast("Ты уже в пути", "🛣️"); return; }
+        if (M.id === "walk") { st.run++; st.sgen++; return startTrip("walk"); }
+        if (M.id === "scooter") {
+          const ok = scootOk();
+          if (!ok.ok) { FX.shake(btn); FX.toast(ok.why, "🥶", 3000); return; }
+          const p = price(st.mode);
+          if (p > S().balance) { FX.shake(btn); FX.toast("Не хватает на самокат. Ноги — бесплатно", "🫠"); return; }
+          st.run++; st.sgen++;
+          FX.toast(ok.risky ? "Мокро. Держись крепче — тормоза тоже мокрые" : "Самокат разблокирован. Ветер — бесплатно", "🛴", 2400);
+          return startTrip("scooter", { price: p, paid: false, payTitle: "Vibe Кикшеринг · самокат", col: "c-mint" });
+        }
         if (M.id === "car") {
-          st.run++; st.sgen++; st.price = price(st.mode);
+          st.run++; st.sgen++;
           FX.toast(`Заводим ${car ? car.name : "машину"}. Врум-врум`, "🔑");
-          return go("car");
+          return startTrip("car", { price: price(st.mode), paid: false });
         }
         if (M.id === "metro") {
           if (!Vibe.pay(METRO_PRICE, { title: "Vibe Метро · проход по лицу", emoji: "🚇", col: "c-sky", from: btn })) return;
-          st.run++; st.sgen++; st.price = METRO_PRICE;
-          return go("metro");
+          st.run++; st.sgen++;
+          return startTrip("metro", { price: METRO_PRICE, paid: true });
         }
         const p = price(st.mode);
-        if (p > S().balance) { FX.shake(btn); FX.toast("Не хватает на такси. Метро — 61 ₽, ноги — бесплатно", "🫠", 2800); return; }
+        if (p > S().balance) { FX.shake(btn); FX.toast("Не хватает на такси. Метро — 61 ₫, ноги — бесплатно", "🫠", 2800); return; }
         st.run++; st.sgen++; st.price = p;
         search();
       }
@@ -740,101 +977,63 @@
           const el = panel.querySelector("[data-wait]");
           if (!el) return;
           w = Math.max(0, w - 1); el.textContent = w;
-          if (w === 0) { el.parentElement.innerHTML = "Платное ожидание: 9 ₽/мин. Шутка. Пока что."; sc.stop(st.waitIv); }
+          if (w === 0) { el.parentElement.innerHTML = "Платное ожидание: 9 ₫/мин. Шутка. Пока что."; sc.stop(st.waitIv); }
         }, 1000);
       }
-      function go(kind) {
-        const M = MODES[st.mode], T = st.trip, run = st.run;
+      function goTaxi() {
+        const M = MODES[st.mode];
         if (st.waitIv) sc.stop(st.waitIv);
         stopDrive();
-        st.kind = kind; st.phase = "ride"; render();
-        FX.sound.whoosh();
-        ctrl.route(T.pts, { color: M.route || "#8b5cff" });
-        ctrl.center(pt(st.from), 340);
-        const total = modeMin(st.mode) - (M.sub || 0);
-        const dur = kind === "walk" ? clamp(T.km * 1400, 3500, 7500) : kind === "metro" ? clamp(T.km * 900, 3000, 6000) : kind === "car" ? clamp(T.km * 1500, 3500, 8000) : clamp(T.km * 2200, 5000, 11000);
-        const lines = kind === "walk" ? WALK_LINES : kind === "metro" ? METRO_LINES : kind === "car" ? CAR_LINES : RIDE_LINES;
-        let li = 0, lastEta = -1, lastP = -1;
-        const lineIv = sc.every(() => {
-          const el = panel.querySelector("[data-rline]");
-          if (el) { el.textContent = lines[++li % lines.length]; FX.bump(el.parentElement); }
-        }, 2100);
-        sc.to(() => {
-          if (run !== st.run) return;
-          st.drv = ctrl.drive(T.pts, {
-            emoji: M.veh, color: M.col, duration: dur, follow: true,
-            onProgress(k) {
-              const p = Math.round(k * 100);
-              if (p !== lastP) { lastP = p; const bar = panel.querySelector("[data-rprog]"); if (bar) bar.style.setProperty("--p", p + "%"); }
-              const eta = Math.max(0, Math.ceil((1 - k) * total));
-              if (eta !== lastEta) { lastEta = eta; const el = panel.querySelector("[data-eta]"); if (el) el.textContent = eta + " мин"; }
-            },
-            onDone() { sc.stop(lineIv); sc.to(() => { if (run === st.run) arrive(kind); }, 0); },
-          });
-        }, 650);
+        startTrip("taxi", { price: st.price, paid: false, payTitle: `Vibe Maps · Такси «${M.n}»`, col: "c-yellow", driver: { n: st.driver.n, ava: st.driver.ava } });
       }
-      function arrive(kind) {
-        const M = MODES[st.mode], T = st.trip, arr = st.to;
-        stopDrive();
-        st.arr = arr; st.from = arr; st.to = null; st.phase = "done"; st.rated = 0; st.tipped = false;
-        st.fined = kind === "car" && arr !== "home" && Math.random() < 0.15;
-        Vibe.state.set({ fz_lastPos: arr });
-        // Календарь: пришёл в место → посетить события (или узнать, что рано/поздно)
-        st.evNote = null;
-        if (Vibe.sched) {
-          const got = Vibe.sched.arrive(arr) || [];
-          if (got.length) st.evNote = { kind: "ok", list: got };
-          else {
-            const nm = Vibe.game.minutes();
-            const here = Vibe.sched.list().filter((e) => e.place === arr);
-            const early = here.filter((e) => e.status === "planned" && smin(e) - 60 > nm).sort((a, b) => smin(a) - smin(b))[0];
-            const late = here.filter((e) => (e.status === "missed" || e.status === "planned") && smin(e) + (e.dur || 0) < nm && nm - smin(e) - (e.dur || 0) < 720).sort((a, b) => smin(b) - smin(a))[0];
-            if (early && smin(early) - nm < 1440) st.evNote = { kind: "early", e: early, wait: Math.max(1, Math.round(smin(early) - 60 - nm)) };
-            else if (late) st.evNote = { kind: "late", e: late };
-          }
+      // Показать текущую поездку (в т.ч. после возвращения на экран)
+      function showRide(t, fresh) {
+        st.phase = "ride"; st.from = t.from; st.to = t.to;
+        st.mode = Math.max(0, MODES.findIndex((m) => m.id === t.mode));
+        radar(false); stopDrive();
+        const pts = MP.path(pt(t.from), pt(t.to));
+        const M = MODES.find((m) => m.id === t.mode) || MODES[0];
+        ctrl.setPins(pins());
+        ctrl.route(pts, { color: M.route || "#8b5cff" });
+        ctrl.fit(pts, 90);
+        vehStart(t);
+        render();
+        if (fresh) {
+          FX.sound.whoosh();
+          FX.toast(`В пути: ${fmtD(t.endMin - t.startMin)}. Прибытие в ${hhmm(t.endMin)}`, t.emoji, 2600);
         }
+      }
+      // Движок поездок сообщил о прибытии (карта открыта или вернулись на неё)
+      function showDone(last, fresh) {
+        vehStop(); stopDrive(); radar(false);
+        Vibe.state.set({ tripLast: Object.assign({}, last, { seen: true }) });
+        st.last = last; st.from = last.to; st.to = null; st.trip = null; st.phase = "done"; st.rated = 0; st.tipped = false;
+        st.driver = last.driver ? Object.assign({ r: "4,9" }, last.driver) : null;
         ctrl.clearRoute();
         ctrl.setPins(pins());
-        ctrl.center(pt(arr), 420);
+        ctrl.center(pt(last.to), 420);
         render();
+        if (!fresh) return;
+        const evs = last.events || [];
         const big = panel.querySelector(".big-num");
-        if (kind === "taxi") {
-          const ok = Vibe.pay(st.price, { title: `Vibe Maps · Такси «${M.n}»`, emoji: M.veh, col: "c-yellow", from: big });
-          if (!ok) sc.to(() => FX.toast(`${st.driver.n} записал тебя в должники. Рейтинг −0,3`, "📉", 2800), 1200);
-        } else if (kind === "walk") {
-          Vibe.reward({ vibiki: walkVib(T), xp: 20, from: big });
-        } else if (kind === "car") {
-          Vibe.game.tx(`Бензин · ${kmTxt(T.km)}`, -st.price, "⛽", "c-orange");
-          if (st.fined) sc.to(() => {
-            Vibe.game.tx("Штраф за парковку", -PARK_FINE, "🚔");
-            Vibe.refreshCounters();
-            FX.toast(`Штраф за парковку −${Vibe.rub(PARK_FINE)}. Камера была быстрее`, "🚔", 3200);
-            FX.shake(panel.querySelector(".c-coral") || panel);
-            FX.sound.error();
-          }, 1800);
-          Vibe.refreshCounters();
-        }
-        if (Vibe.body) Vibe.body.effect(kind === "walk" ? "walk" : kind === "metro" ? "metro" : "taxi", { km: T.km, quiet: kind === "taxi" || kind === "car" });
-        if (!st.evNote || st.evNote.kind !== "ok") FX.confetti();
-        FX.sound.success();
-        FX.burst(big, { emojis: [pinfo(arr).e, "🎉", "✨", M.veh], count: 16 });
-        const i = gameInfo();
-        if (st.evNote && st.evNote.kind === "early") sc.to(() => FX.toast("Пришёл слишком рано. Пунктуальность — тоже кринж", "⏰", 2800), 1300);
-        else if (st.evNote && st.evNote.kind === "late") sc.to(() => FX.toast(`Опоздал на «${st.evNote.e.title}». Бывает`, "😬", 2800), 1300);
-        else if (st.evNote) { /* sched.attend уже поздравил */ }
-        else if (arr === "work" && i && i.workHours) sc.to(() => FX.toast(`Офис-бонус ×1,15. Задачи ждут в Vibe Job`, "💼", 3200), 1300);
+        if (!evs.some((x) => x.arrival === "late")) { if (!evs.some((x) => x.arrival === "ontime")) FX.confetti(); FX.sound.success(); }
+        else FX.sound.error();
+        FX.burst(big, { emojis: [pinfo(last.to).e, "🎉", "✨", last.emoji], count: 16 });
+        const i = gameInfo(), arr = last.to;
+        if (evs.length) return; // sched уже всё сказал
+        if (arr === "work" && i && i.workHours) sc.to(() => FX.toast(`Офис-бонус ×1,15. Задачи ждут в Vibe Job`, "💼", 3200), 1300);
         else if (arr === "home") sc.to(() => FX.toast(i && i.night ? "Дома. Пора спать — кнопка внизу" : "Дома. Диван засчитан", "🛋️"), 1300);
         else if (arr === "clinic") sc.to(() => FX.toast("Регистратура: «Вас нет в списке. Но вы держитесь»", "🏥", 2800), 1300);
         else if (arr === "club") sc.to(() => FX.toast("Фейсконтроль одобрил. Кредитный рейтинг — нет", "🎤", 2800), 1300);
       }
-      function reset() {
+      function reset(quiet) {
         st.run++; st.sgen++;
         if (st.waitIv) sc.stop(st.waitIv);
-        stopDrive(); radar(false);
-        st.phase = "pick"; st.to = null; st.trip = null; st.surge = baseSurge();
+        stopDrive(); radar(false); vehStop();
+        st.phase = "pick"; st.from = loadFrom(); st.to = null; st.trip = null; st.surge = baseSurge();
         ctrl.clearRoute();
         ctrl.setPins(pins());
-        ctrl.fit([pt(st.from), pt("home"), pt("work")].filter(Boolean), 90);
+        if (!quiet) ctrl.fit([pt(st.from), pt("home"), pt("work")].filter(Boolean), 90);
         render();
       }
       function cancel() {
@@ -852,6 +1051,43 @@
         startSurge();
       }
 
+      /* ----- Живые часы: каждую секунду ----- */
+      sc.every(() => {
+        st.tick++;
+        paintTop();
+        if (st.phase === "ride") {
+          const done = TR.check(); // если приехали — придёт событие "arrive"
+          if (done || !TR.current()) return;
+          const t = TR.current(), i = gameInfo();
+          const now = panel.querySelector("[data-now]"); if (now && i) now.textContent = i.time;
+          const eta = panel.querySelector("[data-eta]"); if (eta) eta.textContent = `ещё ${fmtD(TR.eta(t))}`;
+          const bar = panel.querySelector("[data-rprog]"); if (bar) bar.style.setProperty("--p", Math.round(TR.progress(t) * 100) + "%");
+          if (st.tick % 3 === 0) {
+            const k = t.kind, lines = k === "walk" ? WALK_LINES : k === "metro" ? METRO_LINES : k === "scooter" ? SCOOT_LINES : k === "car" ? CAR_LINES : RIDE_LINES;
+            const el = panel.querySelector("[data-rline]");
+            if (el) { el.textContent = lines[(st.tick / 3) % lines.length | 0]; FX.bump(el.parentElement); }
+          }
+          if (st.tick % 10 === 0) {
+            const bt = panel.querySelector('[data-act="boost"]'), b = boostOffer(t);
+            if (bt && b) bt.textContent = `🚕 Ускориться: такси · ${Vibe.rub(b.price)} · будешь в ${hhmm(b.endAt)}`;
+            else if (bt && !b) bt.remove();
+          }
+        }
+        if (st.phase === "pick" && st.tick % 5 === 0) {
+          evList().forEach((e) => { const el = panel.querySelector(`[data-reach="${e.id}"]`); if (el) { const r = evReach(e); el.textContent = r.t; el.parentElement.classList.remove("ok", "warn", "late"); el.parentElement.classList.add(r.c); } });
+          const ar = panel.querySelector("[data-arrive]"); if (ar && st.trip) ar.textContent = arriveTxt();
+          const f = panel.querySelector("[data-fit]"), fe = st.to && fitFor(evAt(st.to), arriveAt());
+          if (f && fe) { f.textContent = fe.t; f.className = `fz-fit ${fe.c}`; }
+        }
+        const nm = gNow();
+        panel.querySelectorAll("[data-cd]").forEach((el) => { const left = +el.dataset.cd - nm; el.textContent = left > 0 ? `через ${fmtD(left)}` : "начинается!"; });
+      }, 1000);
+      const offs = [
+        Vibe.on("arrive", (d) => { if (!sc.dead && d && d.trip) showDone(d.trip, true); }),
+        Vibe.on("attend", () => { if (!sc.dead && (st.phase === "pick" || st.phase === "done")) { ctrl.setPins(pins()); render(); } }),
+        Vibe.on("checkin", () => { if (!sc.dead && (st.phase === "pick" || st.phase === "done")) render(); }),
+      ];
+
       /* ----- Клики ----- */
       sc.on(root, "click", (e) => {
         const dest = e.target.closest("[data-dest]");
@@ -860,17 +1096,21 @@
         if (tar && st.phase === "pick") {
           const i = +tar.dataset.tar;
           if (i === st.mode) { FX.bump(tar); return; }
+          const id = MODES[i].id;
+          if (id === "scooter" && !scootOk().ok) { FX.shake(tar); FX.toast(scootOk().why, "🥶", 3000); return; }
           panel.querySelectorAll(".fz-tar").forEach((el) => { el.classList.toggle("on", el === tar); el.querySelector(".e").classList.toggle("wobble", el === tar); });
           st.mode = i;
           const btn = panel.querySelector('[data-act="order"]');
           if (btn) { btn.innerHTML = orderLabel(); FX.bump(btn); }
           const ar = panel.querySelector("[data-arrive]");
           if (ar) ar.textContent = arriveTxt();
+          const f = panel.querySelector("[data-fit]"), fe = fitFor(evAt(st.to), arriveAt());
+          if (f && fe) { f.textContent = fe.t; f.className = `fz-fit ${fe.c}`; FX.bump(f); }
           FX.sound.pop();
           FX.burst(tar, { emojis: [MODES[i].e, "✨"], count: 6, spread: 60 });
-          const id = MODES[i].id;
-          if (id === "walk") FX.toast("Смелый выбор. Колени скажут спасибо", "🦵");
-          if (id === "metro") FX.toast("61 ₽ и никакого сёрджа. Подозрительно честно", "🚇");
+          if (id === "walk") FX.toast(wxNow().kind === "sun" ? "Солнце! Прогулка поднимет настроение" : Vibe.weather && Vibe.weather.wet() ? `${wxNow().label[0].toUpperCase() + wxNow().label.slice(1)}. Смелый выбор. Настроение −3` : "Смелый выбор. Колени скажут спасибо", "🦵");
+          if (id === "metro") FX.toast("61 ₫ и никакого сёрджа. Подозрительно честно", "🚇");
+          if (id === "scooter") FX.toast(scootOk().risky ? "Мокро. Шанс упасть есть, шанс успеть — тоже" : "Самокат: быстрее ног, дешевле такси", "🛴");
           if (id === "vibe") FX.toast("Вайб-тариф: диско-шар включён", "🪩");
           if (id === "biz") FX.toast("Бизнес: водитель молчит профессионально", "🤵");
           if (id === "car") FX.toast("Своя машина: без сёрджа, но с камерами", "🚗");
@@ -878,7 +1118,7 @@
         }
         const star = e.target.closest("[data-star]");
         if (star) {
-          if (st.rated) { FX.bump(star); return; }
+          if (st.rated || !st.driver) { FX.bump(star); return; }
           const n = +star.dataset.star; st.rated = n;
           FX.sound.like();
           panel.querySelectorAll("[data-star]").forEach((s, i) => {
@@ -894,7 +1134,7 @@
         if (tip) {
           if (st.tipped) { FX.toast("Водитель тронут. Дважды не надо", "🙏"); return; }
           const a = +tip.dataset.tip;
-          if (Vibe.pay(a, { title: `Чаевые · ${st.driver.n}`, emoji: "💸", col: "c-lime", from: tip, cashback: 0.1 })) {
+          if (Vibe.pay(a, { title: `Чаевые · ${st.driver ? st.driver.n : "водитель"}`, emoji: "💸", col: "c-lime", from: tip, cashback: 0.1 })) {
             st.tipped = true; tip.classList.add("on");
             FX.burst(tip, { emojis: ["💸", "💚", "🙏"], count: 12 });
           }
@@ -903,23 +1143,13 @@
         const act = e.target.closest("[data-act]");
         if (!act) return;
         const a = act.dataset.act;
-        if (a === "fromhome") {
-          st.from = "home";
-          Vibe.state.set({ fz_lastPos: "home" });
-          FX.bump(act);
-          if (st.to === "home") { reset(); return; }
-          ctrl.setPins(pins());
-          if (st.to) { st.trip = trip(); ctrl.route(st.trip.pts, { color: "#8b5cff" }); ctrl.fit(st.trip.pts, 90); }
-          else ctrl.center(pt("home"), 380);
-          render();
-          FX.toast("Стартуем из дома. Тапки не забудь", "🏠");
-        } else if (a === "order") {
+        if (a === "order") {
           FX.bump(act);
           order(act);
         } else if (a === "cancel") {
           cancel();
         } else if (a === "go") {
-          go("taxi");
+          goTaxi();
         } else if (a === "call") {
           FX.toast(`${st.driver.n} за рулём и не берёт трубку. Это правильно`, "📞"); FX.bump(act);
         } else if (a === "msg") {
@@ -927,21 +1157,42 @@
         } else if (a === "again") {
           reset();
           FX.sound.pop();
+        } else if (a === "boost") {
+          const t = TR.current(), b = boostOffer(t);
+          if (!b) { FX.toast("Уже почти пришёл. Такси дольше ехать к тебе", "🤷"); act.remove(); return; }
+          const d = pick(DRIVERS);
+          const nt = TR.boost({ mode: "eco", kind: "taxi", minutes: b.minutes, price: b.price, emoji: "🚕", payTitle: "Vibe Maps · Такси «Эконом» (пересадка)", col: "c-yellow", from: act, driver: { n: d.n, ava: d.ava } });
+          if (!nt) return;
+          FX.burst(act, { emojis: ["🚕", "💸", "⚡"], count: 14 });
+          FX.toast(`${d.n} подобрал тебя на ходу. Ноги сказали спасибо, кошелёк — нет`, "🚕", 2800);
+          showRide(nt, false);
         } else if (a === "checkin") {
-          const got = Vibe.sched ? Vibe.sched.arrive(st.from) : [];
-          if (!got.length) { FX.toast("Пока рано. Вход за час до начала", "⏰"); FX.shake(act); return; }
-          FX.burst(act, { emojis: [got[0].e, "✅", "🎉"], count: 14 });
+          if (!Vibe.sched || !Vibe.sched.checkIn) return;
+          const r = Vibe.sched.checkIn(act.dataset.id);
+          if (!r.ok) { FX.toast(r.why || "Пока рано", "⏰", 2800); FX.shake(act); return; }
+          FX.burst(act, { emojis: [(r.e && r.e.e) || "✅", "✅", "🎉"], count: 14 });
+          FX.sound.success();
           ctrl.setPins(pins());
           render();
         }
       });
 
+      // Старт экрана: в пути → показываем поездку; только что приехал → итог; иначе выбор
+      const cur = TR.current();
+      const lastT = TR.last();
       ctrl.setPins(pins());
-      render();
-      if (params.to && pt(params.to) && params.to !== st.from) sc.to(() => setDest(params.to, null, true), 350);
-      else if (st.from !== "home") sc.to(() => FX.toast(`Ты сейчас: ${pinfo(st.from).s}. Карта помнит всё`, "📍"), 500);
-      else if (evList().length) sc.to(() => { const e = evList()[0]; FX.toast(`${e.e} ${e.title} · ${evWhen(e)} — маршрут в один тап`, "📅", 2600); }, 600);
-      return () => { sc.clear(); ctrl.destroy(); };
+      if (cur) {
+        showRide(cur, false);
+        if (params.to && params.to !== cur.to) sc.to(() => FX.toast(`Ты в пути к «${pinfo(cur.to).s}». Сначала доедь`, "🛣️", 2600), 500);
+      } else if (lastT && !lastT.seen && lastT.to === st.from && gNow() - (lastT.at || 0) < 240) {
+        showDone(lastT, false);
+      } else {
+        render();
+        if (params.to && pt(params.to) && params.to !== st.from) sc.to(() => setDest(params.to, null, true), 350);
+        else if (st.from !== "home") sc.to(() => FX.toast(`Ты сейчас: ${pinfo(st.from).s}. Карта помнит всё`, "📍"), 500);
+        else if (evList().length) sc.to(() => { const e = evList()[0]; FX.toast(`${e.e} ${e.title} · ${evWhen(e)} — ${evReach(e).t}`, "📅", 2800); }, 600);
+      }
+      return () => { offs.forEach((f) => f && f()); vehStop(); sc.clear(); ctrl.destroy(); };
     },
   });
 
@@ -950,7 +1201,7 @@
      ============================================================ */
   const mtof = (m) => 440 * Math.pow(2, (m - 69) / 12);
   const TRACKS = [
-    { id: "trevoga", t: "Лоу-фай для тревоги", a: "Заботик & Тревожный Чилл", e: "🫠", art: "linear-gradient(135deg,#8b5cff,#ff6bcb)", len: 167, bpm: 85,
+    { id: "trevoga", t: "Лоу-фай для тревоги", a: "Вайбот & Тревожный Чилл", e: "🫠", art: "linear-gradient(135deg,#8b5cff,#ff6bcb)", len: 167, bpm: 85,
       chords: [[53, 57, 60, 64], [52, 55, 59, 62], [50, 53, 57, 60], [48, 52, 55, 59]], bass: [41, 40, 38, 36] },
     { id: "bank", t: "Биты, чтобы не открывать банковское приложение", a: "DJ Минус Баланс", e: "💸", art: "linear-gradient(135deg,#c6ff4d,#7cf5c8)", len: 154, bpm: 82,
       chords: [[57, 60, 64, 67], [53, 57, 60, 64], [55, 59, 62, 65], [52, 56, 59, 62]], bass: [45, 41, 43, 40] },
@@ -1069,7 +1320,7 @@
     };
   }
   const mmss = (s) => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, "0")}`;
-  // Бесплатный тариф: реклама каждые 3 трека. Premium 199 ₽/мес или «Плюс Вайб» — без рекламы
+  // Бесплатный тариф: реклама каждые 3 трека. Premium 199 ₫/мес или «Плюс Вайб» — без рекламы
   const MUS_PREM = { id: "music", name: "Vibe Music Premium", e: "🎧", price: 199 };
   const AD_EVERY = 3, AD_SEC = 5;
   const ADS = [
@@ -1336,7 +1587,7 @@
     { e: "😢", t: "Кэшбек 0,5% на грусть", d: "Начисляется за каждую минуту грусти после 23:00", c: "c-lilac" },
     { e: "🪙", t: "+10 вайбиков", d: "Маленькая радость — тоже радость", c: "c-lime", vib: 10 },
     { e: "🤑", t: "Предодобренный кредит. Опять", d: "Мы просто не могли не", c: "c-coral" },
-    { e: "🤖", t: "Обнимашка от Заботика", d: "Обнимашка спишется автоматически в понедельник", c: "c-pink", zab: true },
+    { e: "🤖", t: "Обнимашка от Вайбота", d: "Обнимашка спишется автоматически в понедельник", c: "c-pink", zab: true },
     { e: "🎟️", t: "Билет на концерт «Ипотека в 25»", d: "Стоячий партер, стоя до 2049 года", c: "c-orange" },
     { e: "🪙", t: "+50 вайбиков", d: "Джекпот! Не рассказывай бухгалтерии", c: "c-holo", vib: 50 },
   ];
@@ -1645,25 +1896,46 @@
   });
 
   /* ============================================================
-     4. VIBE INVEST — брокер, где всё растёт (на графике)
+     4. VIBE INVEST — мини-экономика: акции, облигации, вклад, крипта, фонд, золото
      ============================================================ */
-  // Цены идут по игровым дням детерминированно от сида игрока (invSeed) — меняются, даже когда тебя нет.
-  // div — дивиденды в месяц (доля от стоимости), платятся 1-го числа игрового месяца.
+  // Всё детерминированно от сида игрока (invSeed) и игрового дня: цены, новости, крахи, пампы —
+  // одни и те же, смотришь ты или нет. Ожидаемая доходность скромная, рискованное может уйти в минус.
+  // div — дивиденды в месяц (1-го числа), cpn — купон в месяц (15-го числа).
   const ASSETS = [
-    { tk: "VIBE", n: "Вайб Групп", e: "📱", c: "c-violet", p: 4120, vol: 0.018, drift: 0.0012, div: 0.004 },
-    { tk: "ZABOT", n: "Заботик Роботикс", e: "🤖", c: "c-mint", p: 892, vol: 0.028, drift: 0.0016 },
-    { tk: "KRDT", n: "Кредит Навсегда", e: "🤑", c: "c-lime", p: 1337, vol: 0.01, drift: 0.0006, div: 0.009 },
-    { tk: "VBC", n: "Вайбкоин", e: "🪙", c: "c-yellow", p: 69420, vol: 0.06, drift: 0.0008 },
-    { tk: "AIR", n: "Воздух Холдинг", e: "💨", c: "c-sky", p: 12, vol: 0.035, drift: 0.0003, div: 0.006 },
-    { tk: "MEME", n: "Мем-фонд «Кот»", e: "🐸", c: "c-pink", p: 228, vol: 0.07, drift: 0.0005 },
+    { tk: "VIBE", n: "Корпорация Vibe", e: "📱", c: "c-violet", cls: "stock", p: 4120, vol: 0.016, drift: 0.0003, div: 0.0025 },
+    { tk: "ZABOT", n: "Вайбот Роботикс", e: "🤖", c: "c-mint", cls: "stock", p: 892, vol: 0.022, drift: 0.0005 },
+    { tk: "KRDT", n: "Кредит Навсегда", e: "🤑", c: "c-lime", cls: "stock", p: 1337, vol: 0.011, drift: 0.0002, div: 0.005 },
+    { tk: "AIR", n: "Воздух Холдинг", e: "💨", c: "c-sky", cls: "stock", p: 12, vol: 0.02, drift: 0.0002, div: 0.003 },
+    { tk: "AGRO", n: "Агро Вайб", e: "🌾", c: "c-yellow", cls: "stock", p: 540, vol: 0.014, drift: 0.0003, div: 0.002 },
+    { tk: "DLVR", n: "Вайб Доставка", e: "🛵", c: "c-orange", cls: "stock", p: 310, vol: 0.02, drift: 0.0003 },
+    { tk: "IDX", n: "Фонд «Весь Вайб-Сити»", e: "🏙️", c: "c-pink", cls: "index", p: 1000 },
+    { tk: "GOLD", n: "Золото", e: "🥇", c: "c-yellow", cls: "gold", p: 6200, vol: 0.007, drift: 0.00015 },
+    { tk: "OFZ", n: "Облигации Вайб-Сити", e: "🏛️", c: "c-white", cls: "bond", p: 1000, vol: 0.0015, drift: 0, cpn: 0.006 },
+    { tk: "VBC", n: "Вайбкоин", e: "🪙", c: "c-yellow", cls: "crypto", p: 69420, vol: 0.045, drift: 0.0002 },
+    { tk: "MEME", n: "Мем-коин «Котик»", e: "🐸", c: "c-pink", cls: "crypto", p: 228, vol: 0.06, drift: -0.0006 },
   ];
+  const STOCKS = ASSETS.map((a, i) => (a.cls === "stock" ? i : -1)).filter((i) => i >= 0);
+  const IDX = ASSETS.findIndex((a) => a.tk === "IDX");
+  const CLS = {
+    stock: { n: "Акции", e: "📈", col: "#8b5cff", risk: 55 },
+    index: { n: "Фонд", e: "🏙️", col: "#ff6bcb", risk: 35 },
+    gold: { n: "Золото", e: "🥇", col: "#ffe14d", risk: 22 },
+    bond: { n: "Облигации", e: "🏛️", col: "#7cf5c8", risk: 6 },
+    deposit: { n: "Вклад", e: "🏦", col: "#8fd8ff", risk: 0 },
+    crypto: { n: "Крипта", e: "🪙", col: "#ff6b2c", risk: 100 },
+  };
   const PERIODS = [
     { k: "1Д", label: "за сегодня" },
     { k: "1Н", label: "за неделю" },
     { k: "1М", label: "за месяц" },
     { k: "Всё", label: "за всё время" },
   ];
-  const SELL_FEE = 0.003;
+  const DEP_RATE = 0.09, DEP_TERMS = [30, 90, 180], DEP_MAX = 5;
+  const COACH = [
+    { n: "Марафон «Пассивный доход за 21 день»", p: 4990 },
+    { n: "Интенсив «Мышление миллионера» (VIP)", p: 14990 },
+    { n: "Наставничество «Как продавать курсы про курсы»", p: 49990 },
+  ];
   const nowM = () => (Vibe.game && Vibe.game.minutes ? Vibe.game.minutes() : 0);
   const gDay = () => Math.floor(nowM() / 1440);
   function h32(a, b, c) {
@@ -1678,128 +1950,407 @@
     if (!sd) { sd = (Date.now() % 1e9) | 1; Vibe.state.set({ invSeed: sd }); }
     return sd;
   }
+  const pctF = (x) => (x >= 0 ? "+" : "−") + String(Math.round(Math.abs(x) * 1000) / 10).replace(".", ",") + "%";
+  const finLvl = () => { try { return (Vibe.skills && Vibe.skills.level && Vibe.skills.level("finance")) || 0; } catch (e) { return 0; } };
+  const invMult = () => { try { return (Vibe.skills && Vibe.skills.mult && Vibe.skills.mult("invest")) || 1; } catch (e) { return 1; } };
+  const TIERS = [
+    { l: 0, n: "Хомяк-новичок", e: "🐹", perk: "Акции, облигации, вклад, фонд и золото" },
+    { l: 2, n: "Диванный аналитик", e: "🛋️", perk: "Комиссия за продажу 0,2% вместо 0,3%" },
+    { l: 3, n: "Трейдер с латте", e: "☕", perk: "«Инсайд от соседа» — слух о завтрашней новости" },
+    { l: 5, n: "Волк с Вайб-стрит", e: "🐺", perk: "Вклад «Стабильный вайб» +1% годовых" },
+    { l: 8, n: "Гоблин-казначей", e: "👺", perk: "Комиссия 0,1% и уважение бабушек у подъезда" },
+  ];
+  const tierOf = (L) => TIERS.filter((t) => L >= t.l).pop();
+  const sellFee = () => (finLvl() >= 8 ? 0.001 : finLvl() >= 2 ? 0.002 : 0.003);
+  const depRate = () => DEP_RATE + (finLvl() >= 5 ? 0.01 : 0);
+
+  /* ---------- Новости и рыночные события (детерминированно по дню) ---------- */
+  const NEWS = [
+    { e: "💜", fx: { VIBE: [3, 7] }, t: "Корпорация Vibe объявила о рекордной заботе о сотрудниках: акции {VIBE}" },
+    { e: "✊", fx: { VIBE: [-5, -3], DLVR: [-7, -3] }, t: "Курьеры объединились — VIBE {VIBE}, DLVR {DLVR}" },
+    { e: "📊", fx: { VIBE: [-4, -2] }, t: "Корпорация Vibe сообщила о рекордно позитивном снижении прибыли: VIBE {VIBE}" },
+    { e: "🔁", fx: { VIBE: [2, 5] }, t: "Vibe запустила подписку на подписки. Рекордный позитив: VIBE {VIBE}" },
+    { e: "👨‍👩‍👧", fx: { VIBE: [-3, 3] }, t: "Корпорация Vibe назвала квартал «рекордно семейным». Рынок думает: VIBE {VIBE}" },
+    { e: "🤗", fx: { VIBE: [-2, 4] }, t: "Совет директоров Vibe обнялся на камеру. Рекордный позитив: VIBE {VIBE}" },
+    { e: "🤖", fx: { ZABOT: [3, 8] }, t: "Вайбот научился говорить «я передам вашу жалобу» на 40 языках: ZABOT {ZABOT}" },
+    { e: "🙈", fx: { ZABOT: [-7, -3], KRDT: [2, 5] }, t: "Вайбот случайно одобрил кредит всему городу: ZABOT {ZABOT}, KRDT {KRDT}" },
+    { e: "🤑", fx: { KRDT: [2, 5] }, t: "«Кредит Навсегда» поднял ставки «для вашего же блага»: KRDT {KRDT}" },
+    { e: "🔍", fx: { KRDT: [-5, -2] }, t: "Регулятор попросил «Кредит Навсегда» писать проценты крупнее 4-го кегля: KRDT {KRDT}" },
+    { e: "🫙", fx: { AIR: [4, 9] }, t: "Воздух Холдинг продал туристам воздух Вайб-Сити в банках: AIR {AIR}" },
+    { e: "🧪", fx: { AIR: [-8, -4] }, t: "Учёные напомнили, что воздух вообще-то бесплатный. AIR {AIR}" },
+    { e: "🛵", fx: { DLVR: [3, 7] }, t: "Вайб Доставка привезла заказ вовремя. Впервые. DLVR {DLVR}" },
+    { e: "🪑", fx: { DLVR: [-6, -3] }, t: "Курьеры Вайб Доставки потребовали стулья: DLVR {DLVR}" },
+    { e: "👵", fx: { GOLD: [1, 3] }, t: "Бабушки Вайб-Сити скупают золото «на всякий случай»: GOLD {GOLD}" },
+    { e: "🌯", fx: { GOLD: [-3, -1] }, t: "В парке нашли клад. Оказалось — фольга от шаурмы. GOLD всё равно {GOLD}" },
+    { e: "🌯", fx: { VBC: [6, 15] }, t: "Вайбкоин принимают к оплате в ларьке с шаурмой: VBC {VBC}" },
+    { e: "🔑", fx: { VBC: [-15, -7] }, t: "Создатель Вайбкоина забыл пароль от кошелька: VBC {VBC}" },
+    { e: "🐦", fx: { VBC: [-10, 10] }, t: "Анонимный миллиардер написал «🪙?». Рынок гадает: VBC {VBC}" },
+    { e: "🏛️", fx: { OFZ: [0.2, 0.8] }, t: "Мэрия Вайб-Сити пообещала вернуть долги. Честно-честно: OFZ {OFZ}" },
+    { e: "🛝", fx: { OFZ: [-0.8, -0.2] }, t: "Мэрия построила пятую горку в парке за счёт облигаций: OFZ {OFZ}" },
+    { e: "🥕", fx: { AGRO: [2, 5] }, t: "Агро Вайб вывела морковь, которая любит понедельники: AGRO {AGRO}" },
+  ];
+  const PUMP = [
+    { x: 0.35, e: "🐱", t: "Котик-блогер с 3 млн подписчиков посоветовал MEME: {MEME} 🚀" },
+    { x: 0.45, e: "👵", t: "MEME обсуждают даже бабушки у подъезда: {MEME}" },
+    { x: 0.2, e: "🛢️", t: "Аналитики: «MEME — это новая нефть». MEME {MEME}" },
+    { x: -0.5, e: "🤫", t: "Котик-блогер тихо продал свои MEME. {MEME}" },
+    { x: -0.35, e: "🫠", t: "Создатели MEME: «это была шутка». MEME {MEME}" },
+  ];
+  const AN_UP = [
+    "Это только начало! Следующая остановка — Луна 🚀",
+    "Я же говорил. Я всегда говорю. Иногда угадываю.",
+    "Покупай, пока не поздно. (Уже немного поздно.)",
+    "Вероятность дальнейшего роста — 146%. Я посчитал сердцем.",
+    "Рекордный позитив подтверждён моими внутренними датчиками.",
+  ];
+  const AN_DOWN = [
+    "Это не падение — это скидка для своих 💜",
+    "Самое время докупить. И ещё раз докупить.",
+    "Рынок просто устал от позитива. Отдохнёт и полетит.",
+    "Цена ниже — вайб выше. Математика заботы.",
+    "Падение — это рост, который пока стесняется.",
+  ];
+  const isPump = (sd, d) => d >= 1 && h32(sd, 7100, d) < 0.025;
+  let newsCache = { seed: null, m: new Map() };
+  // Новости игрового дня d: [{ d, h, e, t, fx: {TK: доля}, kind, an }]
+  function dayNews(d) {
+    const sd = invSeed();
+    if (newsCache.seed !== sd) newsCache = { seed: sd, m: new Map() };
+    if (newsCache.m.has(d)) return newsCache.m.get(d);
+    const out = [];
+    if (d >= 1) {
+      const rr = (k) => h32(sd, 7000 + k, d);
+      const span = (lo, hi, k) => (lo + (hi - lo) * rr(k)) / 100;
+      const fill = (t, fx) => t.replace(/\{(\w+)\}/g, (_, tk) => (fx[tk] != null ? pctF(fx[tk]) : ""));
+      // Крах или ралли
+      const u = rr(1);
+      if (u < 0.018 || u > 0.976) {
+        const crash = u < 0.018, fx = {};
+        ASSETS.forEach((a, i) => {
+          if (i === IDX) return;
+          if (a.cls === "stock") fx[a.tk] = crash ? -span(8, 14, 20 + i) : span(4, 8, 20 + i);
+          else if (a.cls === "crypto") fx[a.tk] = crash ? -span(18, 30, 20 + i) : span(8, 18, 20 + i);
+          else if (a.cls === "gold") fx[a.tk] = crash ? span(3, 5, 20 + i) : -span(0.5, 1.5, 20 + i);
+          else if (a.cls === "bond") fx[a.tk] = crash ? 0.005 : -0.002;
+        });
+        out.push({ kind: crash ? "crash" : "rally", h: 11, e: crash ? "📉" : "🚀", fx,
+          t: crash ? "Чёрный вторник в Вайб-Сити: рынок «бережно корректируется»" : "Ралли! Мэр сказал «всё будет хорошо», и все поверили" });
+      }
+      // Памп и дамп мем-коина
+      for (let k = 0; k < PUMP.length; k++) if (isPump(sd, d - k)) {
+        const ph = PUMP[k], fx = { MEME: ph.x };
+        out.push({ kind: k < 3 ? "pump" : "dump", h: 9 + k * 2, e: ph.e, fx, t: fill(ph.t, fx) });
+        break;
+      }
+      // Погода → агро
+      if (Vibe.weather && Vibe.weather.day) {
+        try {
+          const w = Vibe.weather.day(d), summer = w.month >= 6 && w.month <= 9;
+          let fx = null, t = "", e = w.e;
+          if (w.kind === "storm") { fx = { AGRO: -span(3, 6, 40) }; t = "Непогода побила урожай: AGRO {AGRO}"; }
+          else if (summer && w.kind === "rain" && rr(41) < 0.5) { fx = { AGRO: span(1, 3, 40) }; t = "Дождь бесплатно полил поля. AGRO {AGRO}"; }
+          else if (summer && w.kind === "sun" && w.t >= 23 && rr(41) < 0.6) { fx = { AGRO: -span(1, 3, 40) }; t = "Жара: огурцы в шоке, AGRO {AGRO}"; }
+          else if (!summer && w.kind === "snow" && rr(41) < 0.25) { fx = { AGRO: span(1, 2, 40) }; t = "Снег укрыл озимые. Агрономы плачут от счастья: AGRO {AGRO}"; }
+          if (fx) out.push({ kind: "weather", h: 7, e, fx, t: fill(t, fx) });
+        } catch (e) {}
+      }
+      // Обычные заголовки
+      const cnt = 1 + (rr(2) < 0.45 ? 1 : 0), used = new Set();
+      for (let j = 0; j < cnt; j++) {
+        let ni = Math.floor(rr(10 + j) * NEWS.length);
+        if (used.has(ni)) ni = (ni + 1) % NEWS.length;
+        used.add(ni);
+        const N = NEWS[ni], fx = {};
+        Object.entries(N.fx).forEach(([tk, [lo, hi]], q) => { fx[tk] = span(lo, hi, 50 + j * 5 + q); });
+        out.push({ kind: "news", h: 8 + Math.floor(rr(30 + j) * 12), e: N.e, fx, t: fill(N.t, fx) });
+      }
+      out.sort((a, b) => a.h - b.h);
+      out.forEach((n, k) => {
+        const s = Object.values(n.fx).reduce((x, v) => x + v, 0);
+        const L = s >= 0 ? AN_UP : AN_DOWN;
+        n.d = d; n.k = k;
+        n.an = L[Math.floor(h32(sd, 7200 + k, d) * L.length)];
+      });
+    }
+    if (newsCache.m.size > 900) newsCache.m.clear();
+    newsCache.m.set(d, out);
+    return out;
+  }
+
+  /* ---------- Цены ---------- */
+  // bar(i, d) → { c: закрытие, r: «диффузия» дня (лог), j: [[час, лог-скачок]] }
   let pxCache = { seed: null, a: {} };
-  // Цена закрытия игрового дня day (day 0 — базовая)
-  function closeAt(i, day) {
+  function bar(i, day) {
     const sd = invSeed();
     if (pxCache.seed !== sd) pxCache = { seed: sd, a: {} };
-    const arr = pxCache.a[i] || (pxCache.a[i] = [ASSETS[i].p]);
-    day = Math.max(0, Math.floor(day));
     const A = ASSETS[i];
+    const arr = pxCache.a[i] || (pxCache.a[i] = [{ c: A.p, r: 0, j: [] }]);
+    day = Math.max(0, Math.floor(day));
     while (arr.length <= day) {
-      const d = arr.length, prev = arr[d - 1];
-      let r = A.drift + A.vol * gauss(h32(sd, i * 7919 + 1, d), h32(sd, i * 104729 + 3, d));
-      r -= 0.015 * Math.log(prev / A.p); // лёгкий возврат к «справедливой» цене
-      arr.push(Math.max(A.p * 0.02, prev * Math.exp(clamp(r, -0.35, 0.35))));
+      const d = arr.length, prev = arr[d - 1].c;
+      let r = 0, j = [];
+      if (i === IDX) {
+        STOCKS.forEach((si) => { const b = bar(si, d); r += b.r / STOCKS.length; b.j.forEach(([h, x]) => j.push([h, x / STOCKS.length])); });
+      } else {
+        const k = A.cls === "crypto" ? 0.02 : 0.012;
+        const fair = A.p * Math.exp(A.drift * d);
+        r = A.drift + A.vol * gauss(h32(sd, i * 7919 + 11, d), h32(sd, i * 104729 + 13, d)) - k * Math.log(prev / fair);
+        r = clamp(r, -0.3, 0.3);
+        dayNews(d).forEach((n) => { if (n.fx[A.tk] != null) j.push([n.h, Math.log(1 + n.fx[A.tk])]); });
+      }
+      const tot = r + j.reduce((s, x) => s + x[1], 0);
+      arr.push({ c: Math.max(A.p * 0.01, prev * Math.exp(tot)), r, j });
     }
     return arr[day];
   }
-  // Цена в произвольную игровую минуту: от закрытия вчера к закрытию сегодня + внутридневной шум
+  const closeAt = (i, day) => bar(i, day).c;
+  // Цена в игровую минуту: диффузия плавно + новости скачком в свой час + внутридневной шум
   function priceAt(i, m) {
-    const d = Math.floor(m / 1440), frac = (m - d * 1440) / 1440;
-    const a = closeAt(i, d - 1), b = closeAt(i, d);
-    const noise = (h32(invSeed(), i + 50, Math.floor(m)) - 0.5) * ASSETS[i].vol * 0.15 * Math.sin(Math.PI * frac);
-    return Math.max(0.01, (a + (b - a) * frac) * (1 + noise));
+    const d = Math.floor(m / 1440), frac = (m - d * 1440) / 1440, hr = frac * 24;
+    const b = bar(i, d), prev = d >= 1 ? bar(i, d - 1).c : ASSETS[i].p;
+    const part = b.r * frac + b.j.reduce((s, [h, x]) => s + (h <= hr ? x : 0), 0);
+    const vol = ASSETS[i].vol || 0.01;
+    const noise = (h32(invSeed(), i + 50, Math.floor(m)) - 0.5) * vol * 0.15 * Math.sin(Math.PI * frac);
+    return Math.max(0.01, prev * Math.exp(part) * (1 + noise));
   }
   const pxNow = (i) => priceAt(i, nowM());
   const tkIdx = (tk) => ASSETS.findIndex((a) => a.tk === tk);
+  const dayChg = (i) => { const prev = closeAt(i, gDay() - 1); return ((pxNow(i) - prev) / prev) * 100; };
+  const visibleNews = (d, hr) => dayNews(d).filter((n) => d < gDay() || n.h <= hr);
 
-  // Позиции: invPos { TK: { qty, cost } }. Старый invHold (₽ по тикеру) конвертируем один раз.
+  // Старая модель цен (до v2) — нужна один раз, чтобы перевести позиции по справедливой стоимости
+  const LEG = [["VIBE", 4120, 0.018, 0.0012], ["ZABOT", 892, 0.028, 0.0016], ["KRDT", 1337, 0.01, 0.0006], ["VBC", 69420, 0.06, 0.0008], ["AIR", 12, 0.035, 0.0003], ["MEME", 228, 0.07, 0.0005]];
+  function legacyPx(li, m) {
+    const sd = invSeed(), [, p, vol, drift] = LEG[li];
+    const d = Math.floor(m / 1440), fr = (m - d * 1440) / 1440;
+    let c = p, a = p;
+    for (let x = 1; x <= Math.max(0, d); x++) {
+      let r = drift + vol * gauss(h32(sd, li * 7919 + 1, x), h32(sd, li * 104729 + 3, x));
+      r -= 0.015 * Math.log(c / p);
+      if (x === d) a = c;
+      c = Math.max(p * 0.02, c * Math.exp(clamp(r, -0.35, 0.35)));
+    }
+    return d >= 1 ? a + (c - a) * fr : p;
+  }
+
+  /* ---------- Позиции, вклады, история ---------- */
+  // invPos { TK: { qty, cost, since } }, invDeps [{ id, a, d0, term, rate }]
   function invPos() {
     const s = S();
-    if (!s.invPos && s.invHold) {
-      const pos = {};
-      Object.entries(s.invHold).forEach(([tk, rub]) => { const i = tkIdx(tk); if (i >= 0 && rub > 0) pos[tk] = { qty: rub / pxNow(i), cost: rub }; });
-      Vibe.state.set({ invPos: pos, invHold: null, invValue: null });
+    if (s.invV !== 2) {
+      let pos = null;
+      if (s.invPos) {
+        pos = JSON.parse(JSON.stringify(s.invPos));
+        const m = nowM();
+        Object.keys(pos).forEach((tk) => {
+          const li = LEG.findIndex((l) => l[0] === tk), i = tkIdx(tk), p = pos[tk];
+          if (i < 0 || !p || !(p.qty > 0)) { delete pos[tk]; return; }
+          if (li >= 0) p.qty = (p.qty * legacyPx(li, m)) / pxNow(i);
+        });
+      } else if (s.invHold) {
+        pos = {};
+        Object.entries(s.invHold).forEach(([tk, rub]) => { const i = tkIdx(tk); if (i >= 0 && rub > 0) pos[tk] = { qty: rub / pxNow(i), cost: rub }; });
+      }
+      pos = pos || {};
+      Object.values(pos).forEach((p) => { if (p.since == null) p.since = gDay(); });
+      Vibe.state.set({ invPos: pos, invHold: null, invValue: null, invV: 2 });
       return pos;
     }
     return s.invPos || {};
   }
-  const hasPos = () => Object.values(invPos()).some((p) => p.qty > 0);
-  const portAt = (m) => Object.entries(invPos()).reduce((s, [tk, p]) => { const i = tkIdx(tk); return i < 0 ? s : s + p.qty * priceAt(i, m); }, 0);
+  const invDeps = () => S().invDeps || [];
+  const depSum = () => invDeps().reduce((s, x) => s + x.a, 0);
+  const hasPos = () => Object.values(invPos()).some((p) => p.qty > 0) || invDeps().length > 0;
+  const portAt = (m) => Object.entries(invPos()).reduce((s, [tk, p]) => { const i = tkIdx(tk); return i < 0 ? s : s + p.qty * priceAt(i, m); }, 0) + depSum();
   const portNow = () => portAt(nowM());
-  const portCost = () => Object.values(invPos()).reduce((s, p) => s + (p.cost || 0), 0);
+  const portCost = () => Object.values(invPos()).reduce((s, p) => s + (p.cost || 0), 0) + depSum();
+  const qualified = () => !!S().invQual;
 
-  // История стоимости портфеля по игровым дням: invHist [{ d, v }]
   function syncHist() {
-    const today = gDay();
+    const td = gDay();
     let hist = (S().invHist || []).slice();
     if (!hasPos() && !hist.length) return hist;
-    const pos = invPos();
-    const closeVal = (d) => Object.entries(pos).reduce((s, [tk, p]) => { const i = tkIdx(tk); return i < 0 ? s : s + p.qty * closeAt(i, d); }, 0);
-    const last = hist.length ? hist[hist.length - 1].d : today;
-    // пока тебя не было — сделок не было, значит считаем по текущим позициям
-    for (let d = Math.max(last + 1, today - 400); d < today; d++) hist.push({ d, v: Math.round(closeVal(d)) });
-    hist = hist.filter((h) => h.d !== today);
-    hist.push({ d: today, v: Math.round(portNow()) });
+    const pos = invPos(), cost = Math.round(portCost()), ds = depSum();
+    const closeVal = (d) => Object.entries(pos).reduce((s, [tk, p]) => { const i = tkIdx(tk); return i < 0 ? s : s + p.qty * closeAt(i, d); }, 0) + ds;
+    const last = hist.length ? hist[hist.length - 1].d : td;
+    for (let d = Math.max(last + 1, td - 400); d < td; d++) hist.push({ d, v: Math.round(closeVal(d)), c: cost });
+    hist = hist.filter((h) => h.d !== td);
+    hist.push({ d: td, v: Math.round(portNow()), c: cost });
     hist = hist.slice(-180);
     Vibe.state.set({ invHist: hist });
     return hist;
   }
 
-  // Дивиденды: 1-го числа игрового месяца за тикеры с div
-  function invDividends({ quiet = false } = {}) {
+  /* ---------- Достижения ---------- */
+  const INV_ACH = {
+    inv_top: { e: "🏔️", t: "Купил на хаях", d: "Купил актив на 30-дневном максимуме" },
+    inv_div: { e: "💰", t: "Первые дивиденды", d: "Пассивный доход пришёл сам" },
+    inv_hodl: { e: "💎", t: "HODL 30 дней", d: "Держал актив 30 игровых дней" },
+    inv_qual: { e: "🎓", t: "Квалифицированный", d: "Сдал тест инвестора" },
+    inv_crash: { e: "🫠", t: "Пережил крах", d: "Был в рынке в чёрный вторник" },
+    inv_dep: { e: "🏦", t: "Стабильный вайб", d: "Дождался конца вклада" },
+    inv_meme: { e: "🐸", t: "Мем-магнат", d: "Купил мем-коин на пампе" },
+  };
+  function invAch(id) {
+    try {
+      if (Vibe.ACH && !Vibe.ACH[id]) Vibe.ACH[id] = INV_ACH[id];
+      if (Vibe.achieve) Vibe.achieve(id);
+    } catch (e) {}
+  }
+  const hasAch = (id) => (S().achievements || []).includes(id);
+
+  /* ---------- Доходы: дивиденды (1-го), купоны (15-го), вклады ---------- */
+  function invIncome({ quiet = false } = {}) {
     const s = S();
     if (!s.profile || !Vibe.game || !Vibe.game.tx) return 0;
-    const today = gDay();
-    if (s.invDivDay == null) { Vibe.state.set({ invDivDay: today }); return 0; }
-    if (s.invDivDay >= today) return 0;
-    const pos = invPos();
+    invPos();
+    const td = gDay(), m = invMult();
     let total = 0;
-    for (let d = Math.max(s.invDivDay + 1, today - 400); d <= today; d++) {
-      if ((d % 30) + 1 !== 1) continue;
+    // Вклады, у которых закончился срок
+    const deps = invDeps(), keep = [];
+    deps.forEach((x) => {
+      if (x.d0 + x.term <= td) {
+        const int = Math.round(x.a * x.rate * (x.term / 360) * m);
+        Vibe.game.tx(`Вклад «Стабильный вайб» · возврат + проценты`, x.a + int, "🏦", "c-sky");
+        total += int;
+        invAch("inv_dep");
+        if (!quiet) FX.toast(`Вклад закрылся: +${Vibe.rub(int)} процентов. Стабильно, как и обещали`, "🏦", 3200);
+      } else keep.push(x);
+    });
+    if (keep.length !== deps.length) Vibe.state.set({ invDeps: keep });
+    if (s.invDivDay == null) { Vibe.state.set({ invDivDay: td }); if (total) Vibe.refreshCounters(); return total; }
+    if (s.invDivDay >= td) { if (total) Vibe.refreshCounters(); return total; }
+    const pos = invPos();
+    const owned = Object.keys(pos).length > 0;
+    let paid = 0;
+    for (let d = Math.max(s.invDivDay + 1, td - 400); d <= td; d++) {
+      const dom = (d % 30) + 1;
+      if (owned && dayNews(d).some((n) => n.kind === "crash")) invAch("inv_crash");
+      if (dom !== 1 && dom !== 15) continue;
+      const names = [];
+      let sum = 0;
       Object.entries(pos).forEach(([tk, p]) => {
-        const i = tkIdx(tk); if (i < 0 || !ASSETS[i].div || !(p.qty > 0)) return;
-        const amt = Math.round(p.qty * closeAt(i, d) * ASSETS[i].div);
-        if (amt > 0) { Vibe.game.tx(`Дивиденды · ${tk}`, amt, "💰", "c-lime"); total += amt; }
+        const i = tkIdx(tk); if (i < 0 || !(p.qty > 0)) return;
+        const A = ASSETS[i], rate = dom === 1 ? A.div : A.cpn;
+        if (!rate) return;
+        const amt = Math.round(p.qty * closeAt(i, d) * rate * m);
+        if (amt > 0) { sum += amt; names.push(tk); }
       });
+      if (sum > 0) {
+        Vibe.game.tx(`${dom === 1 ? "Дивиденды" : "Купоны"} · ${names.join(", ")}`, sum, dom === 1 ? "💰" : "🏛️", "c-lime");
+        paid += sum;
+      }
     }
-    Vibe.state.set({ invDivDay: today, invDivTotal: (s.invDivTotal || 0) + total });
+    total += paid;
+    Vibe.state.set({ invDivDay: td, invDivTotal: (s.invDivTotal || 0) + paid });
+    if (paid > 0) invAch("inv_div");
+    if (Object.values(pos).some((p) => p.qty > 0 && p.since != null && td - p.since >= 30)) invAch("inv_hodl");
     if (total > 0) {
       Vibe.refreshCounters();
-      if (!quiet) FX.toast(`Дивиденды пришли: +${Vibe.rub(total)}. Пассивный доход, активная радость`, "💰", 3200);
+      Vibe.emit("invest", { kind: "income", amount: total });
+      if (!quiet && paid > 0) FX.toast(`Пассивный доход: +${Vibe.rub(paid)}. Пассивный доход, активная радость`, "💰", 3200);
     }
     return total;
   }
-  // Дивиденды приходят и без открытия Invest — по игровому тику
-  if (Vibe.game && Vibe.game.on) Vibe.game.on(() => { try { invDividends(); } catch (e) {} });
+  // Доходы приходят и без открытия Invest — по игровому тику
+  if (Vibe.game && Vibe.game.on) Vibe.game.on(() => { try { invIncome(); } catch (e) {} });
 
+  // Публичный хук для других модулей (например, Госвайб/налоги): прибыль и стоимость портфеля
+  Vibe.invest = {
+    value: () => Math.round(portNow()),
+    cost: () => Math.round(portCost()),
+    realized: () => (S().invRealized || 0),            // реализованная прибыль за всё время
+    realizedYear: () => { const r = S().invRealizedY || {}; return r.y === Math.floor(gDay() / 360) ? r.a : 0; },
+    price: (tk) => { const i = tkIdx(tk); return i < 0 ? 0 : pxNow(i); },
+    news: (d = gDay()) => dayNews(d).slice(),
+  };
+
+  /* ---------- Мелочи отображения ---------- */
   const qtyTxt = (q) => (q < 1 ? q.toFixed(4) : q < 100 ? q.toFixed(2) : Vibe.fmt(q)).replace(".", ",");
-  const divTxt = (a) => (a.div ? `💰 ${String(+(a.div * 100).toFixed(1)).replace(".", ",")}%/мес` : "");
-  const dayChg = (i) => { const prev = closeAt(i, gDay() - 1); return ((pxNow(i) - prev) / prev) * 100; };
-  function assetRowsHtml() {
-    const pos = invPos();
-    return ASSETS.map((a, i) => {
-      const p = pos[a.tk];
-      const own = p && p.qty > 0;
-      const ch = dayChg(i);
-      return `
-        <div class="li fz-asset tap" data-asset="${i}" style="cursor:pointer">
-          <div class="ic ${a.c}">${a.e}</div>
-          <div class="tx"><b>${a.tk} ${a.div ? `<span class="badge" style="font-size:10px;padding:2px 6px;background:var(--lime);vertical-align:2px">${divTxt(a)}</span>` : ""}</b><small>${own ? `у тебя ${qtyTxt(p.qty)} шт · ${Vibe.rub(p.qty * pxNow(i))}` : a.n}</small></div>
-          <svg class="spark" viewBox="0 0 62 28"><path data-spark="${i}" d="" fill="none" stroke="${ch >= 0 ? "#12a150" : "#e5333d"}" stroke-width="2.5" stroke-linejoin="round"/></svg>
-          <div class="amt" data-aprice="${i}">${Vibe.rub(pxNow(i))}<small class="${ch >= 0 ? "fz-up" : "fz-down"}">${pct(ch)}</small></div>
-        </div>`;
-    }).join("");
-  }
+  const incTxt = (a) => (a.div ? `💰 ${String(+(a.div * 100).toFixed(2)).replace(".", ",")}%/мес` : a.cpn ? `🏛️ купон ${String(+(a.cpn * 100).toFixed(1)).replace(".", ",")}%/мес` : "");
   function sparkPath(vals, w, h, pad = 2) {
     const mn = Math.min(...vals), mx = Math.max(...vals), r = mx - mn || 1;
     return vals.map((v, i) => `${i ? "L" : "M"}${((i / (vals.length - 1)) * (w - pad * 2) + pad).toFixed(1)} ${(h - pad - ((v - mn) / r) * (h - pad * 2)).toFixed(1)}`).join(" ");
   }
   const durTxt = (min) => (min >= 1440 ? `${Math.floor(min / 1440)} дн.` : min >= 60 ? `${Math.floor(min / 60)} ч` : `${Math.round(min)} мин`);
+  const hh = (h) => String(h).padStart(2, "0") + ":00";
+  function assetRow(i) {
+    const a = ASSETS[i], p = invPos()[a.tk], own = p && p.qty > 0, ch = dayChg(i);
+    const lock = a.cls === "crypto" && !qualified();
+    return `
+      <div class="li fz-asset tap" data-asset="${i}" style="cursor:pointer">
+        <div class="ic ${a.c}">${a.e}</div>
+        <div class="tx"><b>${a.tk} ${incTxt(a) ? `<span class="badge fz-mini" style="background:var(--lime)">${incTxt(a)}</span>` : ""}${lock ? `<span class="badge fz-mini" style="background:#ffd0d0">🔒 тест</span>` : ""}</b><small>${own ? `у тебя ${qtyTxt(p.qty)} шт · ${Vibe.rub(p.qty * pxNow(i))}` : a.n}</small></div>
+        <svg class="spark" viewBox="0 0 62 28"><path data-spark="${i}" d="" fill="none" stroke="${ch >= 0 ? "#12a150" : "#e5333d"}" stroke-width="2.5" stroke-linejoin="round"/></svg>
+        <div class="amt" data-aprice="${i}">${Vibe.rub(pxNow(i))}<small class="${ch >= 0 ? "fz-up" : "fz-down"}">${pct(ch)}</small></div>
+      </div>`;
+  }
+  const GROUPS = [
+    { k: ["stock"], n: "Акции", sub: "дивиденды 1-го числа" },
+    { k: ["index", "gold"], n: "Фонд и золото", sub: "для тех, кто спит спокойно" },
+    { k: ["bond"], n: "Облигации", sub: "купон 15-го, риск как у табуретки" },
+    { k: ["crypto"], n: "Крипта", sub: "волатильность включена в стоимость" },
+  ];
+  function riskOf() {
+    const pos = invPos();
+    let tot = depSum(), w = 0;
+    Object.entries(pos).forEach(([tk, p]) => { const i = tkIdx(tk); if (i < 0) return; const v = p.qty * pxNow(i); tot += v; w += v * CLS[ASSETS[i].cls].risk; });
+    return tot > 0 ? w / tot : 0;
+  }
+  const riskLabel = (r) => (r < 8 ? ["Бабушкин сундук", "🧓"] : r < 25 ? ["Осторожный хомяк", "🐹"] : r < 50 ? ["Сбалансированный вайб", "⚖️"] : r < 75 ? ["Любитель американских горок", "🎢"] : ["Казино с графиками", "🎰"]);
+  function allocation() {
+    const pos = invPos(), out = {};
+    Object.entries(pos).forEach(([tk, p]) => { const i = tkIdx(tk); if (i < 0 || !(p.qty > 0)) return; const c = ASSETS[i].cls; out[c] = (out[c] || 0) + p.qty * pxNow(i); });
+    if (depSum()) out.deposit = depSum();
+    return Object.entries(out).filter(([, v]) => v > 0).sort((a, b) => b[1] - a[1]);
+  }
+  function donutSvg(al) {
+    const tot = al.reduce((s, [, v]) => s + v, 0) || 1, R = 42, C = 2 * Math.PI * R;
+    let off = 0;
+    const segs = al.map(([k, v]) => {
+      const len = (v / tot) * C;
+      const s = `<circle r="${R}" cx="60" cy="60" fill="none" stroke="${CLS[k].col}" stroke-width="20" stroke-dasharray="${len.toFixed(2)} ${(C - len).toFixed(2)}" stroke-dashoffset="${(-off).toFixed(2)}" transform="rotate(-90 60 60)"/>`;
+      off += len;
+      return s;
+    }).join("");
+    return `<svg viewBox="0 0 120 120" class="fz-donut"><circle r="${R}" cx="60" cy="60" fill="none" stroke="#0e0e12" stroke-width="24"/>${segs}<circle r="31" cx="60" cy="60" fill="#fff" stroke="#0e0e12" stroke-width="2.5"/><circle r="53" cx="60" cy="60" fill="none" stroke="#0e0e12" stroke-width="2.5"/><text x="60" y="58" text-anchor="middle" font-size="9" font-weight="800" fill="#0e0e12">${al.length} класс${al.length === 1 ? "" : al.length < 5 ? "а" : "ов"}</text><text x="60" y="70" text-anchor="middle" font-size="12">${al.length >= 3 ? "🧺" : "🥚"}</text></svg>`;
+  }
+  function plSvg() {
+    const h = (S().invHist || []).filter((x) => x.c != null).slice(-30);
+    if (h.length < 2) return `<div class="muted" style="font-weight:800;font-size:12px;padding:18px 0;text-align:center">График появится через пару игровых дней. Терпение — тоже актив</div>`;
+    const vals = h.map((x) => x.v - x.c), mx = Math.max(1, ...vals.map(Math.abs)), W = 340, H = 110, mid = H / 2, bw = W / h.length;
+    return `<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" class="fz-pl"><line x1="0" y1="${mid}" x2="${W}" y2="${mid}" stroke="#0e0e12" stroke-width="2"/>${vals.map((v, i) => {
+      const bh = (Math.abs(v) / mx) * (mid - 4);
+      return `<rect x="${(i * bw + 1).toFixed(1)}" y="${(v >= 0 ? mid - bh : mid).toFixed(1)}" width="${Math.max(2, bw - 2).toFixed(1)}" height="${Math.max(1, bh).toFixed(1)}" rx="2" fill="${v >= 0 ? "#12a150" : "#e5333d"}" style="--i:${i}"/>`;
+    }).join("")}</svg>`;
+  }
+  // Календарь выплат на 30 игровых дней вперёд
+  function calendar() {
+    const td = gDay(), pos = invPos(), m = invMult(), out = [];
+    for (let d = td + 1; d <= td + 30; d++) {
+      const dom = (d % 30) + 1, ev = [];
+      if (dom === 1 || dom === 15) {
+        let sum = 0; const names = [];
+        Object.entries(pos).forEach(([tk, p]) => { const i = tkIdx(tk); if (i < 0) return; const r = dom === 1 ? ASSETS[i].div : ASSETS[i].cpn; if (r && p.qty > 0) { sum += p.qty * pxNow(i) * r * m; names.push(tk); } });
+        if (sum > 0) ev.push({ e: dom === 1 ? "💰" : "🏛️", t: `${dom === 1 ? "Дивиденды" : "Купоны"} ${names.join(", ")}`, a: Math.round(sum) });
+      }
+      invDeps().forEach((x) => { if (x.d0 + x.term === d) ev.push({ e: "🏦", t: "Вклад закрывается", a: x.a + Math.round(x.a * x.rate * (x.term / 360) * m) }); });
+      out.push({ d, dom, ev, in: d - td });
+    }
+    return out;
+  }
 
   Vibe.screen("invest", {
     render() {
       invPos();
-      const own = hasPos();
-      const val = own ? portNow() : 0;
+      const own = hasPos(), L = finLvl(), T = tierOf(L);
       return `
         ${Vibe.ui.head("Vibe Invest", "инвестиции для тех, кто уже всё потратил", Vibe.ui.vibikiPill())}
         <div data-away></div>
         <div class="card c-lime fz-inv-top">
           <span class="sticker" style="top:14px;right:14px;background:var(--pink)">📈 только вверх*</span>
-          <div style="font-weight:800;font-size:13px" data-invlbl>${own ? "Мой портфель" : "Индекс VIBE · портфель пуст"}</div>
-          <div class="big-num" data-inv>${Vibe.rub(own ? val : pxNow(0))}</div>
+          <div style="font-weight:800;font-size:13px" data-invlbl>${own ? "Мой портфель" : "Фонд «Весь Вайб-Сити» · портфель пуст"}</div>
+          <div class="big-num" data-inv>${Vibe.rub(own ? portNow() : pxNow(IDX))}</div>
           <div class="fz-row" style="margin-top:8px;gap:6px;flex-wrap:wrap">
             <span class="badge" data-chg style="background:#fff">▲ +0,00%</span>
             <span style="font-weight:800;font-size:12px" data-chglbl>за сегодня</span>
@@ -1816,17 +2367,15 @@
             <div class="fz-scrub" data-scrub><b></b></div>
           </div>
           <div class="chips" style="margin-top:6px">${PERIODS.map((p, i) => `<button class="chip ${i === 0 ? "on" : ""}" data-per="${i}">${p.k}</button>`).join("")}</div>
+          <button class="badge tap fz-lvl" data-act="level">${T.e} Инвест-уровень ${L} · ${T.n}</button>
         </div>
-        <div class="grid2" style="margin-top:14px">
-          <button class="card tap c-yellow" data-act="topup" style="text-align:left"><span class="emo wobble" style="font-size:30px">💰</span><b style="display:block;margin-top:6px">Дивиденды</b><small style="font-weight:700;font-size:12px" data-divsum>получено ${Vibe.rub(S().invDivTotal || 0)}</small></button>
-          <button class="card tap c-pink" data-act="advice" style="text-align:left"><span class="emo float" style="font-size:30px">🔮</span><b style="display:block;margin-top:6px">Совет дня</b><small style="font-weight:700;font-size:12px">от Заботика</small></button>
+        <div class="fz-tabs">
+          <button class="chip on" data-tab="market">📊 Рынок</button>
+          <button class="chip" data-tab="news">📰 Новости <span class="fz-dot" data-newsdot hidden></span></button>
+          <button class="chip" data-tab="port">🥧 Портфель</button>
         </div>
-        ${Vibe.ui.marquee(ASSETS.map((a, i) => { const c = dayChg(i); return `${a.tk} ${c >= 0 ? "▲" : "▼"} ${pct(c)}`; }))}
-        <h2 class="sec">Активы <small>цены идут по игровым дням</small></h2>
-        <div class="card" style="padding:4px 14px">
-          <div class="stagger" data-assets>${assetRowsHtml()}</div>
-        </div>
-        <div class="fine">Цены меняются каждый игровой день, даже когда ты не смотришь. Особенно когда не смотришь. Дивиденды — 1-го числа. Комиссия за продажу 0,3% — за заботу. Доходность в прошлом не гарантирует доходность в прошлом. Vibe Invest не является брокером, банком, гадалкой и вашим другом, хотя очень старается.</div>`;
+        <div data-body class="fz-popin"></div>
+        <div class="fine">Цены, новости, крахи и пампы идут по игровым дням, даже когда ты не смотришь. Особенно когда не смотришь. Дивиденды — 1-го, купоны — 15-го. Комиссия за продажу ${String(sellFee() * 100).replace(".", ",")}% — за заботу. Доходность в прошлом не гарантирует доходность в прошлом. Аналитика Вайбота не является инвестиционной рекомендацией, прогнозом, мнением и вообще ничем. Vibe Invest не является брокером, банком, гадалкой и вашим другом, хотя очень старается.</div>`;
     },
     mount(root) {
       const sc = scope();
@@ -1834,39 +2383,49 @@
       const valEl = root.querySelector("[data-inv]");
       const chartBox = root.querySelector("[data-chart]");
       const scrub = root.querySelector("[data-scrub]");
-      let per = 0, series = [], animUntil = 0;
+      const body = root.querySelector("[data-body]");
+      let per = 0, series = [], animUntil = 0, tab = "market";
       const W = 340, H = 180, PAD = 14;
+      const curHr = () => (nowM() % 1440) / 60;
+      const newsKey = () => { const v = visibleNews(gDay(), curHr()); const n = v[v.length - 1]; return n ? `${n.d}:${n.k}` : ""; };
+      let lastNews = newsKey();
 
       // Что накапало, пока тебя не было
-      const divGot = invDividends({ quiet: true });
+      const divGot = invIncome({ quiet: true });
       syncHist();
       const seen = S().invSeen;
       const own0 = hasPos();
-      let value = own0 ? portNow() : pxNow(0);
+      let value = own0 ? portNow() : pxNow(IDX);
       if (own0 && seen && seen.v > 0 && nowM() - seen.m >= 20) {
         const ch = ((value - seen.v) / seen.v) * 100, d = value - seen.v;
         const up = ch >= 0;
+        // Главные события за время отсутствия
+        const from = Math.floor(seen.m / 1440), big = [];
+        for (let x = Math.max(from, gDay() - 30); x <= gDay(); x++) dayNews(x).forEach((n) => { if (n.kind === "crash" || n.kind === "rally" || n.kind === "pump" || n.kind === "dump") big.push(n); });
+        const bigN = big.filter((n) => n.d < gDay() || n.h <= curHr()).slice(-2);
         root.querySelector("[data-away]").innerHTML = `
           <div class="card ${up ? "c-mint" : "c-coral"} fz-popin" style="display:flex;align-items:center;gap:12px;margin-bottom:14px">
             <span class="emo wobble" style="font-size:40px">${up ? "🚀" : "🫠"}</span>
-            <div style="flex:1"><div style="font-weight:800;font-size:12px">За время, пока тебя не было (${durTxt(nowM() - seen.m)})</div>
+            <div style="flex:1;min-width:0"><div style="font-weight:800;font-size:12px">За время, пока тебя не было (${durTxt(nowM() - seen.m)})</div>
             <div class="display" style="font-size:26px">${up ? "+" : "−"}${pct(Math.abs(ch)).slice(1)}</div>
-            <div style="font-weight:800;font-size:12px">${up ? "+" : "−"}${Vibe.rub(Math.abs(d))}${divGot ? ` · дивиденды +${Vibe.rub(divGot)}` : ""}</div></div>
+            <div style="font-weight:800;font-size:12px">${up ? "+" : "−"}${Vibe.rub(Math.abs(d))}${divGot ? ` · доход +${Vibe.rub(divGot)}` : ""}</div>
+            ${bigN.map((n) => `<div style="font-weight:700;font-size:11px;margin-top:4px">${n.e} ${n.t}</div>`).join("")}</div>
           </div>`;
         sc.to(() => { if (up) { FX.confetti({ count: 60 }); FX.sound.success(); } else FX.sound.error(); }, 500);
-      } else if (divGot) sc.to(() => FX.toast(`Дивиденды пришли: +${Vibe.rub(divGot)}`, "💰", 3000), 600);
+      } else if (divGot) sc.to(() => FX.toast(`Пассивный доход пришёл: +${Vibe.rub(divGot)}`, "💰", 3000), 600);
 
+      /* ----- Верхний график ----- */
       function seriesFor(k) {
         const own = hasPos();
-        const nm = nowM(), today = Math.floor(nm / 1440);
-        const live = own ? portNow() : pxNow(0);
+        const nm = nowM(), td = Math.floor(nm / 1440);
+        const live = own ? portNow() : pxNow(IDX);
         let pts = [];
         if (k === 0) {
-          for (let m = today * 1440; m < nm; m += 30) pts.push(own ? portAt(m) : priceAt(0, m));
+          for (let m = td * 1440; m < nm; m += 30) pts.push(own ? portAt(m) : priceAt(IDX, m));
         } else {
           const span = k === 1 ? 7 : k === 2 ? 30 : 100000;
-          if (own) pts = (S().invHist || []).filter((h) => h.d < today && h.d >= today - span).map((h) => h.v);
-          else for (let d = Math.max(0, today - Math.min(span, 90)); d < today; d++) pts.push(closeAt(0, d));
+          if (own) pts = (S().invHist || []).filter((h) => h.d < td && h.d >= td - span).map((h) => h.v);
+          else for (let d = Math.max(0, td - Math.min(span, 90)); d < td; d++) pts.push(closeAt(IDX, d));
         }
         pts.push(live);
         if (pts.length < 2) pts.unshift(pts[0]);
@@ -1914,35 +2473,18 @@
       }
       function head() {
         const own = hasPos();
-        root.querySelector("[data-invlbl]").textContent = own ? "Мой портфель" : "Индекс VIBE · портфель пуст";
+        root.querySelector("[data-invlbl]").textContent = own ? "Мой портфель" : "Фонд «Весь Вайб-Сити» · портфель пуст";
         const pnl = root.querySelector("[data-pnl]");
         if (own) {
           const cost = portCost(), v = portNow(), d = v - cost;
           pnl.innerHTML = `Вложено ${Vibe.rub(cost)} · <span class="${d >= 0 ? "fz-up" : "fz-down"}">${d >= 0 ? "+" : "−"}${Vibe.rub(Math.abs(d))} (${pct(cost ? (d / cost) * 100 : 0)})</span>`;
         } else pnl.textContent = "Тапни актив ниже — купишь первую акцию. График сам себя не нарисует";
-        root.querySelector("[data-divsum]").textContent = `получено ${Vibe.rub(S().invDivTotal || 0)}`;
       }
       function setPeriod(i) {
         per = i;
         series = seriesFor(i);
         root.querySelector("[data-chglbl]").textContent = PERIODS[i].label;
         draw(true);
-      }
-      function sparks() {
-        const today = gDay();
-        ASSETS.forEach((a, i) => {
-          const vals = [];
-          for (let d = Math.max(0, today - 14); d < today; d++) vals.push(closeAt(i, d));
-          vals.push(pxNow(i));
-          if (vals.length < 2) vals.unshift(closeAt(i, 0));
-          const sp = root.querySelector(`[data-spark="${i}"]`);
-          if (sp) sp.setAttribute("d", sparkPath(vals, 62, 28));
-        });
-      }
-      function refreshAssets() {
-        const box = root.querySelector("[data-assets]");
-        box.innerHTML = assetRowsHtml();
-        sparks();
       }
       function setValue(nv, animate) {
         const prev = value;
@@ -1953,18 +2495,164 @@
         sc.to(() => valEl.classList.remove("flash-up", "flash-down"), 650);
       }
 
+      /* ----- Вкладки ----- */
+      function marketHtml() {
+        const deps = invDeps();
+        return `
+          ${Vibe.ui.marquee(ASSETS.map((a, i) => { const c = dayChg(i); return `${a.e} ${a.tk} ${c >= 0 ? "▲" : "▼"} ${pct(c)}`; }))}
+          <button class="card tap c-sky fz-depo" data-act="deposit">
+            <span class="emo float" style="font-size:38px">🏦</span>
+            <div style="flex:1;min-width:0;text-align:left"><b style="display:block">Вклад «Стабильный вайб»</b>
+            <small style="font-weight:800;font-size:12px">${String(Math.round(depRate() * 100))}% годовых · ${deps.length ? `открыто ${deps.length} на ${Vibe.rub(depSum())}` : "без риска, но с замком"}</small></div>
+            <span class="badge" style="background:#fff">🔒 срок</span>
+          </button>
+          ${GROUPS.map((g) => `
+            <h2 class="sec">${g.n} <small>${g.k[0] === "crypto" && !qualified() ? "🔒 нужен тест квалифицированного инвестора" : g.sub}</small></h2>
+            <div class="card" style="padding:4px 14px"><div class="stagger">${ASSETS.map((a, i) => (g.k.includes(a.cls) ? assetRow(i) : "")).join("")}</div></div>`).join("")}
+          ${coachCard()}`;
+      }
+      function coachCard() {
+        const n = S().invCoach || 0, C = COACH[Math.min(n, COACH.length - 1)];
+        return `
+          <button class="card tap c-orange fz-coach" data-act="coach">
+            <span class="sticker" style="top:-10px;right:12px;background:var(--yellow);transform:rotate(5deg)">−90% только сегодня*</span>
+            <span class="emo wobble" style="font-size:42px">🧑‍🏫</span>
+            <div style="flex:1;min-width:0;text-align:left"><b style="display:block">Инвестиционный коуч Эдуард</b>
+            <small style="font-weight:800;font-size:12px">${C.n} · ${Vibe.rub(C.p)}</small></div>
+          </button>`;
+      }
+      function newsHtml() {
+        const td = gDay(), hr = curHr(), L = finLvl(), items = [];
+        for (let d = td; d >= Math.max(1, td - 6) && items.length < 16; d--) visibleNews(d, hr).slice().reverse().forEach((n) => items.length < 16 && items.push(n));
+        let insider = "";
+        if (L >= 3) {
+          const tn = dayNews(td + 1)[0];
+          if (tn) {
+            const tk = Object.keys(tn.fx)[0], up = tn.fx[tk] >= 0, lie = h32(invSeed(), 8800, td + 1) < 0.3;
+            const say = lie ? !up : up;
+            insider = `<div class="card c-violet fz-insider fz-popin"><span class="emo wobble" style="font-size:34px">🤫</span><div style="flex:1;min-width:0"><b style="display:block;color:#fff">Инсайд от соседа</b><small style="font-weight:800;font-size:12px;color:#fff">«Завтра ${tk} пойдёт ${say ? "вверх ▲" : "вниз ▼"}, мне кум сказал». Кум ошибается в 30% случаев.</small></div></div>`;
+          }
+        } else insider = `<div class="card flat fz-insider" style="opacity:.75"><span style="font-size:30px">🔒</span><div style="flex:1;min-width:0"><b style="display:block">Инсайд от соседа</b><small style="font-weight:800;font-size:12px">Откроется на 3 уровне финансов. Сосед пока не доверяет</small></div></div>`;
+        const when = (n) => (n.d === td ? `сегодня ${hh(n.h)}` : n.d === td - 1 ? `вчера ${hh(n.h)}` : `${td - n.d} дн. назад`);
+        const col = (n) => (n.kind === "crash" || n.kind === "dump" ? "c-coral" : n.kind === "rally" || n.kind === "pump" ? "c-lime" : n.kind === "weather" ? "c-sky" : "c-white");
+        return `
+          ${insider}
+          <h2 class="sec">Лента <small>игровое время · двигает цены</small></h2>
+          <div class="stagger">${items.length ? items.map((n) => `
+            <div class="card ${col(n)} fz-news">
+              <div class="fz-between"><span class="fz-news-e">${n.e}</span><small style="font-weight:800;font-size:11px">${when(n)}${n.kind === "crash" ? " · 🚨 КРАХ" : n.kind === "rally" ? " · 🚀 РАЛЛИ" : n.kind === "pump" ? " · 🐸 ПАМП" : n.kind === "dump" ? " · 💥 ДАМП" : ""}</small></div>
+              <b class="fz-news-t">${n.t}</b>
+              <div class="fz-fx">${Object.entries(n.fx).slice(0, 6).map(([tk, x]) => `<button class="badge tap ${x >= 0 ? "fz-bup" : "fz-bdown"}" data-asset="${tkIdx(tk)}">${tk} ${pctF(x)}</button>`).join("")}</div>
+              <div class="fz-an"><span>🤖</span><span><b>Аналитика от Вайбота:</b> ${n.an}</span></div>
+            </div>`).join("") : `<div class="card c-white" style="text-align:center"><span class="emo float" style="font-size:40px">📭</span><p style="font-weight:800">Новостей пока нет. Рынок спит, Вайбот — нет</p></div>`}</div>`;
+      }
+      function portHtml() {
+        const L = finLvl(), T = tierOf(L), next = TIERS.find((t) => t.l > L), m = invMult();
+        const pos = invPos(), own = hasPos(), td = gDay();
+        const lvl = `
+          <div class="card c-violet fz-lvlcard" data-act="level">
+            <div class="fz-row"><span class="emo float" style="font-size:44px">${T.e}</span>
+            <div style="flex:1;min-width:0;color:#fff"><div style="font-weight:800;font-size:12px">Инвест-уровень ${L}</div><div class="display" style="font-size:24px">${T.n}</div>
+            <small style="font-weight:800;font-size:12px">${next ? `Финансы ${next.l} → ${next.perk}` : "Максимум. Дальше только своя биржа"}</small></div></div>
+            ${m > 1 ? `<div class="badge" style="margin-top:8px;background:var(--lime)">📊 Перк «Инвестор»: доход ×${String(m).replace(".", ",")}</div>` : ""}
+          </div>`;
+        if (!own) return lvl + `<div class="card c-white" style="text-align:center;margin-top:14px"><span class="emo float" style="font-size:48px">🥚</span><p style="font-weight:800">Портфель пуст. Купи что-нибудь на вкладке «Рынок» — и тут появятся бублик, риск и календарь выплат</p></div>` + achHtml();
+        const al = allocation(), tot = al.reduce((s, [, v]) => s + v, 0) || 1, risk = riskOf(), [rl, re] = riskLabel(risk);
+        const cal = calendar(), evs = cal.filter((c) => c.ev.length);
+        const holdings = Object.entries(pos).filter(([, p]) => p.qty > 0).map(([tk, p]) => {
+          const i = tkIdx(tk); if (i < 0) return "";
+          const a = ASSETS[i], v = p.qty * pxNow(i), d = v - (p.cost || 0), days = p.since != null ? td - p.since : 0;
+          return `<div class="li tap" data-asset="${i}" style="cursor:pointer"><div class="ic ${a.c}">${a.e}</div><div class="tx"><b>${a.tk}</b><small>${qtyTxt(p.qty)} шт · держишь ${days} дн.${days >= 30 ? " 💎" : ""}</small></div><div class="amt" style="text-align:right">${Vibe.rub(v)}<small class="${d >= 0 ? "fz-up" : "fz-down"}" style="display:block;font-size:11px;font-weight:800">${d >= 0 ? "+" : "−"}${Vibe.rub(Math.abs(d))}</small></div></div>`;
+        }).join("");
+        const deps = invDeps().map((x) => {
+          const done = clamp((td - x.d0) / x.term, 0, 1), int = Math.round(x.a * x.rate * (x.term / 360) * m);
+          return `<div class="li"><div class="ic c-sky">🏦</div><div class="tx"><b>${Vibe.rub(x.a)} · ${String(Math.round(x.rate * 100))}%</b><small>ещё ${x.d0 + x.term - td} дн. · проценты +${Vibe.rub(int)}</small><div class="progress" style="margin-top:6px;height:10px"><i style="--p:${Math.round(done * 100)}%"></i></div></div><button class="btn sm" data-depclose="${x.id}" style="flex:0 0 auto">Снять</button></div>`;
+        }).join("");
+        return `${lvl}
+          <div class="grid2" style="margin-top:14px">
+            <div class="card c-white fz-alloc"><div style="font-weight:800;font-size:12px">Распределение</div>${donutSvg(al)}
+              <div class="fz-legend">${al.map(([k, v]) => `<span><i style="background:${CLS[k].col}"></i>${CLS[k].n} ${Math.round((v / tot) * 100)}%</span>`).join("")}</div></div>
+            <div class="card c-yellow fz-risk"><div style="font-weight:800;font-size:12px">Риск-метр</div>
+              <svg viewBox="0 0 120 70" class="fz-gauge"><path d="M10 62 A50 50 0 0 1 110 62" fill="none" stroke="#0e0e12" stroke-width="16" stroke-linecap="round"/><path d="M10 62 A50 50 0 0 1 110 62" fill="none" stroke="url(#fzRisk)" stroke-width="11" stroke-linecap="round"/>
+              <defs><linearGradient id="fzRisk"><stop offset="0" stop-color="#7cf5c8"/><stop offset=".5" stop-color="#ffe14d"/><stop offset="1" stop-color="#ff3b3b"/></linearGradient></defs>
+              <g class="fz-needle" style="transform:rotate(${(-90 + risk * 1.8).toFixed(1)}deg)"><line x1="60" y1="62" x2="60" y2="20" stroke="#0e0e12" stroke-width="4" stroke-linecap="round"/></g><circle cx="60" cy="62" r="6" fill="#0e0e12"/></svg>
+              <div class="display" style="font-size:22px;text-align:center">${Math.round(risk)}/100</div><div style="font-weight:800;font-size:12px;text-align:center">${re} ${rl}</div></div>
+          </div>
+          <h2 class="sec">P/L по дням <small>прибыль/убыток, последние 30 игровых дней</small></h2>
+          <div class="card c-white">${plSvg()}</div>
+          <h2 class="sec">Мои активы <small>тап — купить или продать</small></h2>
+          <div class="card" style="padding:4px 14px">${holdings || ""}${deps}${!holdings && !deps ? `<div class="muted" style="padding:12px 0;font-weight:800">Пусто</div>` : ""}</div>
+          <h2 class="sec">Календарь выплат <small>следующие 30 игровых дней</small></h2>
+          <div class="card c-mint">
+            <div class="fz-cal">${cal.map((c) => `<div class="${c.ev.length ? "on" : ""}" title="${c.ev.map((e) => e.t).join(", ")}"><small>${c.dom}</small>${c.ev.length ? c.ev.map((e) => e.e).join("") : ""}</div>`).join("")}</div>
+            ${evs.length ? evs.slice(0, 5).map((c) => c.ev.map((e) => `<div class="fz-between" style="font-weight:800;font-size:13px;margin-top:8px"><span>${e.e} ${e.t}</span><span>через ${c.in} дн. · ≈${Vibe.rub(e.a)}</span></div>`).join("")).join("") : `<div style="font-weight:800;font-size:12px;margin-top:8px">Выплат не ожидается. Купи VIBE, KRDT или облигации — и календарь оживёт</div>`}
+            <div style="font-weight:800;font-size:12px;margin-top:10px">Всего получено: ${Vibe.rub(S().invDivTotal || 0)}</div>
+          </div>
+          ${achHtml()}
+          <div class="card flat fz-tax"><span style="font-size:26px">🏛️</span><div style="flex:1;min-width:0"><b style="display:block;font-size:13px">Налоги и вычеты</b><small style="font-weight:700;font-size:12px">Реализованная прибыль за игровой год: ${Vibe.rub(Vibe.invest.realizedYear())}. Курс коуча — это «обучение», его можно вернуть вычетом в Госвайбе. Коуч об этом не знает.</small></div></div>`;
+      }
+      function achHtml() {
+        return `<h2 class="sec">Достижения инвестора</h2>
+          <div class="fz-ach stagger">${Object.entries(INV_ACH).map(([id, a]) => `<div class="card ${hasAch(id) ? "c-lime" : "flat"}" style="${hasAch(id) ? "" : "opacity:.55"}"><span style="font-size:28px">${hasAch(id) ? a.e : "🔒"}</span><b>${a.t}</b><small>${a.d}</small></div>`).join("")}</div>`;
+      }
+      function sparks() {
+        const td = gDay();
+        ASSETS.forEach((a, i) => {
+          const sp = root.querySelector(`[data-spark="${i}"]`);
+          if (!sp) return;
+          const vals = [];
+          for (let d = Math.max(0, td - 14); d < td; d++) vals.push(closeAt(i, d));
+          vals.push(pxNow(i));
+          if (vals.length < 2) vals.unshift(closeAt(i, 0));
+          sp.setAttribute("d", sparkPath(vals, 62, 28));
+        });
+      }
+      function showTab(t, anim) {
+        tab = t;
+        root.querySelectorAll("[data-tab]").forEach((c) => c.classList.toggle("on", c.dataset.tab === t));
+        body.innerHTML = t === "news" ? newsHtml() : t === "port" ? portHtml() : marketHtml();
+        body.querySelectorAll(".stagger").forEach((g) => [...g.children].forEach((c, i) => c.style.setProperty("--i", i)));
+        if (anim) retrigger(body, "fz-popin", 520);
+        if (t === "market") sparks();
+        if (t === "news") { const nd = root.querySelector("[data-newsdot]"); if (nd) nd.hidden = true; }
+      }
+      function afterTrade(animate) {
+        syncHist();
+        setValue(hasPos() ? portNow() : pxNow(IDX), animate);
+        showTab(tab); head();
+        series = seriesFor(per);
+        draw(true);
+      }
+
       // Живые тики: цена считается от игровой минуты — детерминированно
+      let tickN = 0;
       sc.every(() => {
-        const nv = hasPos() ? portNow() : pxNow(0);
+        tickN++;
+        const nv = hasPos() ? portNow() : pxNow(IDX);
         if (Math.abs(nv - value) >= 0.5) setValue(nv);
         series[series.length - 1] = nv;
         if (performance.now() > animUntil) draw(false);
-        const i = ri(0, ASSETS.length - 1);
-        const ch = dayChg(i);
-        const el = root.querySelector(`[data-aprice="${i}"]`);
-        if (el) { el.innerHTML = `${Vibe.rub(pxNow(i))}<small class="${ch >= 0 ? "fz-up" : "fz-down"}">${pct(ch)}</small>`; retrigger(el, "tick", 500); }
-        const sp = root.querySelector(`[data-spark="${i}"]`);
-        if (sp) sp.setAttribute("stroke", ch >= 0 ? "#12a150" : "#e5333d");
+        if (tab === "market") {
+          const i = ri(0, ASSETS.length - 1), ch = dayChg(i);
+          const el = root.querySelector(`[data-aprice="${i}"]`);
+          if (el) { el.innerHTML = `${Vibe.rub(pxNow(i))}<small class="${ch >= 0 ? "fz-up" : "fz-down"}">${pct(ch)}</small>`; retrigger(el, "tick", 500); }
+          const sp = root.querySelector(`[data-spark="${i}"]`);
+          if (sp) sp.setAttribute("stroke", ch >= 0 ? "#12a150" : "#e5333d");
+        }
+        // Свежая новость вышла в игровом времени
+        const nk = newsKey();
+        if (nk && nk !== lastNews) {
+          lastNews = nk;
+          const v = visibleNews(gDay(), curHr()), n = v[v.length - 1];
+          if (n) {
+            FX.toast(n.t, n.e, 3600);
+            if (n.kind === "crash") { FX.shake(root.querySelector(".fz-inv-top")); FX.sound.error(); }
+            else if (n.kind === "rally" || n.kind === "pump") FX.burst(dot, { emojis: ["🚀", "📈", "✨"], count: 12, spread: 100 });
+            if (tab === "news") showTab("news");
+            else { const nd = root.querySelector("[data-newsdot]"); if (nd) nd.hidden = false; }
+          }
+        }
+        if (tickN % 12 === 0) { try { if (invIncome() > 0) afterTrade(false); } catch (e) {} }
         head();
       }, 2500);
 
@@ -1983,51 +2671,204 @@
       const end = () => { scrub.style.opacity = 0; lastIdx = -1; };
       sc.on(chartBox, "pointerup", end); sc.on(chartBox, "pointercancel", end); sc.on(chartBox, "pointerleave", end);
 
-      function afterTrade(animate) {
-        syncHist();
-        const own = hasPos();
-        setValue(own ? portNow() : pxNow(0), animate);
-        refreshAssets(); head();
-        series = seriesFor(per);
-        draw(true);
+      /* ----- Тест квалифицированного инвестора ----- */
+      const QUIZ = [
+        { q: "Что такое волатильность?", a: ["График как кардиограмма после трёх энергетиков", "Новый вкус Vibe Cola", "Имя кота мэра"], ok: 0 },
+        { q: "Вайбкоин упал на 50%. Твои действия?", a: ["Беру кредит, чтобы докупить", "Ничего. Я знал, на что шёл 💎", "Звоню маме"], ok: 1, wrong: "Вайбот в восторге. Кредит Навсегда — тоже." },
+        { q: "Сколько можно потерять в крипте?", a: ["Ничего, график же зелёный", "Только то, что не жалко, а мне ничего не жалко", "Всё. И немного нервов сверху"], ok: 2 },
+        { q: "Кто такой квалифицированный инвестор?", a: ["Тот, у кого есть диплом", "Тот, кто прошёл этот тест", "Мой дядя, он всё знает"], ok: 1 },
+      ];
+      function quiz(then) {
+        let k = 0, score = 0;
+        Vibe.modal("", {
+          sound: "pop",
+          onMount(md, close) {
+            function step() {
+              if (k >= QUIZ.length) {
+                const pass = score >= 3;
+                md.innerHTML = pass ? `
+                  <div class="m-emo float">🎓</div><div class="display">Поздравляем!</div>
+                  <p>Ты квалифицированный инвестор (${score}/${QUIZ.length}). Теперь ты можешь терять деньги официально.</p>
+                  <button class="btn black block" data-ok>К крипте 🚀</button>` : `
+                  <div class="m-emo wobble">🫣</div><div class="display">${score}/${QUIZ.length}</div>
+                  <p>Вы слишком уверены в себе, чтобы быть квалифицированным. Нужно 3 из 4. Пересдача бесплатная — пока что.</p>
+                  <button class="btn black block" data-retry>Пересдать</button><button class="btn block" data-close style="margin-top:8px">Потом</button>`;
+                if (pass) {
+                  Vibe.state.set({ invQual: true });
+                  invAch("inv_qual"); FX.confetti(); FX.sound.success();
+                  Vibe.reward({ xp: 40 });
+                  md.querySelector("[data-ok]").addEventListener("click", () => { close(); if (then) sc.to(then, 350); if (tab === "market") showTab("market"); });
+                } else md.querySelector("[data-retry]").addEventListener("click", () => { k = 0; score = 0; step(); FX.sound.pop(); });
+                return;
+              }
+              const Q = QUIZ[k];
+              md.innerHTML = `
+                <div style="margin-bottom:6px">${Vibe.zabotik(72, "sly")}</div>
+                <div class="muted" style="font-weight:800;font-size:12px">Тест квалифицированного инвестора · ${k + 1}/${QUIZ.length}</div>
+                <div class="display" style="font-size:22px;margin:6px 0 12px">${Q.q}</div>
+                ${Q.a.map((a, i) => `<button class="btn block" data-qa="${i}" style="margin-top:8px;white-space:normal;height:auto;min-height:52px;padding:10px 14px">${a}</button>`).join("")}`;
+              md.querySelectorAll("[data-qa]").forEach((b) => b.addEventListener("click", () => {
+                const right = +b.dataset.qa === Q.ok;
+                if (right) score++;
+                b.style.background = right ? "var(--lime)" : "#ffd0d0";
+                FX.bump(b);
+                right ? FX.sound.like() : FX.sound.error();
+                if (!right && Q.wrong) FX.toast(Q.wrong, "🤖");
+                k++;
+                setTimeout(step, 550);
+              }, { once: true }));
+            }
+            step();
+          },
+        });
       }
 
-      // Покупка / продажа
+      /* ----- Инвестиционный коуч ----- */
+      function coach() {
+        const n = S().invCoach || 0, C = COACH[Math.min(n, COACH.length - 1)];
+        const LESSONS = [
+          "Урок 1: Купи мой второй курс. Это и есть пассивный доход. Мой.",
+          "Урок 2: Визуализируй прибыль. Чем чётче видишь — тем больнее потом.",
+          "Урок 3: Богатые думают иначе. Например, о том, как продать тебе урок 4.",
+          "Урок 4: Диверсифицируй коучей. Я, я и ещё раз я.",
+        ];
+        Vibe.modal(`
+          <div class="m-emo wobble">🧑‍🏫</div><div class="display" style="font-size:24px">Коуч Эдуард</div>
+          <p>«Я заработал первый миллион на курсах о том, как заработать первый миллион». ${C.n}.</p>
+          <div class="badge" style="background:var(--yellow);margin-bottom:12px">🔥 Осталось 3 места (всегда)</div>
+          <button class="btn black block" data-buycoach>Записаться · ${Vibe.rub(C.p)}</button>
+          <button class="btn block" data-close style="margin-top:8px">Я сам себе коуч</button>
+          <div class="fine">Опыт финансов прилагается. Деньги — нет. Курс относится к «обучению», вычет — в Госвайбе.</div>`, {
+          sound: "pop",
+          onMount(md, close) {
+            md.querySelector("[data-buycoach]").addEventListener("click", (e) => {
+              const ok = Vibe.pay(C.p, { title: `Learn · курс «Инвест-коуч: ${C.n}»`, emoji: "🧑‍🏫", col: "c-orange", from: e.currentTarget, cashback: 0 });
+              if (!ok) return;
+              Vibe.state.set({ invCoach: n + 1 });
+              md.innerHTML = `<div class="m-emo float">📜</div><div class="display" style="font-size:24px">Курс пройден!</div><p>${LESSONS[n % LESSONS.length]}</p><button class="btn black block" data-close>Я стал богаче. Духовно 🙏</button>`;
+              FX.confetti({ count: 50 }); FX.sound.success();
+              if (tab === "market") showTab("market");
+            });
+          },
+        });
+      }
+
+      /* ----- Вклад ----- */
+      function deposit() {
+        const AM = [5000, 10000, 25000, 50000, 100000, 250000];
+        let amount = 10000, term = 90;
+        Vibe.ui.sheet(`
+          <div class="fz-row" style="margin-bottom:12px">
+            <div class="ic c-sky" style="width:62px;height:62px;border-radius:20px;border:var(--line);display:grid;place-items:center;font-size:34px"><span class="emo wobble">🏦</span></div>
+            <div style="flex:1;min-width:0"><div class="display" style="font-size:22px">Вклад «Стабильный вайб»</div><div style="font-weight:800;font-size:13px">${String(Math.round(depRate() * 100))}% годовых · без риска · на замке</div></div>
+          </div>
+          <div data-dbody></div>`, {
+          onMount(sh, close) {
+            const b = sh.querySelector("[data-dbody]");
+            function drawD() {
+              const int = Math.round(amount * depRate() * (term / 360) * invMult());
+              b.innerHTML = `
+                <div class="card flat c-white" style="text-align:center;padding:14px">
+                  <div class="muted" style="font-weight:800;font-size:12px">Положить на ${term} игровых дней</div>
+                  <div class="big-num" style="font-size:40px;margin-top:4px">${Vibe.rub(amount)}</div>
+                  <div style="font-weight:800;font-size:13px;margin-top:6px">Вернётся ${Vibe.rub(amount + int)} · <span class="fz-up">+${Vibe.rub(int)}</span></div>
+                </div>
+                <div class="fz-amts">${AM.map((v) => `<button class="chip ${v === amount ? "on" : ""}" data-dam="${v}">${Vibe.rub(v)}</button>`).join("")}</div>
+                <div class="chips" style="margin:0 0 6px">${DEP_TERMS.map((t) => `<button class="chip ${t === term ? "on" : ""}" data-dterm="${t}">${t} дн.</button>`).join("")}</div>
+                <button class="btn black xl block" data-dopen ${invDeps().length >= DEP_MAX ? "disabled" : ""}>${invDeps().length >= DEP_MAX ? "Максимум 5 вкладов" : "Открыть вклад 🔒"}</button>
+                <div class="fine">Досрочное снятие — проценты сгорают, тело возвращается. Вклад застрахован чувством стабильности. Ставка 9% «годовых» — игровой год, 360 дней. Проценты не капитализируются, потому что капитализация — это не про вас.</div>`;
+            }
+            drawD();
+            sh.addEventListener("click", (e) => {
+              const a = e.target.closest("[data-dam]"); if (a) { amount = +a.dataset.dam; drawD(); FX.sound.pop(); return; }
+              const t = e.target.closest("[data-dterm]"); if (t) { term = +t.dataset.dterm; drawD(); FX.sound.pop(); return; }
+              const o = e.target.closest("[data-dopen]");
+              if (o && invDeps().length < DEP_MAX) {
+                const ok = Vibe.pay(amount, { title: "Vibe Invest · вклад «Стабильный вайб»", emoji: "🏦", col: "c-sky", from: o, cashback: 0 });
+                if (!ok) return;
+                syncHist();
+                Vibe.state.set({ invDeps: [...invDeps(), { id: Date.now().toString(36), a: amount, d0: gDay(), term, rate: depRate() }] });
+                Vibe.emit("invest", { kind: "deposit", amount });
+                close();
+                FX.confetti({ count: 40 }); FX.sound.success();
+                FX.toast(`Вклад открыт на ${term} дн. Стабильность — это вайб`, "🏦");
+                sc.to(() => afterTrade(true), 400);
+              }
+            });
+          },
+        });
+      }
+      function depClose(id) {
+        const x = invDeps().find((d) => d.id === id); if (!x) return;
+        Vibe.modal(`<div class="m-emo wobble">🔓</div><div class="display" style="font-size:24px">Снять досрочно?</div>
+          <p>Вернём ${Vibe.rub(x.a)}. Накопленные проценты сгорят — так написано в пункте 9.6.12, который вы, конечно, читали.</p>
+          <button class="btn black block" data-yes>Снять ${Vibe.rub(x.a)}</button><button class="btn block" data-close style="margin-top:8px">Пусть лежит</button>`, {
+          sound: "pop",
+          onMount(md, close) {
+            md.querySelector("[data-yes]").addEventListener("click", () => {
+              if (!invDeps().some((d) => d.id === id)) return close();
+              syncHist();
+              Vibe.state.set({ invDeps: invDeps().filter((d) => d.id !== id) });
+              Vibe.game.tx("Вклад «Стабильный вайб» · досрочно", x.a, "🏦", "c-sky");
+              Vibe.refreshCounters();
+              close(); FX.sound.error();
+              FX.toast("Вклад закрыт. Проценты ушли на заботу о вкладчиках", "🫠");
+              sc.to(() => afterTrade(false), 300);
+            });
+          },
+        });
+      }
+
+      /* ----- Покупка / продажа ----- */
       function trade(i) {
         const a = ASSETS[i];
+        if (!a) return;
+        if (a.cls === "crypto" && !qualified()) {
+          Vibe.modal(`<div class="m-emo wobble">🔒</div><div class="display" style="font-size:24px">Крипта только для квалифицированных</div>
+            <p>Регулятор Вайб-Сити заботится о тебе. Пройди короткий тест — 4 вопроса, 0 смысла.</p>
+            <button class="btn black block" data-q>Пройти тест 🎓</button><button class="btn block" data-close style="margin-top:8px">Я боюсь</button>`, {
+            sound: "pop",
+            onMount(md, close) { md.querySelector("[data-q]").addEventListener("click", () => { close(); setTimeout(() => quiz(() => trade(i)), 320); }); },
+          });
+          return;
+        }
         const AM = [500, 1000, 5000, 10000, 25000, 96000];
         const SP = [0.25, 0.5, 1];
         const pos = invPos()[a.tk];
         const owned = pos && pos.qty > 0;
         let mode = "buy", amount = 1000, part = 1;
         const px = () => pxNow(i);
+        const n0 = visibleNews(gDay(), curHr()).filter((n) => n.fx[a.tk] != null).pop();
+        const riskB = { stock: ["средний риск", "var(--yellow)"], index: ["риск пониже", "var(--mint)"], gold: ["тихая гавань", "var(--yellow)"], bond: ["низкий риск", "var(--mint)"], crypto: ["высокий риск, высокий вайб", "#ff3b3b"] }[a.cls];
         Vibe.ui.sheet(`
           <div class="fz-row" style="margin-bottom:12px">
             <div class="ic ${a.c}" style="width:62px;height:62px;border-radius:20px;border:var(--line);display:grid;place-items:center;font-size:34px"><span class="emo wobble">${a.e}</span></div>
-            <div style="flex:1;min-width:0"><div class="display" style="font-size:26px">${a.tk}</div><div class="muted" style="font-weight:800;font-size:13px">${a.n} · ${Vibe.rub(px())}</div>${a.div ? `<div style="font-weight:800;font-size:12px;margin-top:2px">${divTxt(a)} · 1-го числа</div>` : ""}</div>
-            ${a.tk === "VBC" ? `<span class="badge" style="background:#ff3b3b;color:#fff;transform:rotate(6deg)">высокий риск, высокий вайб</span>` : ""}
+            <div style="flex:1;min-width:0"><div class="display" style="font-size:26px">${a.tk}</div><div class="muted" style="font-weight:800;font-size:13px">${a.n} · ${Vibe.rub(px())}</div>${incTxt(a) ? `<div style="font-weight:800;font-size:12px;margin-top:2px">${incTxt(a)} · ${a.div ? "1-го" : "15-го"} числа</div>` : ""}</div>
+            <span class="badge" style="background:${riskB[1]};${a.cls === "crypto" ? "color:#fff;" : ""}transform:rotate(6deg)">${riskB[0]}</span>
           </div>
+          ${n0 ? `<div class="card flat" style="padding:10px 12px;margin-bottom:10px;font-weight:800;font-size:12px">${n0.e} ${n0.t}</div>` : ""}
           ${owned ? `<div class="chips" style="margin-bottom:10px"><button class="chip on" data-mode="buy">Купить</button><button class="chip" data-mode="sell">Продать</button></div>` : ""}
           <div data-body></div>`, {
           onMount(sh, close) {
-            const body = sh.querySelector("[data-body]");
+            const body2 = sh.querySelector("[data-body]");
             function draw2() {
               const p = invPos()[a.tk] || { qty: 0, cost: 0 };
               if (mode === "buy") {
-                body.innerHTML = `
+                body2.innerHTML = `
                   <div class="card flat c-white" style="text-align:center;padding:14px">
                     <div class="muted" style="font-weight:800;font-size:12px">Сумма покупки</div>
                     <div class="big-num" style="font-size:44px;margin-top:4px" data-amt>${Vibe.rub(amount)}</div>
                     <div style="font-weight:800;font-size:13px;margin-top:6px">≈ ${qtyTxt(amount / px())} шт. ${a.tk}</div>
                   </div>
                   <div class="fz-amts">${AM.map((v) => `<button class="chip ${v === amount ? "on" : ""}" data-am="${v}">${v === 96000 ? "Вся зарплата" : Vibe.rub(v)}</button>`).join("")}</div>
-                  <div class="badge" style="background:var(--yellow)">🔮 Прогноз Заботика: ${pick(["вверх", "в космос", "вбок, но красиво", "туда, куда надо"])}</div>
+                  <div class="badge" style="background:var(--yellow);white-space:normal">🤖 Прогноз Вайбота: ${pick(["вверх", "в космос", "вбок, но красиво", "туда, куда надо", "+146% (уверенность 300%)"])}</div>
                   <button class="btn black xl block" data-buy style="margin-top:14px">Купить 🚀</button>
-                  <div class="fine">Нажимая «Купить», вы подтверждаете, что прочитали проспект эмиссии, поняли его и простили.</div>`;
+                  <div class="fine">Нажимая «Купить», вы подтверждаете, что прочитали проспект эмиссии, поняли его и простили. Активы могут дешеветь. Особенно после покупки.</div>`;
               } else {
-                const q = p.qty * part, gross = q * px(), fee = Math.round(gross * SELL_FEE), net = Math.round(gross - fee);
+                const fee0 = sellFee();
+                const q = p.qty * part, gross = q * px(), fee = Math.round(gross * fee0), net = Math.round(gross - fee);
                 const pnl = net - (p.cost || 0) * part;
-                body.innerHTML = `
+                body2.innerHTML = `
                   <div class="card flat c-white" style="text-align:center;padding:14px">
                     <div class="muted" style="font-weight:800;font-size:12px">Получишь на карту</div>
                     <div class="big-num" style="font-size:44px;margin-top:4px">${Vibe.rub(net)}</div>
@@ -2035,7 +2876,7 @@
                   </div>
                   <div class="fz-amts">${SP.map((v) => `<button class="chip ${v === part ? "on" : ""}" data-part="${v}">${v === 1 ? "Всё" : Math.round(v * 100) + "%"}</button>`).join("")}</div>
                   <button class="btn lime xl block" data-sell style="margin-top:4px">Продать ${part === 1 ? "всё" : Math.round(part * 100) + "%"} 💸</button>
-                  <div class="fine">Продажа фиксирует прибыль. Или убыток. Или урок.</div>`;
+                  <div class="fine">Продажа фиксирует прибыль. Или убыток. Или урок.${p.since != null && gDay() - p.since < 30 ? ` До ачивки HODL ещё ${30 - (gDay() - p.since)} дн.` : ""}</div>`;
               }
             }
             draw2();
@@ -2060,17 +2901,25 @@
               if (pt) { part = +pt.dataset.part; draw2(); FX.sound.pop(); return; }
               const b = e.target.closest("[data-buy]");
               if (b) {
-                invDividends({ quiet: true }); syncHist();
+                invIncome({ quiet: true }); syncHist();
                 const price = px();
-                const ok = Vibe.pay(amount, { title: `Vibe Invest · ${a.tk}`, emoji: a.e, col: a.c, from: b, cashback: 0.01 });
+                const ok = Vibe.pay(amount, { title: `Vibe Invest · ${a.tk}`, emoji: a.e, col: a.c, from: b, cashback: 0 });
                 if (!ok) return;
                 const r = b.getBoundingClientRect();
                 close();
                 rocket({ x: r.left + r.width / 2, y: r.top });
                 const all = Object.assign({}, invPos());
-                const cur = all[a.tk] || { qty: 0, cost: 0 };
-                all[a.tk] = { qty: cur.qty + amount / price, cost: (cur.cost || 0) + amount };
+                const cur = all[a.tk] || { qty: 0, cost: 0, since: gDay() };
+                all[a.tk] = { qty: cur.qty + amount / price, cost: (cur.cost || 0) + amount, since: cur.since != null ? cur.since : gDay() };
                 Vibe.state.set({ invPos: all });
+                Vibe.emit("invest", { kind: "buy", tk: a.tk, amount });
+                // Купил на хаях?
+                const td = gDay();
+                if (td >= 10) {
+                  let hi = 0; for (let d = td - 30; d < td; d++) if (d >= 0) hi = Math.max(hi, closeAt(i, d));
+                  if (price >= hi * 0.995) sc.to(() => { invAch("inv_top"); FX.toast("Купил на хаях. Классика жанра", "🏔️", 2600); }, 1600);
+                }
+                if (a.tk === "MEME" && dayNews(td).some((n) => n.kind === "pump")) invAch("inv_meme");
                 sc.to(() => {
                   afterTrade(true);
                   FX.burst(dot, { emojis: ["🚀", "📈", "💚", "✨"], count: 18, spread: 130 });
@@ -2080,22 +2929,31 @@
               }
               const sb = e.target.closest("[data-sell]");
               if (sb) {
-                invDividends({ quiet: true }); syncHist();
+                invIncome({ quiet: true }); syncHist();
                 const all = Object.assign({}, invPos());
                 const p = all[a.tk];
                 if (!p || !(p.qty > 0)) return;
-                const q = p.qty * part, gross = q * px(), net = Math.round(gross * (1 - SELL_FEE));
+                const q = p.qty * part, gross = q * px(), net = Math.round(gross * (1 - sellFee()));
                 const costPart = (p.cost || 0) * part, pnl = net - costPart;
                 if (part >= 1 || p.qty - q < 1e-6) delete all[a.tk];
-                else all[a.tk] = { qty: p.qty - q, cost: (p.cost || 0) - costPart };
-                Vibe.state.set({ invPos: all });
+                else all[a.tk] = { qty: p.qty - q, cost: (p.cost || 0) - costPart, since: p.since };
+                // Перк «Инвестор» и др.: множитель к доходности — только к прибыли
+                const bonus = pnl > 0 ? Math.round(pnl * (invMult() - 1)) : 0;
+                const y = Math.floor(gDay() / 360), ry = S().invRealizedY || {};
+                Vibe.state.set({
+                  invPos: all,
+                  invRealized: (S().invRealized || 0) + pnl + bonus,
+                  invRealizedY: { y, a: (ry.y === y ? ry.a : 0) + pnl + bonus },
+                });
                 Vibe.game.tx(`Vibe Invest · продажа ${a.tk}`, net, a.e, "c-lime");
+                if (bonus > 0) Vibe.game.tx(`Vibe Invest · бонус к доходности`, bonus, "📊", "c-lime");
                 Vibe.refreshCounters();
+                Vibe.emit("invest", { kind: "sell", tk: a.tk, amount: net, pnl: pnl + bonus });
                 const r = sb.getBoundingClientRect();
                 close();
                 if (pnl >= 0) { FX.confetti({ count: 70, from: { x: r.left + r.width / 2, y: r.top } }); FX.sound.success(); }
                 else FX.sound.error();
-                FX.toast(pnl >= 0 ? `Продано! Прибыль +${Vibe.rub(pnl)}. Налоговая уже улыбается` : `Продано с убытком −${Vibe.rub(-pnl)}. Зато опыт бесценен`, pnl >= 0 ? "💸" : "🫠", 3000);
+                FX.toast(pnl >= 0 ? `Продано! Прибыль +${Vibe.rub(pnl + bonus)}. Налоговая уже улыбается` : `Продано с убытком −${Vibe.rub(-pnl)}. Зато опыт бесценен`, pnl >= 0 ? "💸" : "🫠", 3000);
                 sc.to(() => afterTrade(false), 400);
               }
             });
@@ -2115,6 +2973,14 @@
         ], { duration: 1300, easing: "cubic-bezier(.5,0,.6,1)" }).onfinish = () => el.remove();
         FX.confetti({ count: 90, from });
       }
+      function levelInfo() {
+        const L = finLvl(), T = tierOf(L), m = invMult();
+        Vibe.modal(`<div class="m-emo float">${T.e}</div><div class="display" style="font-size:24px">Инвест-уровень ${L}</div>
+          <p>${T.n}. Растёт вместе с навыком «Финансы»: покупки, вклады, курсы и копилка качают его.</p>
+          <div style="text-align:left">${TIERS.map((t) => `<div class="fz-between" style="font-weight:800;font-size:13px;padding:6px 0;border-bottom:2px dashed rgba(14,14,18,.12);${L >= t.l ? "" : "opacity:.5"}"><span>${L >= t.l ? t.e : "🔒"} ${t.perk}</span><small>ур. ${t.l}</small></div>`).join("")}</div>
+          ${m > 1 ? `<p style="font-weight:800">📊 Множитель доходности ×${String(m).replace(".", ",")}</p>` : ""}
+          <button class="btn black block" data-close style="margin-top:12px">Буду расти 📈</button>`, { sound: "pop" });
+      }
 
       sc.on(root, "click", (e) => {
         const pc = e.target.closest("[data-per]");
@@ -2123,31 +2989,22 @@
           setPeriod(+pc.dataset.per); FX.sound.whoosh();
           return;
         }
+        const tb = e.target.closest("[data-tab]");
+        if (tb) { if (tb.dataset.tab !== tab) { showTab(tb.dataset.tab, true); FX.sound.whoosh(); } return; }
+        const dc = e.target.closest("[data-depclose]");
+        if (dc) { depClose(dc.dataset.depclose); return; }
         const as = e.target.closest("[data-asset]");
-        if (as) { trade(+as.dataset.asset); return; }
+        if (as) { const i = +as.dataset.asset; if (i >= 0) trade(i); return; }
         const act = e.target.closest("[data-act]");
         if (!act) return;
-        if (act.dataset.act === "topup") {
-          FX.bump(act);
-          const divs = ASSETS.filter((a) => a.div);
-          const i = gameInfo();
-          const left = i ? (i.dom === 1 ? 30 : 31 - i.dom) : 30;
-          FX.toast(`Дивиденды платят ${divs.map((a) => a.tk).join(", ")} — через ${left} дн. (1-го числа)`, "💰", 3200);
-        } else if (act.dataset.act === "advice") {
-          FX.bump(act);
-          Vibe.modal(`<div style="margin-bottom:6px">${Vibe.zabotik(96, "sly")}</div><div class="display">Совет дня</div><p>${pick([
-            "Покупай на хаях, продавай на лоях. Или наоборот, я вечно путаю.",
-            "Диверсифицируй: часть в VIBE, часть в ZABOT, часть в шаурму.",
-            "Лучшая инвестиция — в себя. Но в себя нельзя купить на 1 000 ₽.",
-            "Если график идёт вниз — переверни телефон.",
-            "KRDT платит дивиденды. Из процентов по твоему же кредиту. Красиво.",
-            "Цены меняются, пока ты спишь. Поэтому я не сплю. Никогда.",
-          ])}</p><button class="btn black block" data-close>Понял, принял 🫡</button>`, { sound: "pop" });
-        }
+        FX.bump(act);
+        if (act.dataset.act === "deposit") deposit();
+        else if (act.dataset.act === "coach") coach();
+        else if (act.dataset.act === "level") levelInfo();
       });
 
       head();
-      sparks();
+      showTab("market");
       setPeriod(0);
       return () => {
         sc.clear();
@@ -2386,7 +3243,7 @@
     ] },
     { name: "Плюс", e: "💎", go: "plus", cta: "Подключить Плюс 💎", slides: [
       { bg: "c-violet", k: "Подписка", t: "Плюс Вайб", x: "Кэшбек ×2, музыка без рекламы и лёгкое чувство превосходства.", hero: "💎", sm: ["✨", "👑", "💜"] },
-      { bg: "c-lilac", t: "Первый месяц — 0 ₽", x: "Следующие — по любви. И по 299 ₽. Отменить можно в любой момент*", hero: "🥰", sm: ["💸", "💖", "⭐"], fine: "*момент наступит в 2031 году" },
+      { bg: "c-lilac", t: "Первый месяц — 0 ₫", x: "Следующие — по любви. И по 299 ₫. Отменить можно в любой момент*", hero: "🥰", sm: ["💸", "💖", "⭐"], fine: "*момент наступит в 2031 году" },
     ] },
     { name: "Концерты", e: "🎤", go: "tickets", cta: "Купить билет 🎟️", slides: [
       { bg: "c-pink", k: "Только один вечер", t: "«Ипотека в 25» снова в городе", x: "Хиты «Платёж», «Ставка ЦБ» и «Не звони мне, банк».", hero: "🎤", sm: ["🎸", "🔥", "🎶"] },
@@ -2396,8 +3253,8 @@
       { bg: "c-lime", k: "Акция", t: "Кэшбек 30%", x: "на шаги вправо, вдохи по чётным и покупки, которые вы не совершали.", hero: "🤑", sm: ["🪙", "💚", "✨"] },
       { bg: "c-orange", t: "Кэшбек приходит вайбиками", x: "А вайбики приходят прямо в сердце. Минуя кошелёк.", hero: "🪙", sm: ["💛", "⭐", "🎉"] },
     ] },
-    { name: "Заботик", e: "🤖", go: "chats", cta: "Поболтать с Заботиком 💬", slides: [
-      { bg: "c-mint", k: "Твой ИИ-друг", t: "Привет, я Заботик!", x: "Я забочусь о тебе 24/7. Даже когда ты спишь. Особенно когда ты спишь.", zab: true, sm: ["💚", "✨", "🫶"] },
+    { name: "Вайбот", e: "🤖", go: "chats", cta: "Поболтать с Вайботом 💬", slides: [
+      { bg: "c-mint", k: "Твой ИИ-друг", t: "Привет, я Вайбот!", x: "Я забочусь о тебе 24/7. Даже когда ты спишь. Особенно когда ты спишь.", zab: true, sm: ["💚", "✨", "🫶"] },
       { bg: "c-sky", t: "Спроси меня о чём угодно", x: "Отвечу про кредит. Я всегда отвечаю про кредит. Это забота.", hero: "💬", sm: ["🤖", "❓", "💡"] },
     ] },
     { name: "Ипотека", e: "🏠", go: "home-buy", cta: "Выбрать квартиру 🏠", slides: [

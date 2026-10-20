@@ -33,6 +33,59 @@
     document.head.appendChild(lk);
   }
 
+  /* ---------- Часы: что видит Vibe Fit ----------
+     0 — только телефон (примерные шаги и «ты вроде устал?»)
+     1 — Vibe Band: шаги, пульс, сон
+     2 — Vibe Watch: всё (продуктивность, питание, настроение, здоровье, стресс)
+     3 — Vibe Watch Ultra: всё + прогноз выгорания и золотой безель */
+  const hasI = (id) => !!(V.inv && V.inv.has(id));
+  const tierNow = () => hasI("watch_ultra") ? 3 : hasI("watch_pro") ? 2 : (hasI("watch_band") || hasI("mk-watch")) ? 1 : 0;
+  let T = 0; // фиксируется на рендере экрана
+  const DEV = [
+    { n: "Телефон", brand: "📱 Телефон в кармане · без часов", cls: "dev-phone" },
+    { n: "Vibe Band", brand: "Vibe Band · live", cls: "dev-band" },
+    { n: "Vibe Watch", brand: "Vibe Watch · live", cls: "dev-watch" },
+    { n: "Vibe Watch Ultra", brand: "Vibe Watch Ultra · live", cls: "dev-ultra" },
+  ];
+  const BUY = {
+    1: { id: "watch_band", n: "Vibe Band", price: 4990 },
+    2: { id: "watch_pro", n: "Vibe Watch", price: 19990 },
+  };
+  const HOOK = {
+    sleep: "Купи Vibe Band — и узнаешь, почему ты так плохо спишь",
+    sleepwhy: "Почему такой сон? Телефон не знает. Он сам спал в беззвучном",
+    steps: "Телефон думает, что ты прошёл 3 000. Или 4 000. Или это ты в метро трясся",
+    prod: "Начальник уже видит твою продуктивность. А ты — нет. Часы покажут первым",
+    food: "Ты точно ешь «сбалансированно»? Часы посчитают каждую шаурму",
+    mood: "Как ты себя чувствуешь? Не отвечай. Часы ответят точнее",
+    health: "Здоровье — это 35% сон, 30% еда и 100% часы, которых у тебя нет",
+  };
+  const approx = (n) => Math.max(0, Math.round((n || 0) / 1000) * 1000);
+  const fuzzyTired = (b) => b.sleeping ? "Телефон лежит неподвижно. Спишь? Или просто понедельник"
+    : b.energy < 25 ? "Ты вроде устал? 🥱" : b.energy < 50 ? "Ты вроде… норм? Или нет? 🤔"
+    : b.energy < 75 ? "Кажется, бодрячком? Не точно 🤷" : "Вроде бодр. Наверное 🙃";
+  const cdTxt = (s) => `${String(Math.floor(s / 60)).padStart(2, "0")}:${String(s % 60).padStart(2, "0")}`;
+  // Пейволл поверх размытого блока. need: 1 — Band, 2 — Watch
+  function paywall(key, need, big) {
+    const up = need === 2 && T === 1;
+    const P = BUY[need];
+    return `<div class="fit-pw ${big ? "big" : ""}">
+      <div class="fit-pw-top"><span class="emo wobble">${need === 1 ? "📿" : "⌚"}</span><span class="fit-pill lime sm">🔒 ${up ? "Апгрейд до Watch: +4 метрики" : "Нужен " + P.n}</span></div>
+      <b>${HOOK[key]}</b>
+      ${big ? `<small>👥 92% пользователей Vibe уже носят часы. Остальные 8% — ты</small>
+      <div class="fit-pw-cd">⏳ скидка 15% сгорит через <b data-cd>02:00</b></div>` : ""}
+      <button class="btn lime block fit-pw-btn" data-go="market" data-params='${JSON.stringify({ cat: "watch", open: P.id })}'>⌚ ${up ? "Апгрейд" : "Купить"} ${P.n} · ${V.rub(P.price)}</button>
+    </div>`;
+  }
+  const lock = (key, need, inner, big) => T >= need ? inner
+    : `<div class="fit-lock ${big ? "big" : ""}"><div class="fit-lock-body" aria-hidden="true" inert>${inner}</div>${paywall(key, need, big)}</div>`;
+  const stressOf = (bpm) => clamp(Math.round((bpm - 58) * 2.2));
+  function burnout(b) {
+    const risk = clamp(Math.round(100 - (b.energy * 0.4 + b.mood * 0.35 + b.health * 0.25)));
+    const days = Math.max(1, Math.round((100 - risk) / 9));
+    return risk >= 60 ? `через ${days} дн. Уже пора в отпуск 🔥` : risk >= 35 ? `через ~${days} дн. Держись 🫠` : `не скоро. Подозрительно 😎`;
+  }
+
   /* ---------- Тонкие иконки ---------- */
   const svgI = (d) => `<svg class="fit-ic" viewBox="0 0 24 24" aria-hidden="true"><path d="${d}"/></svg>`;
   const IC = { ne: svgI("M7 17L17 7M9 7h8v8"), sw: svgI("M17 7L7 17M15 17H7V9"), chev: svgI("M9 5l7 7-7 7"), up: svgI("M12 19V5M6 11l6-6 6 6"), down: svgI("M12 5v14M6 13l6 6 6-6") };
@@ -55,8 +108,15 @@
     return "Ты сейчас как Wi-Fi в метро. Вроде есть, но толку ноль 📉";
   }
 
-  /* ---------- Заботик: хитрый совет по данным ---------- */
+  /* ---------- Вайбот: хитрый совет по данным ---------- */
   function insight(b) {
+    if (T === 0) {
+      const L = ["Я вижу только, что телефон куда-то ходил. Купи Vibe Band — увижу тебя целиком 💜",
+        "Без часов я как мама по телефону: «ты там вроде устал?» Хочешь точнее — Vibe Band",
+        "92% пользователей Vibe уже знают свой пульс. Ты пока знаешь только баланс"];
+      return L[Math.floor(V.game.minutes() / 30) % L.length];
+    }
+    if (T === 1 && (b.nutrition < 40 || b.mood < 35)) return "Что-то с питанием или настроением. Что именно — знает Vibe Watch. Я лишь чувствую";
     const last = (b.sleepLog || []).slice(-1)[0];
     const h = V.game.info().hour;
     const sq = V.body.sleepQuality(b);
@@ -153,7 +213,7 @@
     if (!b.sleeping) return "";
     const mins = now - b.sleeping.at;
     return `<div class="fit-sleepnow">
-      <div class="fit-sn-top"><span class="fit-bubble vio"><span class="emo float">💤</span></span><div><b>Спишь ${dur(mins)}</b><small>Качество ${r0(b.sleeping.q * 100)}% · энергия копится</small></div></div>
+      <div class="fit-sn-top"><span class="fit-bubble vio"><span class="emo float">💤</span></span><div><b>Спишь ${dur(mins)}</b><small>${T ? `Качество ${r0(b.sleeping.q * 100)}%` : "Качество ? · без браслета не видно"} · энергия копится</small></div></div>
       <div class="fit-line dark"><i style="--p:${r0(b.energy)}%"></i></div>
       <small class="fit-sn-sub">⚡ ${r0(b.energy)}% · проснёшься сам на 100%, если уже утро</small>
     </div>`;
@@ -185,7 +245,7 @@
   }
   function mealsHtml(b, day) {
     const M = (b.meals || []).filter((m) => m.day === day);
-    if (!M.length) return `<div class="fit-empty">🥺 Сегодня ты ещё ничего не ел. Заботик волнуется и уже открыл Vibe Eat</div>`;
+    if (!M.length) return `<div class="fit-empty">🥺 Сегодня ты ещё ничего не ел. Вайбот волнуется и уже открыл Vibe Eat</div>`;
     return M.slice().reverse().map((m) => `
       <div class="fit-meal"><span class="fit-sq"><span class="emo">${m.e}</span></span><div><b>${V.esc(m.t)}</b><small>${hhmm(m.min)}</small></div>
       <span class="fit-pill ${m.q >= 70 ? "lime" : m.q >= 45 ? "" : "vio"}">${m.q >= 70 ? "полезно" : m.q >= 45 ? "сойдёт" : "грешно"}</span></div>`).join("");
@@ -203,12 +263,14 @@
     return `<div class="fit-acts">
       ${n ? `<button class="btn lime block" data-act="cook">🍳 Приготовить из холодильника</button>`
           : `<button class="btn lime block" disabled>🍳 Приготовить — холодильник пуст</button><button class="btn block" data-go="supermarket">🥑 В Supermarket за продуктами ${IC.chev}</button>`}
-      <div class="grid2"><button class="btn vio" data-go="eat">🍜 Заказать еду</button><button class="btn black" data-act="vend">🍫 Автомат · 159 ₽</button></div>
+      <div class="grid2"><button class="btn vio" data-go="eat">🍜 Заказать еду</button><button class="btn black" data-act="vend">🍫 Автомат · 159 ₫</button></div>
     </div>`;
   }
   function workoutHtml(b, now) {
     const left = WORKOUT_CD - (now - (b.workoutAt ?? -9999));
     if (left > 0) return `<button class="btn block" disabled>🏋️ Мышцы отдыхают · ещё ${dur(left)}</button>`;
+    if (!T) return `<button class="btn lime xl block fit-wo-btn" data-act="workout">🏋️ Тренировка вслепую · без оценки</button>
+      <div class="fit-wo-lim">🔒 Без браслета точность не считается: максимум 40% и меньше вайбиков. <button data-go="market" data-params='${JSON.stringify({ cat: "watch", open: "watch_band" })}'>Vibe Band ${IC.chev}</button></div>`;
     return `<button class="btn lime xl block fit-wo-btn" data-act="workout">🏋️ Тренировка · 15 сек ${IC.ne}</button>`;
   }
   function moodActHtml(now, day) {
@@ -246,8 +308,10 @@
     render() {
       if (!V.body) return `<div class="head"><div class="title">Vibe Fit</div></div><div class="card">Браслет не подключён. Как и ты к реальности</div>`;
       V.body.tick();
+      T = tierNow();
       const b = V.body.get();
       const g = V.game.info();
+      const D = DEV[T];
       const ring = (k, c, r) => `
         <circle class="fit-rt" cx="120" cy="120" r="${r}" stroke="${c}"/>
         <circle class="fit-rf" data-ring="${k}" cx="120" cy="120" r="${r}" stroke="${c}" pathLength="100" stroke-dasharray="100" stroke-dashoffset="100"/>`;
@@ -259,16 +323,33 @@
         <b class="fit-n" data-t="pv-${k}">0</b><div class="fit-line"><i data-b="p-${k}" style="background:${i === 2 ? "#0d0d0f" : SEG[i][3]}"></i></div></div>`;
       return `
       <div class="head">
-        <div class="title" style="font-size:26px">Vibe Fit<small>Браслет, который знает о тебе всё. Даже лишнее</small></div>
+        <div class="title" style="font-size:26px">Vibe Fit<small>${T ? (T >= 2 ? "Часы, которые знают о тебе всё. Даже лишнее" : "Браслет знает многое. Часы — всё") : "Без часов я знаю о тебе мало. Это больно нам обоим"}</small></div>
         ${V.ui.vibikiPill()}
       </div>
 
       <div class="stagger">
-        <!-- Браслет -->
-        <div class="fit-hero" data-face>
-          <div class="fit-h-top"><span class="fit-h-brand"><i></i>Vibe Band · live</span><span class="fit-time" data-t="time">${g.time}</span></div>
+        <!-- Браслет / часы / телефон -->
+        ${T ? "" : `<div class="fit-hero ${D.cls}" data-face>
+          <div class="fit-h-top"><span class="fit-h-brand"><i></i>${D.brand}</span><span class="fit-time" data-t="time">${g.time}</span></div>
+          <div class="fit-h-mid" data-act="phone">
+            <div class="fit-phone"><i class="fit-ph-notch"></i><div class="fit-ph-scr"><span class="emo">👟</span><b class="fit-n" data-t="pscr">≈0</b><small>шагов?</small></div></div>
+            <div class="fit-h-bpm">
+              <small>Шаги · примерно</small>
+              <div class="fit-bpm"><b class="fit-n" data-t="papprox">≈0</b></div>
+              <span class="fit-zone"><i></i>телефон в кармане — плюс-минус 1000</span>
+              <div class="fit-fuzzy" data-t="fuzzy">${fuzzyTired(b)}</div>
+            </div>
+          </div>
+          <div class="fit-legend">
+            ${[["❤️", "Пульс"], ["😴", "Сон"], ["💼", "Работа"]].map(([e, t]) => `<button class="fit-lg locked" data-go="market" data-params='${JSON.stringify({ cat: "watch", open: "watch_band" })}'><i></i><small>${e} ${t}</small><b class="fit-n">🔒 ?</b></button>`).join("")}
+          </div>
+          <button class="btn lime block fit-ph-cta" data-go="market" data-params='${JSON.stringify({ cat: "watch", open: "watch_band" })}'>📿 Надень Vibe Band — и я увижу тебя целиком · ${V.rub(4990)}</button>
+        </div>`}
+        ${T ? `<div class="fit-hero ${D.cls}" data-face>
+          <div class="fit-h-top"><span class="fit-h-brand"><i></i>${D.brand}</span><span class="fit-time" data-t="time">${g.time}</span></div>
           <div class="fit-h-mid" data-act="heart">
             <div class="fit-ringbox">
+              <span class="fit-pod" aria-hidden="true"></span>${T === 3 ? `<span class="fit-ultra-tag">ULTRA</span>` : ""}
               <svg class="fit-rings" viewBox="0 0 240 240" aria-hidden="true">
                 ${ring("e", "#d7ff2f", 104)}${ring("f", "#6b4dff", 82)}${ring("s", "#ffffff", 60)}
               </svg>
@@ -287,14 +368,14 @@
             <button class="fit-lg" data-act="ring" data-e="🍔"><i style="background:#6b4dff"></i><small>Еда</small><b class="fit-n" data-t="lf">0%</b></button>
             <button class="fit-lg" data-act="ring" data-e="👟"><i style="background:#fff"></i><small>Движение</small><b class="fit-n" data-t="ls">0%</b></button>
           </div>
-        </div>
+        </div>` : ""}
         <div data-c="wake"></div>
-        <div class="fine" style="text-align:center">Пульс измерен приблизительно. Как и всё в твоей жизни. <span data-t="date">${g.label}</span></div>
+        <div class="fine" style="text-align:center">${T ? "Пульс измерен приблизительно. Как и всё в твоей жизни." : "Без часов Vibe Fit видит тебя через карман. Мутно, но с любовью."} <span data-t="date">${g.label}</span></div>
 
         <!-- Продуктивность -->
         <section class="fit-band lime">
           <div class="fit-bh"><h2 class="fit-h2">Продуктивность</h2><span class="fit-pill dark">💼 для работы</span></div>
-          <div class="fit-donut">
+          ${lock("prod", 2, `<div class="fit-donut">
             <svg viewBox="0 0 260 260" aria-hidden="true">
               <circle class="fit-seg-track" cx="130" cy="130" r="98"/>
               ${seg(3)}${seg(2)}${seg(1)}${seg(0)}
@@ -308,17 +389,21 @@
           </div>
           <div class="fit-pts">${tile("e", 0)}${tile("f", 1)}${tile("m", 2)}${tile("h", 3)}</div>
           <div class="fit-verdict"><span data-t="verdict"></span></div>
+          <div class="fit-xtra">
+            <span>🧠 Стресс <b class="fit-n" data-t="stress">—</b></span>
+            ${T === 3 ? `<span class="gold">🔥 Прогноз выгорания: <b data-t="burn">—</b></span>` : ""}
+          </div>`, true)}
           <div class="fit-band-note">Влияет на премию за рабочие задачи</div>
         </section>
 
         <!-- Сон -->
         <section class="fit-band vio">
-          <div class="fit-bh"><h2 class="fit-h2">Сон · 7 ночей</h2><span class="fit-pill glass" data-t="sq">—</span></div>
-          <div data-c="lastsleep"></div>
-          <div data-c="sleepchart" class="fit-mt"></div>
+          <div class="fit-bh"><h2 class="fit-h2">Сон · 7 ночей</h2><span class="fit-pill glass" data-t="sq">${T ? "—" : "🔒 качество ?"}</span></div>
+          ${lock("sleep", 1, `<div data-c="lastsleep"></div>
+          <div data-c="sleepchart" class="fit-mt"></div>`, true)}
           <div class="fit-sheet">
-            <div class="fit-why"><span class="fit-sq big"><span class="emo" data-t="sqe">🛏️</span></span><div><b>Почему такой сон</b><small data-t="why"></small></div></div>
-            <div class="fit-why-note">Качество сна зависит от жилья. Переезд = буст сна ${IC.up}</div>
+            ${lock("sleepwhy", 1, `<div class="fit-why"><span class="fit-sq big"><span class="emo" data-t="sqe">🛏️</span></span><div><b>Почему такой сон</b><small data-t="why"></small></div></div>
+            <div class="fit-why-note">Качество сна зависит от жилья. Переезд = буст сна ${IC.up}</div>`)}
             <div data-c="sleepnow"></div>
             <div data-c="sleepact" class="fit-mt"></div>
           </div>
@@ -327,14 +412,14 @@
 
         <!-- Еда -->
         <div class="fit-bh plain"><h2 class="fit-h2">Еда и питание</h2><span class="fit-pill" data-t="mealsn">0 приёмов</span></div>
-        <div class="fit-tiles">
+        ${lock("food", 2, `<div class="fit-tiles">
           <div class="fit-tile ink">
             <div class="fit-tile-h"><span>Сытость</span>${IC.ne}</div>
             <div class="fit-n fit-tile-n"><span data-t="food" data-val="0">0</span><small>%</small></div>
             <div class="fit-line dark"><i class="lime" data-b="food"></i></div>
           </div>
           <div class="fit-tile vio" data-c="nutr"></div>
-        </div>
+        </div>`)}
         <div class="fit-sheet solo">
           <div class="fit-sub">Сегодня ты съел</div>
           <div data-c="meals" class="fit-meals"></div>
@@ -356,11 +441,11 @@
             </div>
             <div style="flex:1;min-width:0">
               <div class="fit-n fit-steps-num" data-t="steps" data-val="0">0</div>
-              <small class="fit-steps-sub">шагов из ${V.fmt(goal())}</small>
+              <small class="fit-steps-sub">${T ? `шагов из ${V.fmt(goal())}` : "примерно · телефон в кармане — плюс-минус 1000"}</small>
             </div>
           </div>
           <div class="fit-steps-left" data-t="stleft"></div>
-          <div data-c="stepschart" class="fit-mt"></div>
+          ${lock("steps", 1, `<div data-c="stepschart" class="fit-mt"></div>`, true)}
           <div data-c="workout" class="fit-mt"></div>
           <button class="btn block fit-mt fit-ghost" data-go="maps">🚶 Прогуляться по карте ${IC.chev}</button>
           <div class="fine">Тренировка: тапай в ритм 15 секунд. Шаги, настроение и вайбики — за точность, не за усилия. Как в жизни.</div>
@@ -369,7 +454,7 @@
         <!-- Настроение -->
         <div class="fit-bh plain"><h2 class="fit-h2">Настроение</h2><span class="fit-pill" data-t="moodt">—</span></div>
         <div class="fit-mood">
-          <div class="fit-gauge">
+          ${lock("mood", 2, `<div class="fit-gauge">
             <svg viewBox="0 0 220 124" aria-hidden="true">
               <path d="M20 112 A90 90 0 0 1 200 112" fill="none" stroke="rgba(13,13,15,.12)" stroke-width="22" stroke-linecap="round"/>
               <path data-moodarc d="M20 112 A90 90 0 0 1 200 112" fill="none" stroke="#5b3cff" stroke-width="22" stroke-linecap="round" pathLength="100" stroke-dasharray="100" stroke-dashoffset="100"/>
@@ -381,6 +466,8 @@
             <span class="fit-bubble white"><span class="emo" data-t="moodface">😐</span></span>
             <div class="fit-n fit-mood-n"><span data-t="mood" data-val="0">0</span><small>/100</small></div>
           </div>
+          <div class="fit-sub dk">Опускает ${IC.down}</div>
+          <div class="fit-chips" data-c="drops"></div>`, true)}
           <div class="fit-sub dk">Поднимает ${IC.up}</div>
           <div class="fit-chips">
             <button class="fit-chip up" data-go="music">🎧 Музыка</button>
@@ -388,15 +475,13 @@
             <button class="fit-chip up" data-go="tickets">🎤 Концерты</button>
             <button class="fit-chip up" data-go="job">💸 Зарплата</button>
           </div>
-          <div class="fit-sub dk">Опускает ${IC.down}</div>
-          <div class="fit-chips" data-c="drops"></div>
           <div data-c="moodact" class="fit-mt"></div>
         </div>
 
         <!-- Здоровье -->
         <div class="fit-bh plain"><h2 class="fit-h2">Здоровье</h2><span class="fit-pill" data-t="hlabel">—</span></div>
         <div data-c="sick"></div>
-        <div class="fit-sheet solo fit-health">
+        ${lock("health", 2, `<div class="fit-sheet solo fit-health">
           <div class="fit-h-row">
             <div class="fit-n fit-health-n"><span data-t="health" data-val="0">0</span><small>%</small></div>
             <span class="fit-round dark">${IC.ne}</span>
@@ -406,11 +491,11 @@
             <span>😴 Сон <b>35%</b></span><span>🥗 Питание <b>30%</b></span><span>👟 Шаги <b>20%</b></span><span>😊 Вайб <b>15%</b></span>
           </div>
           <div class="fine">Здоровье пересчитывается в полночь по формуле выше. Формулу утвердил отдел маркетинга.</div>
-        </div>
+        </div>`, true)}
 
         <div class="fit-zab">
           ${V.zabotik(58, "sly")}
-          <div><b>Заботик анализирует</b><span data-t="zab"></span></div>
+          <div><b>${T ? "Вайбот анализирует" : "Вайбот гадает"}</b><span data-t="zab"></span></div>
         </div>
         <div class="fine">Vibe Fit не является медицинским изделием. Является изделием, которое продаёт тебе доставку, когда ты голоден.</div>
       </div>`;
@@ -478,11 +563,13 @@
         const P = V.body.productivity(b);
         const sq = V.body.sleepQuality(b);
         const G = goal();
-        const stPct = (b.steps / G) * 100;
+        const stPct = ((T ? b.steps : approx(b.steps)) / G) * 100;
 
         // Браслет
         const face = $("[data-face]");
         if (face) face.classList.toggle("night", !!b.sleeping);
+        const shownSteps = T ? b.steps : approx(b.steps);
+        if (!T) { txt("pscr", "≈" + V.fmt(shownSteps)); txt("papprox", "≈" + V.fmt(shownSteps)); txt("fuzzy", fuzzyTired(b)); }
         txt("time", g.time); txt("date", g.label);
         ring("e", b.energy); ring("f", b.food); ring("s", stPct);
         txt("le", r0(b.energy) + "%"); txt("lf", r0(b.food) + "%"); txt("ls", r0(Math.min(999, stPct)) + "%");
@@ -493,15 +580,17 @@
         txt("prodemo", P.value >= 80 ? "🚀" : P.value >= 60 ? "💼" : P.value >= 40 ? "🐢" : b.sleeping ? "😴" : "🪫");
         [["e", P.parts.energy], ["f", P.parts.food], ["m", P.parts.mood], ["h", P.parts.health]].forEach(([k, v]) => { bar("p-" + k, v); txt("pv-" + k, r0(v) + "%"); });
         txt("verdict", verdict(P.value, b));
+        if (T >= 2) { const st = stressOf(V.body.heartRate(b)); txt("stress", st + "%"); }
+        if (T === 3) txt("burn", burnout(b));
 
         // Сон
-        txt("sq", `${sq.e} качество ${r0(sq.q * 100)}%`);
+        if (T) txt("sq", `${sq.e} качество ${r0(sq.q * 100)}%`);
         txt("sqe", sq.e); txt("why", sq.why);
         chunk("lastsleep", lastSleepHtml(b));
         chunk("sleepchart", sleepChart(b.sleepLog));
         chunk("sleepnow", sleepNowHtml(b, now));
         chunk("sleepact", sleepActHtml(b));
-        chunk("upsell", upsellHtml(sq));
+        chunk("upsell", T ? upsellHtml(sq) : "");
 
         // Еда
         bar("food", b.food); num("food", b.food);
@@ -518,8 +607,8 @@
         // Активность
         ring("st", stPct);
         txt("stpct", r0(stPct) + "%");
-        num("steps", b.steps);
-        txt("stleft", b.steps >= G ? "🔥 Цель выполнена! Можно гордиться и лежать" : `Ещё ${V.fmt(G - b.steps)} шагов ≈ ${comma(((G - b.steps) / 1350).toFixed(1))} км до цели`);
+        num("steps", T ? b.steps : approx(b.steps), T ? V.fmt : (v) => "≈" + V.fmt(v));
+        txt("stleft", !T ? `Ещё примерно ${V.fmt(Math.max(0, G - approx(b.steps)))} шагов. Точнее скажет Vibe Band` : b.steps >= G ? "🔥 Цель выполнена! Можно гордиться и лежать" : `Ещё ${V.fmt(G - b.steps)} шагов ≈ ${comma(((G - b.steps) / 1350).toFixed(1))} км до цели`);
         const freshSteps = chunk("stepschart", stepsChart(b.stepsLog, day));
         const tc = $("[data-todaycol]");
         if (tc) {
@@ -550,7 +639,7 @@
         if (ma) ma.setAttribute("stroke-dashoffset", (100 - clamp(b.mood)).toFixed(2));
         txt("moodface", moodFace(b.mood));
         num("mood", b.mood);
-        txt("moodt", moodText(b.mood));
+        txt("moodt", T >= 2 ? moodText(b.mood) : "🔒 вроде норм?");
         chunk("drops", dropsHtml(b));
         chunk("moodact", moodActHtml(now, day));
 
@@ -559,7 +648,7 @@
         const hn = Math.round(clamp(b.health) / 5);
         root.querySelectorAll("[data-hdots] i").forEach((d, i) => d.classList.toggle("on", i < hn));
         const hd = $("[data-hdots]"); if (hd) hd.classList.toggle("low", b.health < 40);
-        txt("hlabel", (b.sick ? "🤒 " : "") + healthLabel(b.health));
+        txt("hlabel", (b.sick ? "🤒 " : "") + (T >= 2 ? healthLabel(b.health) : "🔒 ?"));
         chunk("sick", sickHtml(b));
 
         txt("zab", insight(b));
@@ -586,6 +675,22 @@
       root.querySelectorAll("[data-bub]").forEach((c) => { const v = c.style.getPropertyValue("--a"); c.style.setProperty("--a", "-90deg"); timers.push(setTimeout(() => c.style.setProperty("--a", v), 300)); });
       timers.push(setInterval(() => { V.body.tick(); update(); }, 2500));
       timers.push(setInterval(pulse, 2000));
+      // Фейковая «скидка 15%», которая сгорает и тут же воскресает
+      if (T < 2 && root.querySelector("[data-cd]")) {
+        let cd = 120;
+        const paint = () => root.querySelectorAll("[data-cd]").forEach((el) => { el.textContent = cdTxt(cd); });
+        paint();
+        timers.push(setInterval(() => {
+          if (!alive) return;
+          cd--;
+          if (cd <= 0) {
+            cd = 120;
+            FX.toast("Скидка сгорела… и снова появилась. Только для тебя 💜", "⏳", 2600);
+            root.querySelectorAll(".fit-pw-cd").forEach((el) => FX.bump(el));
+          }
+          paint();
+        }, 1000));
+      }
 
       /* ---------- Действия ---------- */
       const awake = (btn) => {
@@ -606,6 +711,11 @@
           FX.burst(a, { emojis: b.sleeping ? ["💤", "🌙", "⭐"] : ["❤️", "💓", "💗"], count: 10 });
           FX.toast(b.sleeping ? `Пульс ${bpm}. Спишь как младенец. Младенец с ипотекой` : `Пульс ${bpm}. Сердце бьётся — уже неплохо`, "⌚");
         }
+        if (act === "phone") {
+          FX.bump($(".fit-phone"));
+          FX.burst(a, { emojis: ["📱", "❓", "🤷"], count: 8 });
+          FX.toast("Телефон не чувствует пульс. Только вибрацию от уведомлений. Vibe Band почувствует", "📱", 3000);
+        }
         if (act === "ring") { FX.bump(a); FX.burst(a, { emojis: [a.dataset.e, "✨"], count: 8 }); }
 
         if (act === "sleep") {
@@ -620,7 +730,7 @@
         if (act === "wake") {
           const rec = V.body.wake();
           FX.burst(a, { emojis: ["☀️", "🌤️", "✨"], count: 14 });
-          if (rec && rec.hours >= 0.5) FX.toast(`Доброе утро! Сон ${comma(rec.hours)} ч, качество ${r0(rec.q * 100)}%`, "☀️", 3000);
+          if (rec && rec.hours >= 0.5) FX.toast(T ? `Доброе утро! Сон ${comma(rec.hours)} ч, качество ${r0(rec.q * 100)}%` : "Доброе утро! Как ты спал — знает только Vibe Band", "☀️", 3000);
           else FX.toast("Это был не сон, а моргание. Меньше 30 минут не засчитали", "🥱", 3000);
           update();
         }
@@ -672,7 +782,7 @@
         const hitBeats = new Set();
         V.ui.sheet(`
           <div class="display" style="font-size:28px">Тренировка 🏋️</div>
-          <p class="muted" style="font-weight:700;margin:6px 0 10px;font-size:14px">Тапай по кругу, когда он самый большой. 15 секунд, 80 ударов в минуту. Не спеши — браслет считает точность</p>
+          <p class="muted" style="font-weight:700;margin:6px 0 10px;font-size:14px">Тапай по кругу, когда он самый большой. 15 секунд, 80 ударов в минуту. ${T ? "Не спеши — браслет считает точность" : "Без браслета точность не видна — засчитаем максимум 40%"}</p>
           <div class="fit-wo-hud"><span>⏱ <b data-wt>15,0</b></span><span>🎯 <b data-wh>0</b></span><span>🔥 x<b data-wc>0</b></span></div>
           <div class="progress" style="height:10px"><i data-wbar style="--p:100%;background:var(--pink);transition:none"></i></div>
           <div class="fit-wo-arena">
@@ -728,11 +838,12 @@
           if (done) return;
           done = true;
           clearInterval(iv); anim && anim.cancel(); ringAnim && ringAnim.cancel();
-          const score = clamp(sum / BEATS, 0, 1);
+          const raw = clamp(sum / BEATS, 0, 1);
+          const score = T ? raw : Math.min(0.4, raw); // без браслета — «на глаз»
           const vib = Math.round(15 + score * 85), xp = Math.round(10 + score * 40);
           V.body.effect("workout", { score });
           const arena = sh.querySelector(".fit-wo-arena");
-          arena.innerHTML = `<div class="fit-wo-res"><div class="big-num">${r0(score * 100)}%</div><b>${score > 0.8 ? "Зверь! Тренер в слезах 🦍" : score > 0.5 ? "Достойно. Почти как в рилсах 💪" : "Ну, ты хотя бы встал с дивана 🛋️"}</b><small>Попаданий ${hits} из ${BEATS} · лучшее комбо ${best}</small></div>`;
+          arena.innerHTML = !T ? `<div class="fit-wo-res"><div class="big-num">??%</div><b>Без браслета засчитали «на глаз»: ${r0(score * 100)}% 📱</b><small>Попаданий ${hits} из ${BEATS}. А было ли это хорошо — знает только Vibe Band</small></div>` : `<div class="fit-wo-res"><div class="big-num">${r0(score * 100)}%</div><b>${score > 0.8 ? "Зверь! Тренер в слезах 🦍" : score > 0.5 ? "Достойно. Почти как в рилсах 💪" : "Ну, ты хотя бы встал с дивана 🛋️"}</b><small>Попаданий ${hits} из ${BEATS} · лучшее комбо ${best}</small></div>`;
           FX.sound.success();
           if (score > 0.8) FX.confetti();
           FX.burst(arena, { emojis: ["🏋️", "💪", "🔥", "✨"], count: 18 });
@@ -1051,6 +1162,51 @@
   .fit-zab { display: flex; gap: 12px; align-items: center; margin-top: 18px; background: var(--fK); color: #fff; border-radius: 28px; padding: 14px 16px; }
   .fit-zab b { display: block; font-size: 12px; font-weight: 800; color: var(--fL); margin-bottom: 2px; }
   .fit-zab span { font-size: 14px; font-weight: 700; }
+
+  /* ---------- Замки и пейволл (нет часов) ---------- */
+  .fit-lock { display: grid; position: relative; }
+  .fit-lock > * { grid-area: 1 / 1; min-width: 0; }
+  .fit-lock-body { filter: blur(7px) saturate(.8); opacity: .75; pointer-events: none; user-select: none; }
+  .fit-pw { align-self: center; justify-self: center; width: calc(100% - 16px); max-width: 320px; margin: 8px 0; z-index: 3; background: var(--fK); color: #fff; border-radius: 24px; padding: 12px 12px 10px; box-shadow: 0 0 0 2px var(--fL), 0 10px 30px rgba(13,13,15,.35); display: grid; gap: 8px; text-align: center; animation: pop-in .5s var(--spring) both; }
+  .fit-pw.big { padding: 16px 14px 14px; gap: 9px; }
+  .fit-pw-top { display: flex; align-items: center; justify-content: center; gap: 8px; }
+  .fit-pw-top .emo { font-size: 26px; } .fit-pw.big .fit-pw-top .emo { font-size: 34px; }
+  .fit-pw > b { font-size: 13px; font-weight: 800; line-height: 1.25; } .fit-pw.big > b { font-size: 15px; }
+  .fit-pw > small { font-size: 11px; font-weight: 700; color: #a9a9b2; }
+  .fit-pw-cd { justify-self: center; background: var(--fV); border-radius: 999px; padding: 5px 12px; font-size: 12px; font-weight: 800; }
+  .fit-pw-cd b { font-family: var(--fnum); font-weight: 600; font-size: 15px; color: var(--fL); font-variant-numeric: tabular-nums; }
+  [data-screen="fit"] .btn.fit-pw-btn { height: 44px; font-size: 13px; padding: 0 10px; animation: pulse 1.6s ease-in-out infinite; }
+  .fit-wo-lim { margin-top: 8px; display: flex; align-items: center; justify-content: space-between; gap: 8px; background: #1d1d22; border-radius: 14px; padding: 9px 12px; font-size: 12px; font-weight: 700; color: #cfcfd6; }
+  .fit-wo-lim button { flex: 0 0 auto; display: inline-flex; align-items: center; gap: 2px; background: var(--fL); color: var(--fK); border-radius: 999px; padding: 5px 10px; font-size: 12px; font-weight: 800; }
+  .fit-xtra { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+  .fit-xtra span { background: #fff; border-radius: 999px; padding: 7px 12px; font-size: 12px; font-weight: 800; }
+  .fit-xtra b { font-size: 15px; } .fit-xtra .gold { background: linear-gradient(135deg, #ffe08a, #e9b949 55%, #b8841f); }
+
+  /* ---------- Устройство на браслете ---------- */
+  /* Нет часов: силуэт телефона */
+  .fit-phone { width: 92px; height: 150px; margin: 0 20px 0 14px; flex: 0 0 auto; border-radius: 22px; background: #26262d; box-shadow: inset 0 0 0 3px #3a3a44; position: relative; padding: 18px 7px 12px; animation: float 3.4s ease-in-out infinite; }
+  .fit-ph-notch { position: absolute; top: 7px; left: 50%; width: 28px; height: 6px; margin-left: -14px; border-radius: 999px; background: #0d0d0f; }
+  .fit-ph-scr { height: 100%; border-radius: 14px; background: linear-gradient(170deg, #2a1d8f, #15151b); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; filter: blur(.4px); }
+  .fit-ph-scr .emo { font-size: 22px; } .fit-ph-scr b { font-size: 18px; color: var(--fL); } .fit-ph-scr small { font-size: 10px; font-weight: 700; color: #a9a9b2; }
+  .fit-hero.dev-phone .fit-bpm b { font-size: 46px; }
+  .fit-hero.dev-phone .fit-zone { height: auto; padding: 5px 10px; white-space: normal; line-height: 1.2; }
+  .fit-fuzzy { margin-top: 10px; font-size: 14px; font-weight: 800; color: var(--fL); animation: fit-fz 2.4s ease-in-out infinite; }
+  @keyframes fit-fz { 50% { opacity: .55; transform: translateX(3px); } }
+  .fit-lg.locked i { background: #3a3a44; }
+  .fit-lg.locked b { font-size: 18px; color: #6c6c78; }
+  .fit-ph-cta { margin-top: 10px; position: relative; font-size: 14px !important; min-height: 50px; animation: pulse 1.8s ease-in-out infinite; }
+  /* Band: ремешок; Watch: квадратный корпус и коронка; Ultra: золотой безель */
+  .fit-ringbox::before { content: ""; position: absolute; left: 50%; top: -8px; bottom: -8px; width: 62px; margin-left: -31px; border-radius: 18px; background: repeating-linear-gradient(0deg, #1e1e24 0 9px, #2a2a32 9px 11px); }
+  .fit-pod { position: absolute; inset: 3px; border-radius: 50%; background: #131317; box-shadow: 0 0 0 3px #2e2e36; }
+  .fit-rings, .fit-ring-c { position: relative; z-index: 1; } .fit-ring-c { position: absolute; }
+  .fit-hero.dev-watch .fit-ringbox::before, .fit-hero.dev-ultra .fit-ringbox::before { width: 84px; margin-left: -42px; top: -12px; bottom: -12px; border-radius: 22px; }
+  .fit-hero.dev-watch .fit-pod, .fit-hero.dev-ultra .fit-pod { inset: -4px; border-radius: 40px; box-shadow: 0 0 0 4px #3c3c46; }
+  .fit-hero.dev-watch .fit-ringbox::after, .fit-hero.dev-ultra .fit-ringbox::after { content: ""; position: absolute; right: -11px; top: 50%; width: 7px; height: 26px; margin-top: -13px; border-radius: 4px; background: #4a4a55; }
+  .fit-hero.dev-ultra .fit-pod { box-shadow: 0 0 0 4px #e9b949, 0 0 0 6px #8a6416, 0 0 22px rgba(233,185,73,.45); }
+  .fit-hero.dev-ultra .fit-ringbox::after { background: linear-gradient(#ffe08a, #b8841f); }
+  .fit-hero.dev-ultra .fit-ringbox::before { background: repeating-linear-gradient(0deg, #ff7a1a 0 9px, #e5650c 9px 11px); }
+  .fit-hero.dev-ultra .fit-h-brand { color: #e9b949; }
+  .fit-ultra-tag { position: absolute; z-index: 2; left: 50%; bottom: -2px; transform: translateX(-50%); font-family: var(--fnum); font-size: 10px; letter-spacing: 2px; color: var(--fK); background: linear-gradient(135deg, #ffe08a, #e9b949); border-radius: 999px; padding: 1px 8px; }
 
   /* ---------- Мини-игры (шиты) ---------- */
   .fit-wo-hud { display: flex; justify-content: space-between; font-weight: 800; font-size: 14px; margin-bottom: 6px; font-variant-numeric: tabular-nums; }
