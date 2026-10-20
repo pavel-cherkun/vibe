@@ -459,11 +459,36 @@
     { id: "memes", t: "🤡 Знание мемов", w: 1 },
   ];
   const MAX_SKILLS = 5;
+  // Навык в резюме подтверждён, если за ним что-то стоит: пройденный курс или уровень в «Навыках».
+  // Неподтверждённый — это враньё: HR верит в него наполовину.
+  const SK_PROOF = {
+    prompt: { c: ["code", "cats"], s: ["career", 3], how: "курс «Код без кода» или «Нейросети для котов»" },
+    so: { c: ["code"], how: "курс «Код без кода»" },
+    excel: { c: ["fin"], s: ["finance", 3], how: "курс «Финграмотность» или Финансы 3 ур." },
+    eng: { s: ["career", 4], how: "Карьера 4 ур." },
+    stress: { c: ["med"], s: ["health", 3], how: "курс «Медитация» или Здоровье 3 ур." },
+    fb: { s: ["career", 2], jobs: 1, how: "любая работа в прошлом или Карьера 2 ур." },
+    calls: { c: ["prod"], s: ["charisma", 3], how: "курс «Продакт за 3 дня» или Харизма 3 ур." },
+    drive: { s: ["driving", 2], how: "Вождение 2 ур. (права в Vibe Drive)" },
+    smile: { s: ["charisma", 2], how: "Харизма 2 ур." },
+    tiktok: { c: ["blog"], s: ["social", 3], how: "курс «Блогер-миллионник» или Соцсети 3 ур." },
+    memes: { free: true, how: "мемы не проверяют" },
+  };
+  function skillProven(id) {
+    const P = SK_PROOF[id]; if (!P) return true;
+    if (P.free) return true;
+    const my = st("life_courses", { cats: 1, med: 2 });
+    if ((P.c || []).some((c) => { const C = COURSES.find((x) => x.id === c); return C && my[c] >= C.les.length; })) return true;
+    if (P.s && Vibe.skills && Vibe.skills.level && Vibe.skills.level(P.s[0]) >= P.s[1]) return true;
+    if (P.jobs && ((S().stats || {}).jobs || 0) >= P.jobs) return true;
+    return false;
+  }
+  const skillPts = (id) => { const k = SKILLS.find((x) => x.id === id); if (!k) return 0; return skillProven(id) ? k.w : Math.floor(k.w / 2); };
   const COURSE_PTS = { prod: 14, cats: 6, fin: 10, med: 4, code: 14, blog: 8 };
   const BOOST_COST = 150;
   function resume() {
     const s = S();
-    const sk = st("life_skills", []).reduce((a, id) => a + ((SKILLS.find((x) => x.id === id) || {}).w || 0), 0);
+    const sk = st("life_skills", []).reduce((a, id) => a + skillPts(id), 0);
     const my = st("life_courses", { cats: 1, med: 2 });
     let cr = 0;
     Object.keys(my).forEach((id) => {
@@ -764,7 +789,7 @@
           ? `<div class="card c-sky"><div class="lf-row" style="gap:10px"><div style="flex:1;font-weight:800;font-size:13px">Ты работаешь в «${esc(s.job.company)}». Новый оффер заменит текущую работу — тихо, без отработки.</div><button class="btn sm black" data-act="myjob">← Работа</button></div></div>`
           : `<div class="card lf-warn ${rw < 20 ? "c-coral" : "c-yellow"}">
               <div class="lf-row"><div><div class="lf-mini" style="color:var(--ink)">⚠️ Без работы</div><div class="display" style="font-size:22px;margin-top:4px">Денег хватит на ${rw} ${plural(rw, "день", "дня", "дней")}</div></div><span class="emo wobble" style="font-size:46px">${rw < 20 ? "🫠" : "⏳"}</span></div>
-              <div class="fine" style="color:var(--ink);opacity:.75">Баланс ${rub(s.balance)}. Аренда, еда и ЖКХ списываются сами. 1 игровой день = 1 час реальной жизни.</div>
+              <div class="fine" style="color:var(--ink);opacity:.75">Баланс ${rub(s.balance)}. Аренда, еда и ЖКХ списываются сами. 1 игровой день = 24 минуты реальной жизни.</div>
             </div>`;
         const inv = apps().filter((a) => appStatus(a) === "invite").length;
         return `<div class="stagger">${top}
@@ -937,7 +962,8 @@
             <div class="lf-cvb" data-cvb>${cvb(R)}</div>
           </div>
           <h2 class="sec">Навыки <small data-skn>${skills.length}/${MAX_SKILLS} · HR дочитывает до пятого</small></h2>
-          <div class="lf-skills">${SKILLS.map((k) => `<button class="chip ${skills.includes(k.id) ? "on" : ""}" data-skill="${k.id}">${k.t} <small>+${k.w}</small></button>`).join("")}</div>
+          <div class="lf-skills">${SKILLS.map((k) => { const ok = skillProven(k.id); return `<button class="chip ${skills.includes(k.id) ? "on" : ""}" data-skill="${k.id}">${k.t} <small>${ok ? `✅ +${k.w}` : `🤥 +${Math.floor(k.w / 2)}`}</small></button>`; }).join("")}</div>
+          <div class="fine" style="margin-top:8px">✅ — подтверждено курсом или уровнем в «Навыках», даёт полный балл. 🤥 — просто написал: HR верит наполовину. Как подтвердить — нажми на навык ещё раз, когда он выбран.</div>
           <h2 class="sec">Курсы <small>Vibe Learn · до +${Object.values(COURSE_PTS).reduce((a, b) => a + b, 0)}%</small></h2>
           <div class="card" style="padding:2px 14px">${COURSES.map((c) => {
             const d = my[c.id], own = d !== undefined, full = own && d >= c.les.length, pts = full ? COURSE_PTS[c.id] : own ? d * 2 : 0;
@@ -947,6 +973,16 @@
           <div class="card c-grad" style="margin-top:16px">
             <div class="lf-row"><div><div class="display" style="font-size:20px">Прокачать резюме</div><div style="font-size:12px;font-weight:700;margin-top:4px">+6% за раз · осталось ${3 - boosts} из 3</div></div><span class="emo wobble" style="font-size:40px">✨</span></div>
             <button class="btn yellow block" data-boost style="margin-top:12px" ${boosts >= 3 ? "disabled" : ""}>${boosts >= 3 ? "Резюме идеально. Почти" : `Прокачать · ${BOOST_COST} 🪙`}</button>
+          </div>
+          <div class="card c-lilac" style="margin-top:16px">
+            <b>Как дорасти до 100%</b>
+            <div style="font-size:13px;font-weight:700;margin-top:8px;display:grid;gap:4px">
+              <span>📄 База — 12</span>
+              <span>🧠 Навыки — до 31, если все пять подтверждены</span>
+              <span>🎓 Курсы — до ${Object.values(COURSE_PTS).reduce((a, b) => a + b, 0)}: полный балл только за пройденный курс, начатый — по 2 за урок</span>
+              <span>✨ Прокачка — до 18 (3 раза по 6)</span>
+              <span>💼 Опыт — до 15: прошлые места работы и грейд</span>
+            </div>
           </div>
           ${zab("Добавь «стрессоустойчивость». Её никто не проверяет — её проверяет жизнь.")}
         </div>`;
@@ -965,7 +1001,11 @@
       function toggleSkill(ch) {
         const id = ch.dataset.skill;
         let skills = st("life_skills", []).slice();
-        if (skills.includes(id)) { skills = skills.filter((x) => x !== id); ch.classList.remove("on"); FX.sound.pop(); }
+        if (skills.includes(id)) {
+          // Повторное нажатие снимает навык и подсказывает, как его подтвердить
+          if (!skillProven(id) && SK_PROOF[id]) FX.toast(`Чтобы HR поверил: ${SK_PROOF[id].how}`, "🤥", 3400);
+          skills = skills.filter((x) => x !== id); ch.classList.remove("on"); FX.sound.pop();
+        }
         else {
           if (skills.length >= MAX_SKILLS) { FX.shake(ch); FX.toast("Пять навыков максимум. Дальше HR не читает", "🙈"); return; }
           skills.push(id);
@@ -1165,7 +1205,8 @@
           ${left ? "" : `<div class="card c-lilac" style="text-align:center"><div class="emo float" style="font-size:48px">🌙</div><b style="display:block;margin-top:4px">Задачи на сегодня закончились</b><div style="font-size:13px;font-weight:700;margin-top:4px">Новые — завтра (через ~<span data-nextday>${hm(Vibe.game.realMinTo(Vibe.game.info().day + 1))}</span>)</div></div>`}
           </div>
           <h2 class="sec">Дорога на работу <small>${dec(Vibe.map.km(p))} км</small></h2>
-          <div data-jmap style="height:200px"></div>
+          <div style="position:relative"><div data-jmap data-go="maps" class="tap" style="height:200px;cursor:pointer"></div><span class="badge" style="position:absolute;right:12px;bottom:12px;z-index:3;pointer-events:none;background:#fff">🗺️ Открыть карту</span></div>
+          <div class="chips" style="margin-top:12px">${[["work", "💼 В офис"], ["home", "🏠 Домой"], ["supermarket", "🛒 Супермаркет"], ["park", "🌳 Парк"], ["clinic", "🏥 Клиника"]].map(([to, t]) => `<button class="chip" data-go="maps" data-params='${JSON.stringify({ to })}'>${t}</button>`).join("")}</div>
           <div class="grid2" style="margin-top:12px">
             <div class="card tight c-sky"><div class="lf-mini" style="color:var(--ink)">🚇 Метро</div><div class="big-num" style="font-size:22px">${Vibe.map.minutes(p, "metro")} мин</div><div style="font-size:11px;font-weight:800">57 ₫ и немного локтей</div></div>
             <div class="card tight c-yellow"><div class="lf-mini">🚕 Такси</div><div class="big-num" style="font-size:22px">${Vibe.map.minutes(p, "taxi")} мин</div><div style="font-size:11px;font-weight:800">если без пробок (нет)</div></div>

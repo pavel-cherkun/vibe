@@ -3,7 +3,7 @@
    Делает игровое время видимым: живые часы, таймлайн дня,
    дела на сегодня, продуктивность, месяц и ближайшие события.
 
-   Время: 1 игровой день = 1 реальный час (1 мин = 2,5 сек).
+   Время: 1 игровая минута = 1 секунда, день = 24 минуты.
    Неделя: игровой день 0 (1 ноября) — понедельник, как в body.js
    (day % 7 < 5 — будни).
    ============================================================ */
@@ -181,7 +181,7 @@
     return list.find((u) => BIG.includes(u.t)) || list.find((u) => u.a) || list[0] || null;
   }
   function bigCd(u) {
-    return fmtCountdown(G().realMinTo(u.day) * 60000 + (u.concert ? (20 / 24) * 3600000 : 0));
+    return fmtCountdown(G().realMinTo(u.day) * 60000 + (u.concert ? (20 / 24) * G().DAY_MS : 0));
   }
   function bigHtml(u) {
     if (!u) return `
@@ -487,7 +487,7 @@
     return res.sort((a, b) => a.in - b.in).slice(0, 7);
   }
   function cdText(u) {
-    const ms = G().realMinTo(u.day) * 60000 + (u.concert ? (20 / 24) * 3600000 : 0);
+    const ms = G().realMinTo(u.day) * 60000 + (u.concert ? (20 / 24) * G().DAY_MS : 0);
     return `${u.in === 0 ? "сегодня" : `через ${u.in} ${plural(u.in, "день", "дня", "дней")}`} · ⏳ ${fmtCountdown(ms)}`;
   }
   function upHtml() {
@@ -669,7 +669,7 @@
         const bc = $("[data-bigcd]"); if (bc && big) bc.textContent = bigCd(big);
       }
 
-      // ---- Главный цикл: 500 мс, тяжёлое — раз в игровую минуту (2,5 с) ----
+      // ---- Главный цикл: 500 мс, тяжёлое — раз в игровую минуту (1 с) ----
       let timelineEvery = 0;
       const loop = setInterval(() => {
         if (document.hidden || !root.isConnected) return;

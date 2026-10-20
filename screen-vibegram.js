@@ -4,7 +4,7 @@
    Экраны: "gram" (tab), "gram-profile" (id), "reels" (i)
    API: Vibe.gram.post({e, text, kind, from, tags, s}), followers(), fame(), tier(), canDM()
    Состояние: S.gram = { base, posts[], drafts[], follow{}, liked{}, saved{}, myCm{}, seenSt{},
-     relDay{}, tierMax, decayDay, dealDay, reelsSeen, reelLiked{}, lastPostDay }
+     relDay{}, tierMax, decayDay, dealDay, reelsSeen, reelLiked{}, lastPostDay, placeDay{}, bio }
    Все люди и блогеры вымышленные.
    ============================================================ */
 (function () {
@@ -32,7 +32,7 @@
   const app = () => document.getElementById("app") || document.body;
 
   /* ---------- Состояние ---------- */
-  const DEF = { base: 0, posts: [], drafts: [], follow: { coach: true, meme: true, vibe: true }, liked: {}, saved: {}, myCm: {}, seenSt: {}, relDay: {}, tierMax: 0, decayDay: -1, dealDay: -1, reelsSeen: 0, reelLiked: {}, lastPostDay: -1, placeDay: {} };
+  const DEF = { base: 0, posts: [], drafts: [], follow: { coach: true, meme: true, vibe: true }, liked: {}, saved: {}, myCm: {}, seenSt: {}, relDay: {}, tierMax: 0, decayDay: -1, dealDay: -1, reelsSeen: 0, reelLiked: {}, lastPostDay: -1, placeDay: {}, bio: null };
   const G = () => Object.assign({}, DEF, S().gram || {});
   const setG = (patch) => Vibe.state.set({ gram: Object.assign(G(), typeof patch === "function" ? patch(G()) : patch) });
 
@@ -690,11 +690,12 @@
 
   /* ---------- Сторис ---------- */
   let storyClose = null;
-  function openStory(id) {
-    const a = acc(id); if (!a) return;
+  function openStory(id, own = null) {
+    const a = own ? own.a : acc(id); if (!a) return;
     const d = today();
-    let frames;
-    if (a.story) frames = a.story.map((t, i) => ({ e: (a.posts[i % a.posts.length] || [a.e])[0], s: (a.posts[i % a.posts.length] || ["", "✨✨✨"])[1], bg: (hash(a.id) + i) % BG.length, st: t }));
+    let frames = own ? own.frames : null;
+    if (frames) { /* свои кадры (хайлайты игрока) */ }
+    else if (a.story) frames = a.story.map((t, i) => ({ e: (a.posts[i % a.posts.length] || [a.e])[0], s: (a.posts[i % a.posts.length] || ["", "✨✨✨"])[1], bg: (hash(a.id) + i) % BG.length, st: t }));
     else {
       const ps = accPosts(a, 3).slice(0, 2);
       frames = ps.map((p) => ({ e: p.e, s: p.s, bg: p.bg, st: p.text }));
@@ -705,7 +706,7 @@
     el.innerHTML = `<div class="vg-sbars">${frames.map(() => `<i><b></b></i>`).join("")}</div>
       <div class="vg-shead">${ava(a, 34)}<b>${esc(a.handle)}</b><small>${ago(nowMin() - (d * 1440 + 9 * 60))}</small><span style="flex:1"></span><button class="vg-sx" data-x>✕</button></div>
       <div class="vg-sbody" data-body></div>
-      <div class="vg-sfoot"><button class="vg-sreact" data-r="🔥">🔥</button><button class="vg-sreact" data-r="😂">😂</button><button class="vg-sreact" data-r="😍">😍</button><button class="vg-sreact" data-r="💜">💜</button><button class="btn sm" data-prof>Профиль</button></div>`;
+      <div class="vg-sfoot"><button class="vg-sreact" data-r="🔥">🔥</button><button class="vg-sreact" data-r="😂">😂</button><button class="vg-sreact" data-r="😍">😍</button><button class="vg-sreact" data-r="💜">💜</button>${a.me ? "" : `<button class="btn sm" data-prof>Профиль</button>`}</div>`;
     app().appendChild(el);
     setG({ seenSt: Object.assign({}, G().seenSt, { [a.id]: d }) });
     let i = 0, t = null;
@@ -725,15 +726,78 @@
     el.addEventListener("click", (e) => {
       if (e.target.closest("[data-x]")) return close();
       const r = e.target.closest("[data-r]");
-      if (r) { FX.burst(r, { emojis: [r.dataset.r], count: 10 }); FX.sound.like(); if (!a.star) relBump(a.id, 1); return; }
+      if (r) { FX.burst(r, { emojis: [r.dataset.r], count: 10 }); FX.sound.like(); if (!a.star && !a.me) relBump(a.id, 1); return; }
       if (e.target.closest("[data-prof]")) { close(); Vibe.go("gram-profile", { id: a.id }); return; }
       if (e.target.closest("[data-body]")) { i += e.clientX < el.getBoundingClientRect().left + el.clientWidth / 3 ? -1 : 1; show(); }
     });
     show();
   }
 
-  /* ---------- Табы ленты ---------- */
+  /* ---------- Иконки (линейные SVG, как в больших соцсетях) ---------- */
+  const IC = {
+    home: '<path d="M3 10.6 12 3l9 7.6V20a1 1 0 0 1-1 1h-5.2v-6.2H9.2V21H4a1 1 0 0 1-1-1z"/>',
+    search: '<circle cx="11" cy="11" r="7"/><path d="m20.5 20.5-4.3-4.3"/>',
+    plus: '<rect x="3" y="3" width="18" height="18" rx="5.5"/><path d="M12 7.8v8.4M7.8 12h8.4"/>',
+    reels: '<rect x="3" y="3" width="18" height="18" rx="5.5"/><path d="M3 8.6h18M9 3l2.6 5.6M15 3l2.6 5.6"/><path d="M10.2 12.2v5.2l4.4-2.6z"/>',
+    heart: '<path d="M12 20.3s-7.4-4.5-9.3-9C1.4 8 3.3 4.6 6.7 4.6c2.1 0 3.6 1.2 5.3 3.3 1.7-2.1 3.2-3.3 5.3-3.3 3.4 0 5.3 3.4 4 6.7-1.9 4.5-9.3 9-9.3 9z"/>',
+    send: '<path d="M21.5 2.5 10.6 13.4"/><path d="M21.5 2.5 15 21.2l-4.4-7.8-7.8-4.4z"/>',
+    cm: '<path d="M20.6 11.6a8.6 8.6 0 0 1-12.8 7.5L3 20.6l1.5-4.6A8.6 8.6 0 1 1 20.6 11.6z"/>',
+    save: '<path d="M6 3.2h12v17.6l-6-4.6-6 4.6z"/>',
+    grid: '<rect x="3" y="3" width="18" height="18" rx="3"/><path d="M9 3v18M15 3v18M3 9h18M3 15h18"/>',
+    tag: '<rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="10" r="3.2"/><path d="M6.6 19.4c1.2-2.5 3.1-3.9 5.4-3.9s4.2 1.4 5.4 3.9"/>',
+    menu: '<path d="M4 6.5h16M4 12h16M4 17.5h16"/>',
+    back: '<path d="M15 5 8 12l7 7"/>',
+    cam: '<rect x="3" y="6.5" width="18" height="13.5" rx="4"/><circle cx="12" cy="13.2" r="3.6"/><path d="M8.5 6.5 10 4h4l1.5 2.5"/>',
+  };
+  const svg = (k, cls = "") => `<svg class="vg-i ${cls}" viewBox="0 0 24 24" aria-hidden="true">${IC[k]}</svg>`;
+
+  /* ---------- Нижнее меню Vibegram ---------- */
+  const NAV = [["feed", "home", "Лента"], ["explore", "search", "Интересное"], ["create", "plus", "Создать"], ["reels", "reels", "Рилсы"], ["me", null, "Профиль"]];
+  function navHtml(active, dark = false) {
+    const d = G().drafts.length;
+    return `<nav class="vg-nav ${dark ? "dark" : ""}" data-vgnav>${NAV.map(([k, ic, lbl]) => `<button class="vg-nb ${active === k ? "on" : ""}" data-nav="${k}" aria-label="${lbl}">${ic ? svg(ic) : `<span class="vg-nme">${esc(me().e)}</span>`}${k === "create" ? `<i class="vg-nbadge" ${d ? "" : "hidden"}>${d > 9 ? "9+" : d}</i>` : ""}</button>`).join("")}</nav>`;
+  }
+  // where: "gram" | "reels" | "profile"; local(k) — переключение внутри экрана (true = обработано)
+  function bindNav(root, where, local) {
+    const nav = root.querySelector("[data-vgnav]"); if (!nav) return;
+    nav.addEventListener("click", (e) => {
+      const b = e.target.closest("[data-nav]"); if (!b) return;
+      const k = b.dataset.nav;
+      FX.bump(b.firstElementChild || b); FX.haptic && FX.haptic(6);
+      if (k === "create") return newPost();
+      if (local && local(k)) return;
+      const nav2 = where === "profile" || !Vibe.replace ? Vibe.go : Vibe.replace;
+      if (k === "reels") nav2("reels", {}); else nav2("gram", { tab: k });
+    });
+  }
+  const setNav = (root, k) => root.querySelectorAll("[data-nav]").forEach((b) => b.classList.toggle("on", b.dataset.nav === k));
+  function updBadge(root) {
+    const bd = root.querySelector(".vg-nbadge"); if (!bd) return;
+    const d = G().drafts.length;
+    bd.hidden = !d; bd.textContent = d > 9 ? "9+" : d;
+  }
+
+  /* ---------- Шапка ---------- */
+  function gramHead(tab) {
+    const ti = tierIdx();
+    const title = tab === "me"
+      ? `<button class="vg-hhandle" data-vg="menu">${esc(me().handle)}${ti >= 3 ? `<span class="vg-ver">✔</span>` : ""}<small>▾</small></button>`
+      : `<span class="vg-logo">Vibegram</span>`;
+    const dot = G().posts.length ? `<i class="vg-hdot"></i>` : "";
+    const right = tab === "me"
+      ? `<button class="vg-hi" data-vg="newpost" aria-label="Новый пост">${svg("plus")}</button><button class="vg-hi" data-vg="menu" aria-label="Меню">${svg("menu")}</button>`
+      : `<button class="vg-hi" data-vg="activity" aria-label="Уведомления">${svg("heart")}${dot}</button><button class="vg-hi" data-vg="direct" aria-label="Директ">${svg("send")}</button>`;
+    return `<button class="vg-hi" data-back aria-label="Назад">${svg("back")}</button><div class="vg-htitle">${title}</div>${right}`;
+  }
+  function direct() {
+    if (Vibe.screens && Vibe.screens.chats) Vibe.go("chats");
+    else FX.toast("Директ переехал в мессенджер Vibe. Он тоже семья 💜", "✈️", 2200);
+  }
+
+  /* ---------- Табы ---------- */
   let curTab = "feed";
+  let meTab = "grid";
+  let xq = "";
   let refreshFn = null;
   const refresh = () => refreshFn && refreshFn();
 
@@ -742,24 +806,52 @@
     return `${storiesRow()}<div class="vg-feed">${list.map(postHtml).join("") || `<div class="card" style="text-align:center"><div style="font-size:48px">📭</div><b>Лента пуста. Подпишись на кого-нибудь!</b></div>`}</div>
       <div class="fine" style="text-align:center;margin:10px 0 30px">Ты посмотрел всё за 3 дня. Алгоритм подготовит ещё. Мы заботимся о твоём времени 💜</div>`;
   }
-  function tabReels() {
-    return `<button class="card c-black tap vg-reelhero" data-go="reels" data-params='{"i":"0"}'>
-        <div><div class="display" style="font-size:24px;color:var(--lime)">Рилсы ▶</div><small style="color:#bdbac8;font-weight:700">30 рилсов. 30 минут жизни. Вернём? Нет</small></div><span class="emo float" style="font-size:52px">🌀</span></button>
-      <div class="vg-rgrid stagger">${REELS.map((r) => `<button class="vg-rthumb tap" data-go="reels" data-params='{"i":"${r.i}"}'>${reelScene(r, true)}<span class="vg-rviews">▶ ${kfmt(r.views)}</span></button>`).join("")}</div>`;
+
+  /* --- Интересное: поиск, звёзды, сетка --- */
+  const postTile = (p) => { cache.set(p.id, p); return `<button class="vg-xt" data-tile="${p.id}">${photo(p, "sm")}</button>`; };
+  const reelTile = (r) => `<button class="vg-xt tall" data-go="reels" data-params='{"i":"${r.i}"}'>${reelScene(r, true)}<span class="vg-xr">${svg("reels")}</span><span class="vg-rviews">▶ ${kfmt(r.views)}</span></button>`;
+  function exploreTiles() {
+    const d = today(), r = rng(hash("x" + d));
+    const posts = [];
+    allStars().forEach((s) => accPosts(s, 2).slice(0, 3).forEach((p) => posts.push(p)));
+    for (let i = posts.length - 1; i > 0; i--) { const j = Math.floor(r() * (i + 1)); [posts[i], posts[j]] = [posts[j], posts[i]]; }
+    const out = [];
+    for (let k = 0, pi = 0; k < 5 && pi < posts.length; k++, pi += 4) {
+      const grp = posts.slice(pi, pi + 4).map(postTile);
+      const rt = reelTile(REELS[(d * 7 + k * 5) % REELS.length]);
+      if (k % 2) out.push(grp[0], grp[1], rt, ...grp.slice(2)); else out.push(rt, ...grp);
+    }
+    return out.filter(Boolean).join("");
   }
-  function tabStars() {
-    const g = G(), ok = canDM();
-    return `${storiesRow()}
-      <div class="card ${ok ? "c-lime" : "c-black"}" style="margin-bottom:14px">
-        <b style="font-size:16px">${ok ? "✅ Звёзды читают тебя и отвечают" : "🔒 Звёзды отвечают не всем"}</b>
-        <p style="margin:6px 0 0;font-size:13px;font-weight:700;${ok ? "" : "color:#bdbac8"}">Ответ в личке — только для Инфлюенсеров (100 тыс+), Селеб и тех, у кого на счету от ${money(1000000)}. Остальным — «прочитано» ✓✓</p>
-      </div>
-      <div class="stack stagger">${allStars().map((s) => `
-        <div class="card tight vg-starrow">
-          <button class="vg-who" data-vg="open" data-id="${s.id}">${ava(s, 54, true, g.seenSt[s.id] === today())}<span><b>${esc(s.n)}${verified(s)}</b><small>${esc(s.niche || "Блогер")} · ${kfmt(s.followers)}</small></span></button>
-          <button class="btn sm ${g.follow[s.id] ? "" : "black"}" data-follow="${s.id}">${g.follow[s.id] ? "Вы подписаны" : "Подписаться"}</button>
-        </div>`).join("")}</div>`;
+  function accRow(a) {
+    const g = G();
+    const fo = a.star ? `<button class="btn sm ${g.follow[a.id] ? "" : "black"}" data-follow="${a.id}">${g.follow[a.id] ? "Вы подписаны" : "Подписаться"}</button>` : `<span class="badge" style="background:var(--mint)">Свои 💞</span>`;
+    return `<div class="card tight vg-starrow"><button class="vg-who" data-vg="open" data-id="${a.id}">${ava(a, 50, a.star, g.seenSt[a.id] === today())}<span><b>${esc(a.n)}${verified(a)}</b><small>${esc(a.handle)} · ${a.star ? esc(a.niche || "Блогер") + " · " + kfmt(a.followers) : "в твоём круге"}</small></span></button>${fo}</div>`;
   }
+  function exploreBody() {
+    const g = G(), q = xq.trim().toLowerCase().replace(/^[@#]/, "");
+    if (q) {
+      const list = allStars().concat(chars()).filter((a) => [a.n, a.handle, a.niche || ""].join(" ").toLowerCase().includes(q));
+      const tags = [...new Set(TRENDS.concat(GEN_TAGS))].filter((t) => t.includes(q)).slice(0, 5);
+      return `${tags.length ? `<div class="chips">${tags.map((t) => `<span class="chip">${t === trend() ? "🔥" : "#"}${esc(t)}</span>`).join("")}</div>` : ""}
+        <div class="stack stagger">${list.map(accRow).join("") || `<div class="card flat" style="text-align:center"><div style="font-size:40px">🔍</div><b>Никого не нашли</b><div class="muted" style="font-size:13px;font-weight:700">Зато нашли тебе предодобренный кредит 💜</div></div>`}</div>`;
+    }
+    const ok = canDM();
+    return `<div class="vg-xhead"><b>Звёзды Vibegram</b><small>${ok ? "✅ отвечают тебе в директ" : "🔒 директ — со 100 тыс"}</small></div>
+      <div class="hscroll vg-scards">${allStars().map((s) => `<div class="vg-scard ${s.col || "c-white"}">
+        <button data-vg="open" data-id="${s.id}" aria-label="${esc(s.n)}">${ava(s, 64, true, g.seenSt[s.id] === today())}</button>
+        <b>${esc(String(s.n).split(" · ")[0])}${verified(s)}</b><small>${esc(s.niche || "Блогер")}</small><small>👥 ${kfmt(s.followers)}</small>
+        <button class="btn sm ${g.follow[s.id] ? "" : "black"}" data-follow="${s.id}">${g.follow[s.id] ? "Вы подписаны" : "Подписаться"}</button></div>`).join("")}</div>
+      ${ok ? "" : `<div class="fine" style="margin:-4px 0 12px">Звёзды читают всех. Отвечают — Инфлюенсерам (100 тыс+), Селебам и тем, у кого на счету от ${money(1000000)}. Остальным — «прочитано» ✓✓</div>`}
+      <div class="vg-xhead"><b>Интересное</b><small>🔥 #${esc(trend())}</small></div>
+      <div class="vg-xgrid">${exploreTiles()}</div>
+      <div class="fine" style="text-align:center;margin:12px 0 4px">Подборку собрал алгоритм, который знает тебя лучше мамы. Мама в курсе 💜</div>`;
+  }
+  function tabExplore() {
+    return `<label class="vg-search">${svg("search")}<input data-xq type="search" maxlength="40" placeholder="Поиск людей и звёзд" value="${esc(xq)}" autocomplete="off"></label><div data-xbody>${exploreBody()}</div>`;
+  }
+
+  /* --- Рекламные интеграции --- */
   function deal() {
     const ti = tierIdx();
     if (ti < 2 || G().dealDay === today()) return null;
@@ -769,81 +861,222 @@
     const rate = [0, 0, 0.25, 0.35, 0.5][ti];
     return { brand, fee: Math.round((followers() * rate * (0.8 + r() * 0.4)) / 100) * 100 };
   }
+
+  /* --- Мой профиль --- */
+  const BIO_TIER = ["Пока никто. Но с потенциалом 🫥", "Расту. Как процент по кредиту 🌱", "Коллаб — в директ. Бартер не предлагать 📣", "Вдохновляю. Иногда даже себя 💫", "Да, это я. Нет, автограф платный 🌟"];
+  const BIO_SET = ["Живу, как могу ✨", "Работаю над собой. И на Корпорацию 💜", "Не пишите про кредиты. Уже одобрено", "Мечтаю о ферме. Работаю в офисе 🌾", "Счастлив(а) по подписке. Продлевается сама", "Тут могла быть ваша реклама. Пишите в директ 🤝", "Вайб есть. Отпуска нет", "Мама, я в интернете 👋"];
+  const CAT = ["Личный блог", "Цифровой автор", "Блогер", "Инфлюенсер", "Публичная персона"];
+  const COVER = ["linear-gradient(120deg,#d9c8ff,#8fd8ff)", "linear-gradient(120deg,#c6ff4d,#7cf5c8)", "linear-gradient(120deg,#ffe14d,#ff6bcb)", "linear-gradient(120deg,#ff6bcb,#8b5cff)", "var(--holo)"];
+  function myBio() {
+    const s = S(), ti = tierIdx();
+    let job = "💼 В поиске себя (и вакансии)";
+    if (s.job) { let t = s.job.title || "Сотрудник"; try { if (Vibe.game && Vibe.game.jobTitle) t = Vibe.game.jobTitle(s.job); } catch (err) {} job = `💼 ${t}${s.job.company ? " · " + s.job.company : ""}`; }
+    return [job, G().bio || BIO_SET[hash(s.name || "me") % BIO_SET.length], BIO_TIER[ti]];
+  }
+  const HL = [
+    { id: "ach", n: "Ачивки", e: "🏆" },
+    { id: "travel", n: "Поездки", e: "✈️", re: /travel|путешеств|отпуск|тревел/i },
+    { id: "food", n: "Еда", e: "🍜", re: /food|coffee|еда|кофе|ужин|завтрак/i },
+    { id: "work", n: "Работа", e: "💼", re: /promo|office|карьер|работа|офис|повышен/i },
+    { id: "love", n: "Близкие", e: "💞", re: /family|friend|date|gift|семья|друзья|свидание|подарок/i },
+    { id: "fun", n: "Тусовки", e: "🎉", re: /concert|place|event|концерт|чекин|музыка/i },
+  ];
+  const hlPosts = (h) => (h.re ? myPosts().filter((p) => h.re.test(p.kind + " " + (p.tags || []).join(" "))) : []);
+  function taggedPosts() {
+    const out = [];
+    chars().forEach((a) => accPosts(a, 7).forEach((p) => { if (hash(p.id + "tag") % 3 === 0) out.push(p); }));
+    return out.sort((x, y) => y.at - x.at).slice(0, 12);
+  }
+  function meTabBody() {
+    if (meTab === "reels") {
+      const ids = Object.keys(G().reelLiked || {}).map(Number).filter((i) => REELS[i]);
+      return ids.length ? `<div class="vg-rgrid">${ids.map((i) => { const r = REELS[i]; return `<button class="vg-rthumb tap" data-go="reels" data-params='{"i":"${r.i}"}'>${reelScene(r, true)}<span class="vg-rviews">❤️ ${kfmt(r.likes + 1)}</span></button>`; }).join("")}</div>`
+        : `<div class="vg-empty"><div style="font-size:44px">🌀</div><b>Тут будут рилсы, которые тебе понравились</b><div class="muted">Лайкай двойным тапом — алгоритм запомнит навсегда</div><button class="btn black sm" data-go="reels" style="margin-top:10px">Начать залипать</button></div>`;
+    }
+    if (meTab === "tagged") {
+      const ps = taggedPosts();
+      return ps.length ? `<div class="vg-grid">${ps.map((p) => { cache.set(p.id, p); const a = acc(p.a); return `<button class="vg-gtile" data-tile="${p.id}">${photo(p, "sm")}<span class="vg-gtag">${a ? a.e : "👤"}</span></button>`; }).join("")}</div>`
+        : `<div class="vg-empty"><div style="font-size:44px">🏷️</div><b>Тебя пока не отмечали</b><div class="muted">Позови Лёху в бар — отметит обязательно</div></div>`;
+    }
+    const posts = myPosts();
+    return `<div class="vg-grid">${posts.map((p, i) => { cache.set(p.id, p); return `<button class="vg-gtile" data-tile="${p.id}">${photo(p, "sm")}${i === 0 && nowMin() - p.at < 240 ? `<span class="vg-gnew">NEW</span>` : ""}<span class="vg-gl">❤️ ${kfmt(myLikes(p))}</span></button>`; }).join("") || `<div class="vg-empty" style="grid-column:1/-1"><div style="font-size:44px">📷</div><b>Альбом пуст</b><div class="muted">Живи — и постим лучшие моменты. Vibe напомнит</div><button class="btn black sm" data-vg="newpost" style="margin-top:10px">📸 Первый пост</button></div>`}</div>`;
+  }
   function tabMe() {
     const g = G(), f = followers(), ti = tierIdx(f), t = TIERS[ti], nx = TIERS[ti + 1];
     const m = me();
     const posts = myPosts();
-    const pr = nx ? clamp(Math.log10(Math.max(1, f) / Math.max(1, t.at)) / Math.log10(nx.at / Math.max(1, t.at)), 0, 1) : 1;
+    const fp = fame();
     const dl = deal();
-    const achs = Vibe.ACH_LIST ? Vibe.ACH_LIST() : [];
     const have = S().achievements || [];
+    const following = Object.keys(g.follow).filter((k) => g.follow[k]).length + chars().length;
+    const deco = [t.e, "✨", "📸", "💜", "🔥"].map((e, k) => `<span class="vg-cdec" style="left:${[8, 30, 52, 70, 88][k]}%;top:${[18, 52, 14, 46, 20][k]}%;animation-delay:${(-k * 0.7).toFixed(1)}s">${e}</span>`).join("");
+    const mk = TIERS.slice(1).map((x, k) => `<span class="vg-fmk ${k + 1 <= ti ? "on" : ""}" style="left:${Math.round((Math.log10(x.at + 1) / 6) * 100)}%">${x.e}</span>`).join("");
+    const mi = ["grid", "reels", "tagged"].indexOf(meTab);
     return `
-      <div class="vg-meprof">
-        <div class="vg-mehead">
-          <span class="vg-bigava ${ti === 4 ? "celeb" : ""}">${ava(m, 86, true)}</span>
+      <div class="vg-pro">
+        <div class="vg-cover" style="background:${COVER[ti]};${ti === 4 ? "background-size:300% 300%;animation:holo 6s linear infinite" : ""}">${deco}<span class="vg-tierchip">${t.e} ${t.n}</span></div>
+        <div class="vg-prow">
+          <button class="vg-pava ${ti === 4 ? "celeb" : ""}" data-mystory aria-label="Моя история">${ava(m, 92, true)}<span class="vg-pplus" data-vg="newpost">+</span></button>
           <div class="vg-counts">
-            <div><b>${posts.length}</b><small>постов</small></div>
-            <div><b data-myf>${kfmt(f)}</b><small>подписчиков</small></div>
-            <div><b>${Object.keys(g.follow).length + chars().length}</b><small>подписок</small></div>
+            <div><b data-cnt="${posts.length}">0</b><small>посты</small></div>
+            <div><b data-cnt="${f}" data-myf>0</b><small>подписчики</small></div>
+            <div><b data-cnt="${following}">0</b><small>подписки</small></div>
           </div>
         </div>
-        <b style="font-size:17px">${esc(m.n)}${ti >= 3 ? `<span class="vg-ver">✔</span>` : ""}</b>
-        <div class="muted" style="font-weight:800;font-size:13px">${esc(m.handle)}</div>
-        <div class="card tight ${t.c}" style="margin:12px 0">
-          <div style="display:flex;justify-content:space-between;align-items:center"><b>${t.e} ${t.n}</b><small style="font-weight:800">${nx ? `до «${nx.n}»: ${kfmt(nx.at - f)}` : "Ты на вершине. Держись"}</small></div>
-          <div class="progress" style="margin-top:8px"><i style="width:${Math.round(pr * 100)}%"></i></div>
-          <div class="vg-ladder">${TIERS.map((x, k) => `<span class="${k <= ti ? "on" : ""}">${x.e}</span>`).join("")}</div>
-          <div class="fine" style="margin-top:6px">Слава ${fame()}/100. Подписчики растут от качества: редкие моменты, прайм-тайм, тренды, настроение и внешность. Каждые новые 10× даются тяжелее.</div>
+        <div class="vg-pname">${esc(m.n)}${ti >= 3 ? `<span class="vg-ver">✔</span>` : ""}</div>
+        <div class="vg-pcat">${CAT[ti]} · ${esc(m.handle)}</div>
+        <div class="vg-pbio">${myBio().map(esc).join("<br>")}</div>
+        <div class="vg-plink">🔗 vibe.city/${esc(m.handle.slice(1))} · марафон «Стань собой» в шапке</div>
+        <div class="vg-pbtns">
+          <button class="btn sm" data-edit>Редактировать</button>
+          <button class="btn sm" data-shareprof>Поделиться</button>
+          <button class="btn sm" data-discover aria-label="Найти людей">👤＋</button>
         </div>
-        <h2 class="sec" style="margin-top:4px">Достижения <small>${have.length} из ${achs.length}</small></h2>
-        <div class="vg-hl hscroll">${achs.map(([id, a]) => `<button class="vg-hlc ${have.includes(id) ? "on" : ""}" data-ach="${id}"><span>${have.includes(id) ? a.e : "🔒"}</span><small>${esc(a.t)}</small></button>`).join("")}</div>
-        ${dl ? `<div class="card c-yellow vg-deal"><div class="sticker" style="top:10px;right:10px;background:var(--pink)">Бренд</div><b style="font-size:17px">🤝 ${esc(dl.brand)} хочет интеграцию</b><p style="margin:6px 0 10px;font-weight:700;font-size:13px">Гонорар ${money(dl.fee)}. Подписчики слегка расстроятся.</p><button class="btn black sm" data-deal>Взять интеграцию</button></div>` : ti < 2 ? `<div class="card tight c-white" style="margin-bottom:12px"><b>🔒 Рекламные интеграции</b><div class="muted" style="font-size:12px;font-weight:700">Бренды приходят с 10 тыс подписчиков. Платят в ₫, иногда</div></div>` : ""}
-        <button class="btn grad block xl" data-vg="newpost" style="margin:6px 0 14px">📸 Новый пост${g.drafts.length ? ` · моментов: ${g.drafts.length}` : ""}</button>
-        <div class="vg-grid">${posts.map((p) => { cache.set(p.id, p); return `<button class="vg-gtile" data-tile="${p.id}">${photo(p, "sm")}<span class="vg-gl">❤️ ${kfmt(myLikes(p))}</span></button>`; }).join("") || `<div class="card" style="grid-column:1/-1;text-align:center"><div style="font-size:44px">📷</div><b>Альбом пуст</b><div class="muted" style="font-weight:700;font-size:13px">Живи — и постим лучшие моменты. Vibe напомнит</div></div>`}</div>
+        <div class="vg-fame">
+          <div class="vg-fame-top"><b>Путь к Селебе</b><span>⭐ ${fp}/100</span></div>
+          <div class="vg-fbar"><i data-fbar="${fp}"></i>${mk}</div>
+          <div class="vg-fame-sub">${t.e} ${t.n} · ${nx ? `до «${nx.n}» ещё ${kfmt(nx.at - f)} 👥` : "Ты на вершине. Держись"}</div>
+          <div class="fine">Подписчики растут от качества: редкие моменты, прайм-тайм, тренды, настроение и внешность. Каждые новые 10× даются тяжелее. Это нормально, так задумано 💜</div>
+        </div>
+        ${dl ? `<div class="card c-yellow vg-deal"><div class="sticker" style="top:10px;right:10px;background:var(--pink)">Бренд</div><b style="font-size:17px">🤝 ${esc(dl.brand)} хочет интеграцию</b><p style="margin:6px 0 10px;font-weight:700;font-size:13px">Гонорар ${money(dl.fee)}. Подписчики слегка расстроятся.</p><button class="btn black sm" data-deal>Взять интеграцию</button></div>` : ti < 2 ? `<div class="card tight c-white vg-deal"><b>🔒 Рекламные интеграции</b><div class="muted" style="font-size:12px;font-weight:700">Бренды приходят с 10 тыс подписчиков. Платят в ₫, иногда</div></div>` : ""}
+        <div class="vg-hl hscroll">
+          <button class="vg-hlc new" data-vg="newpost"><span>＋</span><small>Новое</small></button>
+          ${HL.map((h) => { const n = h.id === "ach" ? have.length : hlPosts(h).length; return `<button class="vg-hlc ${n ? "on" : ""}" data-hl="${h.id}"><span>${h.e}</span><small>${h.n}${n ? " · " + n : ""}</small></button>`; }).join("")}
+        </div>
+        ${g.drafts.length ? `<button class="card tight tap c-lime vg-nudge" data-vg="newpost"><span style="font-size:26px">📝</span><b>Моментов ждут публикации: ${g.drafts.length}</b><span>→</span></button>` : ""}
+        <div class="vg-ptabs">${[["grid", "grid"], ["reels", "reels"], ["tagged", "tag"]].map(([k, ic]) => `<button class="vg-ptab ${meTab === k ? "on" : ""}" data-mtab="${k}" aria-label="${k}">${svg(ic)}</button>`).join("")}<i class="vg-ptab-ink" style="transform:translateX(${mi * 100}%)"></i></div>
+        <div data-mtbody>${meTabBody()}</div>
       </div>`;
+  }
+  function animMe(root) {
+    root.querySelectorAll("[data-cnt]").forEach((el) => FX.countTo(el, +el.dataset.cnt, { from: 0, dur: 1100, fmt: kfmt }));
+    const fb = root.querySelector("[data-fbar]");
+    if (fb) requestAnimationFrame(() => requestAnimationFrame(() => { fb.style.width = clamp(+fb.dataset.fbar, 2, 100) + "%"; }));
+  }
+  function openMyStory() {
+    const ps = myPosts().slice(0, 4);
+    if (!ps.length) { FX.toast("Сторис пусты. Опубликуй момент — и кольцо загорится", "📸", 2000); return newPost(); }
+    openStory("me", { a: me(), frames: ps.map((p) => ({ e: p.e, s: p.s, bg: p.bg, st: p.text })) });
+  }
+  function openHL(id) {
+    if (id === "ach") return achAlbum();
+    const h = HL.find((x) => x.id === id); if (!h) return;
+    const ps = hlPosts(h).slice(0, 6);
+    if (!ps.length) { FX.toast(`«${h.n}» пока пусто. Корпорация верит, что скоро будет`, h.e, 2200); return; }
+    openStory("me", { a: Object.assign(me(), { handle: h.e + " " + h.n }), frames: ps.map((p) => ({ e: p.e, s: p.s, bg: p.bg, st: p.text })) });
+  }
+  function achAlbum() {
+    const achs = Vibe.ACH_LIST ? Vibe.ACH_LIST() : [], have = S().achievements || [];
+    Vibe.ui.sheet(`<div class="display" style="font-size:22px;margin-bottom:4px">Альбом достижений</div>
+      <p class="muted" style="font-weight:700;margin:0 0 12px">Открыто ${have.length} из ${achs.length}. Каждое можно запостить</p>
+      <div class="vg-achgrid">${achs.map(([id, a]) => `<button class="vg-hlc ${have.includes(id) ? "on" : ""}" data-ach="${id}"><span>${have.includes(id) ? a.e : "🔒"}</span><small>${esc(a.t)}</small></button>`).join("") || `<p class="muted">Скоро</p>`}</div>`, {
+      onMount(sh, close) { sh.addEventListener("click", (e) => { const b = e.target.closest("[data-ach]"); if (!b) return; close(); setTimeout(() => achSheet(b.dataset.ach), 320); }); },
+    });
+  }
+  function editBio() {
+    const cur = G().bio || "";
+    Vibe.ui.sheet(`<div class="display" style="font-size:22px;margin-bottom:6px">Редактировать профиль</div>
+      <p class="muted" style="font-weight:700;margin:0 0 10px">Пара слов о себе. Алгоритм прочитает первым</p>
+      <div class="field" style="height:50px"><input data-bio maxlength="70" value="${esc(cur)}" placeholder="О себе…"></div>
+      <div class="chips vg-biochips" data-presets>${BIO_SET.map((b) => `<button class="chip" data-b>${esc(b)}</button>`).join("")}</div>
+      <button class="btn black block" data-save style="margin-top:12px">Сохранить</button>
+      <div class="fine">Аватар меняется в основном профиле Vibe. Лицо — по записи 💅</div>`, {
+      onMount(sh, close) {
+        const inp = sh.querySelector("[data-bio]");
+        sh.querySelector("[data-presets]").addEventListener("click", (e) => { const b = e.target.closest("[data-b]"); if (!b) return; inp.value = b.textContent; FX.bump(b); });
+        sh.querySelector("[data-save]").addEventListener("click", (e) => {
+          setG({ bio: inp.value.trim().slice(0, 70) || null });
+          FX.burst(e.currentTarget, { emojis: ["✨", "💜", "📝"], count: 8 }); FX.sound.pop();
+          close(); FX.toast("Профиль обновлён. Алгоритм уже оценил", "✨", 1800); refresh();
+        });
+      },
+    });
+  }
+  function gramMenu(goTab) {
+    const g = G(), have = (S().achievements || []).length, all = Vibe.ACH_LIST ? Vibe.ACH_LIST().length : 0;
+    const rows = [["activity", "❤️", "Активность", "лайки и комментарии"], ["ach", "🏆", "Альбом достижений", `${have} из ${all}`], ["stars", "🌟", "Звёзды и директ", canDM() ? "отвечают" : "читают"], ["drafts", "📝", "Моменты и черновики", g.drafts.length || "пусто"], ["direct", "✈️", "Директ", "мессенджер"], ["edit", "✏️", "Редактировать профиль", ""]];
+    Vibe.ui.sheet(`<div class="display" style="font-size:22px;margin-bottom:10px">Vibegram</div>
+      <div class="stack">${rows.map(([k, e, t, s]) => `<button class="card tight tap vg-mrow" data-m="${k}"><span>${e}</span><b>${t}</b><small>${esc(s)}</small></button>`).join("")}</div>
+      <div class="fine">Настройки приватности недоступны: от семьи у нас секретов нет 💜</div>`, {
+      onMount(sh, close) {
+        sh.addEventListener("click", (e) => {
+          const b = e.target.closest("[data-m]"); if (!b) return;
+          const k = b.dataset.m; close();
+          setTimeout(() => ({ activity, ach: achAlbum, stars: () => goTab("explore"), drafts: newPost, direct, edit: editBio })[k](), 320);
+        });
+      },
+    });
   }
 
   /* ---------- Экран "gram" ---------- */
+  const TAB_ALIAS = { stars: "explore", search: "explore", profile: "me", reels: "feed" };
   Vibe.screen("gram", {
     render(p) {
-      if (p.tab) curTab = p.tab;
-      const tabs = [["feed", "Лента"], ["reels", "Рилсы"], ["me", "Мой профиль"], ["stars", "Звёзды"]];
-      return `
-      <div class="head"><button class="icon-btn" data-back aria-label="Назад">←</button>
-        <div class="title"><span class="vg-logo">Vibegram</span><small>${TIERS[tierIdx()].e} ${kfmt(followers())} подписчиков · ${Vibe.ui.clock()}</small></div>
-        <button class="icon-btn" data-vg="activity">❤️</button>
-      </div>
-      <div class="chips vg-tabs" data-tabs>${tabs.map(([k, n]) => `<button class="chip ${curTab === k ? "on" : ""}" data-tab="${k}">${n}</button>`).join("")}</div>
-      <div data-body></div>`;
+      if (p.tab) curTab = TAB_ALIAS[p.tab] || p.tab;
+      if (!["feed", "explore", "me"].includes(curTab)) curTab = "feed";
+      return `<header class="vg-top" data-top>${gramHead(curTab)}</header>
+        <div class="vg-scroll" data-scroll><div data-body></div></div>
+        ${navHtml(curTab)}`;
     },
-    mount(root) {
+    mount(root, p) {
       injectCss();
-      const body = root.querySelector("[data-body]");
+      root.classList.add("vg-shell");
+      if (p.tab === "reels") setTimeout(() => (Vibe.replace || Vibe.go)("reels", {}), 0);
+      const body = root.querySelector("[data-body]"), scroller = root.querySelector("[data-scroll]"), top = root.querySelector("[data-top]");
+      const stg = (el) => el.querySelectorAll(".stagger").forEach((g) => [...g.children].forEach((c, i) => c.style.setProperty("--i", Math.min(i, 12))));
       const draw = () => {
-        body.innerHTML = { feed: tabFeed, reels: tabReels, me: tabMe, stars: tabStars }[curTab]();
-        body.querySelectorAll(".stagger").forEach((g) => [...g.children].forEach((c, i) => c.style.setProperty("--i", Math.min(i, 12))));
+        body.innerHTML = { feed: tabFeed, explore: tabExplore, me: tabMe }[curTab]();
+        top.innerHTML = gramHead(curTab);
+        stg(body); updBadge(root);
+        if (curTab === "me") animMe(body);
+      };
+      const switchTab = (k) => {
+        if (k === "reels") return false;
+        if (k === curTab) { scroller.scrollTo({ top: 0, behavior: "smooth" }); return true; }
+        curTab = k; setNav(root, k); scroller.scrollTop = 0; draw();
+        return true;
       };
       draw();
       refreshFn = draw;
       bindPostClicks(root);
-      root.querySelector("[data-tabs]").addEventListener("click", (e) => {
-        const b = e.target.closest("[data-tab]"); if (!b || b.dataset.tab === curTab) return;
-        curTab = b.dataset.tab;
-        root.querySelectorAll("[data-tab]").forEach((x) => x.classList.toggle("on", x === b));
-        FX.bump(b); draw();
+      bindNav(root, "gram", switchTab);
+      body.addEventListener("input", (e) => {
+        if (!e.target.matches("[data-xq]")) return;
+        xq = e.target.value;
+        const xb = body.querySelector("[data-xbody]"); xb.innerHTML = exploreBody(); stg(xb);
       });
       root.addEventListener("click", (e) => {
-        const st = e.target.closest('[data-vg="story"]'); if (st) return openStory(st.dataset.id);
         if (e.target.closest('[data-vg="newpost"]')) return newPost();
+        const st = e.target.closest('[data-vg="story"]'); if (st) return openStory(st.dataset.id);
         if (e.target.closest('[data-vg="activity"]')) return activity();
+        if (e.target.closest('[data-vg="direct"]')) return direct();
+        if (e.target.closest('[data-vg="menu"]')) return gramMenu(switchTab);
         const fo = e.target.closest("[data-follow]"); if (fo) return follow(fo.dataset.follow, fo);
-        const tl = e.target.closest("[data-tile]"); if (tl) { const p = cache.get(tl.dataset.tile); if (p) postSheet(p); return; }
+        const tl = e.target.closest("[data-tile]"); if (tl) { const q = cache.get(tl.dataset.tile); if (q) postSheet(q); return; }
         const ac = e.target.closest("[data-ach]"); if (ac) return achSheet(ac.dataset.ach);
+        if (e.target.closest("[data-mystory]")) return openMyStory();
+        const hl = e.target.closest("[data-hl]"); if (hl) { FX.bump(hl.firstElementChild); return openHL(hl.dataset.hl); }
+        const mt = e.target.closest("[data-mtab]");
+        if (mt) {
+          if (mt.dataset.mtab === meTab) return;
+          meTab = mt.dataset.mtab;
+          body.querySelectorAll("[data-mtab]").forEach((x) => x.classList.toggle("on", x === mt));
+          const ink = body.querySelector(".vg-ptab-ink"); if (ink) ink.style.transform = `translateX(${["grid", "reels", "tagged"].indexOf(meTab) * 100}%)`;
+          const mb = body.querySelector("[data-mtbody]"); if (mb) { mb.innerHTML = meTabBody(); FX.bump(mb); }
+          FX.sound.tap();
+          return;
+        }
+        if (e.target.closest("[data-edit]")) return editBio();
+        const sp = e.target.closest("[data-shareprof]");
+        if (sp) { FX.burst(sp, { emojis: ["🔗", "💜", "✨"], count: 8 }); FX.toast("Ссылка на профиль скопирована. Мама подписалась (в третий раз)", "🔗", 2200); return; }
+        if (e.target.closest("[data-discover]")) return switchTab("explore");
         if (e.target.closest("[data-deal]")) { const d = deal(); if (d) composer({ kind: "ad", e: pick(["🥤", "👟", "🛏️", "🍵", "🎧", "🥟"]), s: "💸✨🤝", bg: 3, text: `Обожаю ${d.brand}! Пользуюсь каждый день (с сегодняшнего)`, tags: ["реклама"], sug: [] }, { deal: d }); }
       });
       const iv = setInterval(() => {
-        root.querySelectorAll("[data-likes]").forEach((el) => { const p = cache.get(el.dataset.likes); if (p) { const v = fmt(likesOf(p)); if (el.textContent !== v) { el.textContent = v; FX.bump(el); } } });
-        const mf = root.querySelector("[data-myf]"); if (mf) mf.textContent = kfmt(followers());
+        root.querySelectorAll("[data-likes]").forEach((el) => { const q = cache.get(el.dataset.likes); if (q) { const v = fmt(likesOf(q)); if (el.textContent !== v) { el.textContent = v; FX.bump(el); } } });
+        const mf = root.querySelector("[data-myf]");
+        if (mf) { const v = followers(); if (+mf.dataset.val !== v) { FX.countTo(mf, v, { fmt: kfmt }); FX.bump(mf); } }
+        updBadge(root);
       }, 3000);
       return () => { clearInterval(iv); refreshFn = null; if (storyClose) storyClose(); };
     },
@@ -876,15 +1109,14 @@
   }
 
   /* ---------- Экран профиля ---------- */
-  Vibe.screen("gram-profile", {
-    render(p) {
-      const a = acc(p.id);
-      if (!a) return `${Vibe.ui.head("Vibegram")}<div class="card" style="text-align:center"><div style="font-size:48px">🫥</div><b>Аккаунт не найден</b><p class="muted">Возможно, его забанила Корпорация. Из заботы.</p></div>`;
-      const g = G();
-      const posts = accPosts(a, 10).slice(0, 15);
-      const fol = a.char && !a.star ? true : !!g.follow[a.id];
-      const ok = !a.star || canDM();
-      return `
+  function profileInner(p) {
+    const a = acc(p.id);
+    if (!a) return `${Vibe.ui.head("Vibegram")}<div class="card" style="text-align:center"><div style="font-size:48px">🫥</div><b>Аккаунт не найден</b><p class="muted">Возможно, его забанила Корпорация. Из заботы.</p></div>`;
+    const g = G();
+    const posts = accPosts(a, 10).slice(0, 15);
+    const fol = a.char && !a.star ? true : !!g.follow[a.id];
+    const ok = !a.star || canDM();
+    return `
       ${Vibe.ui.head(esc(a.handle), a.star ? "Подтверждённый аккаунт" : a.kind === "family" ? "Семья" : "Близкий человек")}
       <div class="vg-mehead">
         <button class="vg-bigava" data-vg="story" data-id="${a.id}">${ava(a, 86, true, g.seenSt[a.id] === today())}</button>
@@ -903,11 +1135,19 @@
         <button class="btn sm ${ok ? "lime" : ""}" style="flex:1" data-dm>${ok ? "Написать" : "Написать 🔒"}</button>
       </div>
       ${a.star && !ok ? `<div class="fine" style="margin:-6px 0 12px">Звезда читает личку. Отвечает — Инфлюенсерам, Селебам и владельцам ${money(1000000)}+</div>` : ""}
-      ${posts.length ? `<div class="vg-grid">${posts.map((p) => { cache.set(p.id, p); return `<button class="vg-gtile" data-tile="${p.id}">${photo(p, "sm")}<span class="vg-gl">❤️ ${kfmt(likesOf(p))}</span></button>`; }).join("")}</div>` : `<div class="card" style="text-align:center"><div style="font-size:40px">📷</div><b>Пока без постов</b></div>`}
+      ${posts.length ? `<div class="vg-grid">${posts.map((q) => { cache.set(q.id, q); return `<button class="vg-gtile" data-tile="${q.id}">${photo(q, "sm")}<span class="vg-gl">❤️ ${kfmt(likesOf(q))}</span></button>`; }).join("")}</div>` : `<div class="card" style="text-align:center"><div style="font-size:40px">📷</div><b>Пока без постов</b></div>`}
       ${a.star ? `<h2 class="sec">Рилсы автора</h2><div class="vg-rgrid">${REELS.filter((r) => r.a === a.id).map((r) => `<button class="vg-rthumb tap" data-go="reels" data-params='{"i":"${r.i}"}'>${reelScene(r, true)}<span class="vg-rviews">▶ ${kfmt(r.views)}</span></button>`).join("")}</div>` : ""}`;
+  }
+  Vibe.screen("gram-profile", {
+    render(p) {
+      if (p.id === "me") return `<div class="vg-scroll"></div>`;
+      return `<div class="vg-scroll">${profileInner(p)}</div>${navHtml(null)}`;
     },
     mount(root, p) {
       injectCss();
+      root.classList.add("vg-shell", "notop");
+      if (p.id === "me") { setTimeout(() => (Vibe.replace || Vibe.go)("gram", { tab: "me" }), 0); return; }
+      bindNav(root, "profile");
       const a = acc(p.id);
       if (!a) return;
       bindPostClicks(root);
@@ -951,90 +1191,130 @@
     });
   }
 
-  /* ---------- Экран "reels" ---------- */
+  /* ---------- Экран "reels": полноэкранный вертикальный плеер ---------- */
   Vibe.screen("reels", {
     render() {
       const g = G();
-      return `<div class="vg-reels" data-reels>
-        ${REELS.map((r) => { const a = reelAcc(r); const lk = !!g.reelLiked[r.i]; return `
+      return `<div class="vg-rstage" data-stage><div class="vg-rtrack" data-track>
+        ${REELS.map((r) => { const a = reelAcc(r); const lk = !!g.reelLiked[r.i], sv = !!g.saved["reel:" + r.i]; const canF = a.star && !a.official && !g.follow[a.id]; return `
         <section class="vg-reel" data-ri="${r.i}">
           ${reelScene(r)}
+          <div class="vg-rshade"></div>
           <div class="vg-sub" data-sub>${esc(r.subs[0])}</div>
           <span class="vg-rheart">❤️</span>
           <div class="vg-rail">
-            <button class="vg-rbtn" data-ra="prof" data-id="${a.id}">${ava(a, 46)}</button>
-            <button class="vg-rbtn" data-ra="like" data-i="${r.i}"><span>${lk ? "❤️" : "🤍"}</span><small data-rl>${kfmt(r.likes + (lk ? 1 : 0))}</small></button>
-            <button class="vg-rbtn" data-ra="cm" data-i="${r.i}"><span>💬</span><small>${kfmt(r.cms)}</small></button>
-            <button class="vg-rbtn" data-ra="share"><span>📤</span><small>Отпр.</small></button>
-            <span class="vg-disc">🎵</span>
+            <button class="vg-rbtn" data-ra="like" data-i="${r.i}" aria-label="Нравится">${svg("heart", lk ? "fill" : "")}<small data-rl>${kfmt(r.likes + (lk ? 1 : 0))}</small></button>
+            <button class="vg-rbtn" data-ra="cm" data-i="${r.i}" aria-label="Комментарии">${svg("cm")}<small>${kfmt(r.cms)}</small></button>
+            <button class="vg-rbtn" data-ra="share" aria-label="Поделиться">${svg("send")}<small>${kfmt(Math.round(r.likes / 9))}</small></button>
+            <button class="vg-rbtn" data-ra="save" data-i="${r.i}" aria-label="Сохранить">${svg("save", sv ? "fill" : "")}</button>
+            <span class="vg-disc">${a.e}</span>
           </div>
           <div class="vg-rinfo">
-            <b>${esc(a.handle)}${a.star ? " ✔" : ""}</b>
-            <div>${esc(r.cap)}</div>
-            <div class="vg-music"><span>♪ ${esc(r.music)} · ♪ ${esc(r.music)} ·</span></div>
+            <div class="vg-rwho"><button class="vg-rava" data-ra="prof" data-id="${a.id}">${ava(a, 34)}<b>${esc(a.handle)}${a.star ? `<span class="vg-ver">✔</span>` : ""}</b></button>${canF ? `<button class="vg-rfol" data-ra="follow" data-id="${a.id}">Подписаться</button>` : ""}</div>
+            <div class="vg-rcap">${esc(r.cap)}</div>
+            <div class="vg-music">♪ <span>${esc(r.music)} · ${esc(r.music)} · </span></div>
           </div>
-          <div class="vg-rprog"><i></i></div>
+          <div class="vg-rprog"><i data-prog></i></div>
         </section>`; }).join("")}
-      </div>
-      <button class="vg-rback" data-back>←</button><div class="vg-rtitle">Рилсы</div>`;
+      </div></div>
+      <div class="vg-rtop"><button class="vg-rtb" data-back aria-label="Назад">${svg("back")}</button><b class="vg-rtitle">Рилсы</b><button class="vg-rtb" data-cam aria-label="Снять">${svg("cam")}</button></div>
+      ${navHtml("reels", true)}`;
     },
     mount(root, p) {
       injectCss();
       root.classList.add("vg-reels-screen");
-      const box = root.querySelector("[data-reels]");
-      const start = clamp(parseInt(p.i, 10) || 0, 0, REELS.length - 1);
-      requestAnimationFrame(() => { box.scrollTop = start * box.clientHeight; });
-      let active = null, subT = null, subI = 0, seen = 0;
-      const timers = [];
-      const activate = (sec) => {
+      const stage = root.querySelector("[data-stage]"), track = root.querySelector("[data-track]");
+      const secs = [...track.children], N = secs.length;
+      let idx = p.i != null && p.i !== "" ? clamp(parseInt(p.i, 10) || 0, 0, N - 1) : (G().reelsSeen || 0) % N;
+      let active = null, elapsed = 0, dur = 10000, step = 2000, subI = 0, paused = false, seen = 0;
+      let raf = 0, last = performance.now(), tapT = null, lastT = 0, noClick = 0;
+      let dragY = null, dy = 0, t0 = 0, wheelLock = 0, wheelT = 0;
+
+      const place = (anim) => {
+        track.style.transition = anim ? "transform .46s cubic-bezier(.22,1.18,.36,1)" : "none";
+        track.style.transform = `translate3d(0, calc(${-idx * 100}% + ${dy}px), 0)`;
+      };
+      const setPaused = (v) => { paused = v; if (active) active.classList.toggle("paused", v); };
+      const activate = () => {
+        const sec = secs[idx];
         if (active === sec) return;
-        if (active) active.classList.remove("on", "paused");
-        active = sec; sec.classList.add("on");
+        if (active) { active.classList.remove("on", "paused"); const pi = active.querySelector("[data-prog]"); if (pi) pi.style.transform = "scaleX(0)"; }
+        active = sec; paused = false; sec.classList.add("on");
         const r = REELS[+sec.dataset.ri];
-        subI = 0;
-        const sub = sec.querySelector("[data-sub]");
-        clearInterval(subT);
-        const step = Math.max(900, Math.round((60 / r.bpm) * 4 * 1000));
-        sub.textContent = r.subs[0];
-        subT = setInterval(() => { if (sec.classList.contains("paused")) return; subI = (subI + 1) % r.subs.length; sub.textContent = r.subs[subI]; sub.classList.remove("pop"); void sub.offsetWidth; sub.classList.add("pop"); }, step);
+        step = Math.max(900, Math.round((60 / r.bpm) * 4 * 1000));
+        dur = clamp(step * r.subs.length * 2, 7000, 15000);
+        elapsed = 0; subI = 0;
+        sec.querySelector("[data-sub]").textContent = r.subs[0];
         seen++;
         const n = (G().reelsSeen || 0) + 1;
         setG({ reelsSeen: n });
         if (n >= 50) Vibe.achieve && Vibe.achieve("gram_reels");
         if (seen > 0 && seen % 12 === 0) FX.toast(pick(["Ты посмотрел ещё 12 рилсов. Вайбот гордится. Время — нет", "Перерыв? Шучу, вот ещё 💜", "Глаза устали? Купи капли в Vibe Health 👀"]), "🌀", 2600);
       };
-      const io = new IntersectionObserver((ents) => ents.forEach((en) => { if (en.isIntersecting && en.intersectionRatio > 0.6) activate(en.target); }), { root: box, threshold: [0.6] });
-      box.querySelectorAll(".vg-reel").forEach((s) => io.observe(s));
-      let tapT = null, lastT = 0;
+      const goTo = (n) => {
+        dy = 0;
+        if (n < 0) { place(true); return; }
+        if (n >= N) { n = 0; FX.toast("Ты досмотрел все рилсы. Алгоритм уже подготовил их заново 💜", "🌀", 2400); }
+        idx = n; place(true); activate();
+      };
+      const loop = (t) => {
+        const dt = Math.min(100, t - last); last = t;
+        if (active && !paused && dragY === null && !document.hidden && !document.querySelector(".sheet, .modal")) {
+          elapsed += dt;
+          const r = REELS[+active.dataset.ri];
+          const si = Math.floor(elapsed / step) % r.subs.length;
+          if (si !== subI) { subI = si; const sub = active.querySelector("[data-sub]"); sub.textContent = r.subs[si]; sub.classList.remove("pop"); void sub.offsetWidth; sub.classList.add("pop"); }
+          const pi = active.querySelector("[data-prog]"); if (pi) pi.style.transform = `scaleX(${Math.min(1, elapsed / dur).toFixed(4)})`;
+          if (elapsed >= dur) goTo(idx + 1);
+        }
+        raf = requestAnimationFrame(loop);
+      };
+
       const likeReel = (i, force) => {
         const g = G(), lk = Object.assign({}, g.reelLiked);
         if (force && lk[i]) return;
         if (lk[i]) delete lk[i]; else lk[i] = 1;
         setG({ reelLiked: lk });
-        const sec = box.querySelector(`[data-ri="${i}"]`);
-        const b = sec.querySelector('[data-ra="like"]');
-        b.querySelector("span").textContent = lk[i] ? "❤️" : "🤍";
+        const b = secs[i] && secs[i].querySelector('[data-ra="like"]'); if (!b) return;
+        b.querySelector("svg").classList.toggle("fill", !!lk[i]);
         b.querySelector("[data-rl]").textContent = kfmt(REELS[i].likes + (lk[i] ? 1 : 0));
         FX.bump(b);
         if (lk[i]) FX.sound.like();
       };
-      box.addEventListener("click", (e) => {
-        const b = e.target.closest("[data-ra]");
-        if (b) {
-          const a = b.dataset.ra;
-          if (a === "like") { likeReel(+b.dataset.i); if (G().reelLiked[b.dataset.i]) FX.burst(b, { emojis: ["❤️", "💖"], count: 8, spread: 60 }); }
-          else if (a === "prof") Vibe.go("gram-profile", { id: b.dataset.id });
-          else if (a === "share") { FX.toast("Отправлено в чат «Семья». Мама не поймёт, но лайкнет", "📤", 2200); FX.bump(b); }
-          else if (a === "cm") {
-            const r = REELS[+b.dataset.i], rr = rng(hash("rcm" + r.i));
-            const list = Array.from({ length: 8 + Math.floor(rr() * 6) }, () => { const u = pickR(rr, RAND_USERS); return { a: u[0], e: u[1], t: pickR(rr, CM_GEN) }; });
-            const a0 = reelAcc(r);
-            if (a0.char && !a0.star) list.unshift(...chars().filter((c) => c.id !== a0.id).slice(0, 2).map((c) => ({ a: c.handle, e: c.e, t: pick(CHAR_CM[c.id] || ["🔥"]) })));
-            commentsSheet(list, { title: "Комментарии", onSend: () => Vibe.reward && Vibe.reward({ xp: 2, silent: true }) });
-          }
-          return;
+      const rail = (b) => {
+        const a = b.dataset.ra;
+        if (a === "like") { likeReel(+b.dataset.i); if (G().reelLiked[b.dataset.i]) FX.burst(b, { emojis: ["❤️", "💖"], count: 8, spread: 60 }); }
+        else if (a === "prof") Vibe.go("gram-profile", { id: b.dataset.id });
+        else if (a === "follow") {
+          const id = b.dataset.id;
+          follow(id, b);
+          const on = !!G().follow[id];
+          stage.querySelectorAll(`[data-ra="follow"][data-id="${id}"]`).forEach((x) => { x.textContent = on ? "Вы подписаны" : "Подписаться"; x.classList.toggle("done", on); });
+          FX.bump(b);
         }
-        const sec = e.target.closest(".vg-reel"); if (!sec) return;
+        else if (a === "share") { FX.toast("Отправлено в чат «Семья». Мама не поймёт, но лайкнет", "📤", 2200); FX.bump(b); }
+        else if (a === "save") {
+          const g = G(), saved = Object.assign({}, g.saved), k = "reel:" + b.dataset.i;
+          if (saved[k]) delete saved[k]; else saved[k] = 1;
+          setG({ saved });
+          b.querySelector("svg").classList.toggle("fill", !!saved[k]); FX.bump(b); FX.sound.pop();
+          if (saved[k]) FX.toast("Сохранено в «Посмотрю потом» (никогда)", "🔖", 1600);
+        }
+        else if (a === "cm") {
+          const r = REELS[+b.dataset.i], rr = rng(hash("rcm" + r.i));
+          const list = Array.from({ length: 8 + Math.floor(rr() * 6) }, () => { const u = pickR(rr, RAND_USERS); return { a: u[0], e: u[1], t: pickR(rr, CM_GEN) }; });
+          const a0 = reelAcc(r);
+          if (a0.char && !a0.star) list.unshift(...chars().filter((c) => c.id !== a0.id).slice(0, 2).map((c) => ({ a: c.handle, e: c.e, t: pick(CHAR_CM[c.id] || ["🔥"]) })));
+          commentsSheet(list, { title: "Комментарии", onSend: () => Vibe.reward && Vibe.reward({ xp: 2, silent: true }) });
+        }
+      };
+
+      // Тап — пауза, двойной тап — лайк с сердцем
+      stage.addEventListener("click", (e) => {
+        if (Date.now() < noClick) return;
+        const b = e.target.closest("[data-ra]");
+        if (b) return rail(b);
+        const sec = e.target.closest(".vg-reel"); if (!sec || sec !== active) return;
         const t = Date.now();
         if (t - lastT < 300) {
           clearTimeout(tapT); lastT = 0;
@@ -1048,10 +1328,61 @@
         } else {
           lastT = t;
           clearTimeout(tapT);
-          tapT = setTimeout(() => { sec.classList.toggle("paused"); FX.sound.tap(); }, 300);
+          tapT = setTimeout(() => { setPaused(!paused); FX.sound.tap(); }, 300);
         }
       });
-      return () => { io.disconnect(); clearInterval(subT); clearTimeout(tapT); timers.forEach(clearTimeout); };
+
+      // Свайп пальцем
+      stage.addEventListener("touchstart", (e) => {
+        if (e.touches.length > 1) { dragY = null; return; }
+        dragY = e.touches[0].clientY; dy = 0; t0 = Date.now();
+        track.style.transition = "none";
+      }, { passive: true });
+      stage.addEventListener("touchmove", (e) => {
+        if (dragY === null) return;
+        dy = e.touches[0].clientY - dragY;
+        if (idx === 0 && dy > 0) dy *= 0.35;
+        place(false);
+      }, { passive: true });
+      const touchEnd = () => {
+        if (dragY === null) return;
+        const d = dy, fast = Math.abs(d) / Math.max(1, Date.now() - t0) > 0.5;
+        dragY = null;
+        if (Math.abs(d) > 10) noClick = Date.now() + 350;
+        if (d < -70 || (fast && d < -25)) goTo(idx + 1);
+        else if (d > 70 || (fast && d > 25)) goTo(idx - 1);
+        else { dy = 0; place(true); }
+      };
+      stage.addEventListener("touchend", touchEnd);
+      stage.addEventListener("touchcancel", touchEnd);
+
+      // Колесо мыши / трекпад: один жест — один рилс
+      stage.addEventListener("wheel", (e) => {
+        e.preventDefault();
+        const now = Date.now(), gap = now - wheelT; wheelT = now;
+        if (Math.abs(e.deltaY) < 6) return;
+        if (now < wheelLock) { if (gap < 120) wheelLock = Math.max(wheelLock, now + 120); return; }
+        wheelLock = now + 650;
+        goTo(idx + (e.deltaY > 0 ? 1 : -1));
+      }, { passive: false });
+
+      // Клавиатура
+      const onKey = (e) => {
+        if (!root.isConnected || (Vibe.current && Vibe.current.el !== root)) return;
+        if (document.querySelector(".sheet, .modal") || /INPUT|TEXTAREA/.test((e.target && e.target.tagName) || "")) return;
+        if (["ArrowDown", "PageDown"].includes(e.key)) { e.preventDefault(); goTo(idx + 1); }
+        else if (["ArrowUp", "PageUp"].includes(e.key)) { e.preventDefault(); goTo(idx - 1); }
+        else if (e.key === " " || e.key === "Spacebar") { e.preventDefault(); setPaused(!paused); }
+      };
+      document.addEventListener("keydown", onKey);
+
+      root.querySelector("[data-cam]").addEventListener("click", () => newPost());
+      bindNav(root, "reels", (k) => { if (k === "reels") { goTo(idx + 1); return true; } return false; });
+
+      place(false);
+      activate();
+      raf = requestAnimationFrame(loop);
+      return () => { cancelAnimationFrame(raf); clearTimeout(tapT); document.removeEventListener("keydown", onKey); };
     },
   });
 
@@ -1113,7 +1444,6 @@
     const st = document.createElement("style");
     st.textContent = `
     .vg-logo { font-family: var(--font-logo); font-size: 26px; background: var(--grad); -webkit-background-clip: text; background-clip: text; color: transparent; }
-    .vg-tabs { margin-bottom: 6px; }
     .vg-ava-w { --s: 40px; width: var(--s); height: var(--s); border-radius: 50%; display: inline-grid; place-items: center; flex: 0 0 auto; position: relative; }
     .vg-ava-w.ring { background: var(--holo); background-size: 300% 300%; animation: holo 5s linear infinite; padding: 3px; }
     .vg-ava-w.seen { background: #c9c6d3; padding: 3px; }
@@ -1159,7 +1489,6 @@
     .vg-cm b { font-weight: 900; }
     .vg-cm small { display: block; color: var(--muted); font-size: 11px; font-weight: 700; margin-top: 2px; }
     .vg-sheetpost .vg-post { box-shadow: none; margin: 0; }
-    .vg-reelhero { display: flex; align-items: center; justify-content: space-between; width: 100%; text-align: left; margin-bottom: 14px; }
     .vg-rgrid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin-bottom: 20px; }
     .vg-rthumb { position: relative; border: 2px solid var(--ink); border-radius: 14px; overflow: hidden; aspect-ratio: 9/16; }
     .vg-rviews { position: absolute; left: 6px; bottom: 6px; color: #fff; font-weight: 900; font-size: 11px; text-shadow: 0 1px 2px #000; }
@@ -1191,30 +1520,41 @@
     @keyframes vg-orbit { from { transform: rotate(0) translateX(95px) rotate(0); } to { transform: rotate(360deg) translateX(95px) rotate(-360deg); } }
     @keyframes vg-pulse { 0%,100% { transform: scale(1); opacity: .9; } 50% { transform: scale(1.45); opacity: 1; } }
     .vg-reels-screen { padding: 0 !important; background: #0e0e12 !important; overflow: hidden !important; }
-    .vg-reels { position: absolute; inset: 0; overflow-y: auto; scroll-snap-type: y mandatory; scrollbar-width: none; overscroll-behavior: contain; }
-    .vg-reels::-webkit-scrollbar { display: none; }
-    .vg-reel { position: relative; height: 100%; scroll-snap-align: start; scroll-snap-stop: always; overflow: hidden; color: #fff; }
+    .vg-rstage { position: absolute; left: 0; right: 0; top: 0; bottom: calc(56px + var(--safe-bottom)); overflow: hidden; touch-action: none; background: #0e0e12; }
+    .vg-rtrack { height: 100%; will-change: transform; }
+    .vg-reel { position: relative; height: 100%; overflow: hidden; color: #fff; }
+    .vg-rshade { position: absolute; inset: 0; background: linear-gradient(180deg, rgba(14,14,18,.4) 0%, transparent 16%, transparent 56%, rgba(14,14,18,.66) 100%); pointer-events: none; z-index: 2; }
     .vg-beatring { position: absolute; left: 50%; top: 50%; width: 260px; height: 260px; margin: -130px 0 0 -130px; border-radius: 50%; border: 4px solid rgba(255,255,255,.5); animation: vg-ring var(--beat) ease-out infinite; animation-play-state: paused; }
     @keyframes vg-ring { 0% { transform: scale(.6); opacity: .9; } 100% { transform: scale(1.6); opacity: 0; } }
-    .vg-sub { position: absolute; left: 16px; right: 76px; top: 68%; text-align: center; font-family: var(--font-display); font-size: 28px; line-height: 1.1; color: #fff; -webkit-text-stroke: 1.5px var(--ink); text-shadow: 0 4px 0 var(--ink); z-index: 3; }
+    .vg-sub { position: absolute; left: 16px; right: 70px; top: 56%; text-align: center; font-family: var(--font-display); font-size: 28px; line-height: 1.1; color: #fff; -webkit-text-stroke: 1.5px var(--ink); text-shadow: 0 4px 0 var(--ink); z-index: 3; pointer-events: none; }
     .vg-sub.pop { animation: pop-in .35s var(--spring); }
     .vg-rheart { position: absolute; left: 50%; top: 40%; font-size: 120px; pointer-events: none; opacity: 0; transform: translate(-50%,-50%) scale(0); z-index: 5; filter: drop-shadow(0 4px 0 var(--ink)); }
-    .vg-rail { position: absolute; right: 10px; bottom: 120px; display: flex; flex-direction: column; align-items: center; gap: 14px; z-index: 4; }
-    .vg-rbtn { display: flex; flex-direction: column; align-items: center; color: #fff; font-size: 30px; line-height: 1; transition: transform .2s var(--spring); }
-    .vg-rbtn:active { transform: scale(.85); }
-    .vg-rbtn small { font-size: 11px; font-weight: 900; margin-top: 3px; text-shadow: 0 1px 2px #000; }
-    .vg-disc { width: 42px; height: 42px; border-radius: 50%; background: #1d1b26; border: 3px solid #fff; display: grid; place-items: center; font-size: 18px; animation: spin 3s linear infinite; }
-    .vg-rinfo { position: absolute; left: 14px; right: 80px; bottom: 26px; z-index: 4; font-weight: 700; font-size: 14px; text-shadow: 0 1px 3px rgba(0,0,0,.7); }
-    .vg-rinfo b { font-weight: 900; font-size: 15px; display: block; margin-bottom: 4px; }
-    .vg-music { overflow: hidden; white-space: nowrap; margin-top: 6px; font-size: 12px; }
+    .vg-rail { position: absolute; right: 8px; bottom: 20px; display: flex; flex-direction: column; align-items: center; gap: 16px; z-index: 4; }
+    .vg-rbtn { display: flex; flex-direction: column; align-items: center; color: #fff; line-height: 1; min-width: 46px; transition: transform .2s var(--spring); filter: drop-shadow(0 1px 3px rgba(0,0,0,.55)); }
+    .vg-rbtn:active { transform: scale(.82); }
+    .vg-rbtn .vg-i { width: 31px; height: 31px; }
+    .vg-rbtn[data-ra="like"] .vg-i.fill { color: #ff3b5c; stroke: #ff3b5c; }
+    .vg-rbtn small { font-size: 12px; font-weight: 900; margin-top: 4px; }
+    .vg-disc { width: 36px; height: 36px; border-radius: 10px; background: #1d1b26; border: 2.5px solid #fff; display: grid; place-items: center; font-size: 18px; animation: spin 4s linear infinite; animation-play-state: paused; }
+    .vg-reel.on:not(.paused) .vg-disc { animation-play-state: running; }
+    .vg-rinfo { position: absolute; left: 14px; right: 74px; bottom: 18px; z-index: 4; font-weight: 700; font-size: 14px; text-shadow: 0 1px 3px rgba(0,0,0,.7); }
+    .vg-rwho { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; min-width: 0; }
+    .vg-rava { display: flex; align-items: center; gap: 8px; color: #fff; min-width: 0; text-align: left; }
+    .vg-rava .vg-ava { border-color: #fff; }
+    .vg-rava b { font-weight: 900; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .vg-rfol { flex: 0 0 auto; color: #fff; border: 1.5px solid rgba(255,255,255,.9); border-radius: 9px; padding: 5px 10px; font-size: 12px; font-weight: 900; transition: transform .2s var(--spring), opacity .2s; }
+    .vg-rfol.done { opacity: .6; }
+    .vg-rcap { font-size: 14px; line-height: 1.3; max-height: 2.6em; overflow: hidden; }
+    .vg-music { overflow: hidden; white-space: nowrap; margin-top: 8px; font-size: 12px; display: flex; gap: 4px; }
     .vg-music span { display: inline-block; animation: marquee 9s linear infinite; }
-    .vg-rprog { position: absolute; left: 0; right: 0; bottom: 0; height: 4px; background: rgba(255,255,255,.25); z-index: 4; }
-    .vg-rprog i { display: block; height: 100%; width: 0; background: #fff; }
-    .vg-reel.on:not(.paused) .vg-rprog i { animation: vg-prog 12s linear infinite; }
-    @keyframes vg-prog { to { width: 100%; } }
-    .vg-reel.paused::after { content: "▶"; position: absolute; left: 50%; top: 45%; transform: translate(-50%,-50%); font-size: 64px; color: rgba(255,255,255,.85); z-index: 5; pointer-events: none; }
-    .vg-rback { position: absolute; top: calc(var(--safe-top) + 12px); left: 14px; width: 42px; height: 42px; border-radius: 50%; background: rgba(14,14,18,.5); color: #fff; font-size: 20px; z-index: 6; border: 2px solid rgba(255,255,255,.6); }
-    .vg-rtitle { position: absolute; top: calc(var(--safe-top) + 20px); left: 0; right: 0; text-align: center; color: #fff; font-family: var(--font-display); font-size: 18px; z-index: 5; pointer-events: none; text-shadow: 0 2px 0 var(--ink); }
+    .vg-rprog { position: absolute; left: 0; right: 0; bottom: 0; height: 3px; background: rgba(255,255,255,.22); z-index: 5; }
+    .vg-rprog i { display: block; height: 100%; width: 100%; background: #fff; transform-origin: left center; transform: scaleX(0); }
+    .vg-reel.paused::after { content: "▶"; position: absolute; left: 50%; top: 45%; width: 88px; height: 88px; margin: -44px 0 0 -44px; border-radius: 50%; background: rgba(14,14,18,.45); display: grid; place-items: center; padding-left: 6px; box-sizing: border-box; font-size: 38px; color: #fff; z-index: 5; pointer-events: none; animation: vg-pz .3s var(--spring) both; }
+    @keyframes vg-pz { from { opacity: 0; transform: scale(.5); } }
+    .vg-rtop { position: absolute; top: 0; left: 0; right: 0; padding: calc(var(--safe-top) + 8px) 8px 0; display: flex; align-items: center; justify-content: space-between; z-index: 6; pointer-events: none; }
+    .vg-rtb { width: 44px; height: 44px; display: grid; place-items: center; color: #fff; pointer-events: auto; filter: drop-shadow(0 1px 3px rgba(0,0,0,.6)); transition: transform .2s var(--spring); }
+    .vg-rtb:active { transform: scale(.85); }
+    .vg-rtitle { color: #fff; font-family: var(--font-display); font-weight: 400; font-size: 20px; text-shadow: 0 2px 0 var(--ink); }
     .vg-mehead { display: flex; align-items: center; gap: 14px; margin-bottom: 10px; }
     .vg-bigava.celeb .vg-ava-w { box-shadow: 0 0 0 4px var(--yellow), 0 0 24px var(--pink); }
     .vg-counts { flex: 1; display: grid; grid-template-columns: repeat(3,1fr); text-align: center; }
@@ -1264,6 +1604,102 @@
     .vg-sfoot .btn { margin-left: auto; }
     .vg-dm { max-height: 40vh; min-height: 120px; overflow-y: auto; display: flex; flex-direction: column; gap: 6px; }
     .vg-read { align-self: flex-end; font-size: 11px; font-weight: 800; color: var(--muted); }
+    /* --- Оболочка Vibegram: шапка + скролл + нижнее меню --- */
+    .vg-shell { padding: 0 !important; overflow: hidden !important; display: flex; flex-direction: column; }
+    .vg-top { flex: 0 0 auto; display: flex; align-items: center; gap: 2px; padding: calc(var(--safe-top) + 6px) 8px 4px; background: var(--bg); position: relative; z-index: 5; }
+    .vg-htitle { flex: 1; min-width: 0; display: flex; align-items: center; padding-left: 2px; }
+    .vg-hi { width: 44px; height: 44px; display: grid; place-items: center; position: relative; color: var(--ink); flex: 0 0 auto; transition: transform .2s var(--spring); }
+    .vg-hi:active { transform: scale(.85); }
+    .vg-hdot { position: absolute; top: 9px; right: 9px; width: 10px; height: 10px; border-radius: 50%; background: #ff3b5c; border: 2px solid var(--bg); }
+    .vg-hhandle { font-weight: 900; font-size: 19px; display: flex; align-items: center; gap: 4px; max-width: 100%; min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+    .vg-hhandle small { font-size: 12px; }
+    .vg-i { width: 26px; height: 26px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; display: block; flex: 0 0 auto; }
+    .vg-i.fill { fill: currentColor; }
+    .vg-scroll { flex: 1 1 auto; min-height: 0; overflow-y: auto; overflow-x: hidden; padding: 6px 16px calc(var(--safe-bottom) + 88px); scrollbar-width: none; -webkit-overflow-scrolling: touch; overscroll-behavior: contain; }
+    .vg-scroll::-webkit-scrollbar { display: none; }
+    .vg-shell.notop .vg-scroll { padding-top: calc(var(--safe-top) + 12px); }
+    @media (max-width: 360px) { .vg-scroll { padding-left: 12px; padding-right: 12px; } }
+    .vg-nav { position: absolute; left: 0; right: 0; bottom: 0; z-index: 30; display: grid; grid-template-columns: repeat(5, 1fr); height: calc(56px + var(--safe-bottom)); padding-bottom: var(--safe-bottom); background: rgba(255,251,239,.94); -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px); border-top: 2px solid var(--ink); color: var(--ink); }
+    .vg-nav.dark { background: #0e0e12; color: #fff; border-top-color: #2a2833; }
+    .vg-nb { display: grid; place-items: center; position: relative; height: 56px; color: inherit; opacity: .5; transition: opacity .2s, transform .25s var(--spring); }
+    .vg-nb.on, .vg-nb[data-nav="me"] { opacity: 1; }
+    .vg-nb.on .vg-i { stroke-width: 2.7; }
+    .vg-nb.on::after { content: ""; position: absolute; bottom: 4px; left: 50%; width: 5px; height: 5px; margin-left: -2.5px; border-radius: 50%; background: var(--pink); }
+    .vg-nb:active { transform: scale(.86); }
+    .vg-nme { width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center; font-size: 17px; line-height: 1; background: var(--lime); border: 2px solid currentColor; }
+    .vg-nb.on .vg-nme { box-shadow: 0 0 0 2px var(--bg), 0 0 0 4px var(--pink); }
+    .vg-nav.dark .vg-nb.on .vg-nme { box-shadow: 0 0 0 2px #0e0e12, 0 0 0 4px var(--pink); }
+    .vg-nbadge { position: absolute; top: 6px; left: calc(50% + 5px); min-width: 18px; height: 18px; padding: 0 4px; border-radius: 9px; background: #ff3b5c; color: #fff; font-style: normal; font-size: 10px; font-weight: 900; display: grid; place-items: center; border: 2px solid var(--bg); }
+    .vg-nbadge[hidden] { display: none; }
+    .vg-nav.dark .vg-nbadge { border-color: #0e0e12; }
+    /* --- Интересное --- */
+    .vg-search { display: flex; align-items: center; gap: 8px; height: 46px; padding: 0 14px; border-radius: 16px; background: var(--paper); border: var(--line); margin: 2px 0 14px; color: var(--muted); }
+    .vg-search .vg-i { width: 20px; height: 20px; }
+    .vg-search input { flex: 1; min-width: 0; border: 0; background: none; outline: none; font-weight: 700; font-size: 15px; color: var(--ink); user-select: text; -webkit-user-select: text; }
+    .vg-xhead { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; margin: 4px 0 8px; }
+    .vg-xhead b { font-family: var(--font-display); font-size: 19px; font-weight: 400; }
+    .vg-xhead small { font-size: 12px; font-weight: 800; color: var(--muted); white-space: nowrap; }
+    .vg-scards { gap: 10px; }
+    .vg-scard { width: 138px; border-radius: 22px; padding: 12px 10px; display: flex; flex-direction: column; align-items: center; gap: 2px; text-align: center; }
+    .vg-scard b { font-size: 13px; font-weight: 900; margin-top: 6px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+    .vg-scard small { font-size: 11px; font-weight: 700; opacity: .8; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+    .vg-scard .btn { margin-top: 8px; width: 100%; padding: 0 8px; font-size: 12px; height: 36px; }
+    .vg-xgrid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; margin-bottom: 8px; }
+    .vg-xt { position: relative; overflow: hidden; border-radius: 10px; border: 2px solid var(--ink); min-height: 0; display: block; }
+    .vg-xt.tall { grid-row: span 2; }
+    .vg-xt.tall .vg-an { animation-play-state: running; }
+    .vg-xr { position: absolute; top: 6px; right: 6px; color: #fff; filter: drop-shadow(0 1px 2px rgba(0,0,0,.6)); }
+    .vg-xr .vg-i { width: 18px; height: 18px; }
+    /* --- Мой профиль --- */
+    .vg-cover { position: relative; height: 96px; border-radius: 24px; overflow: hidden; }
+    .vg-cdec { position: absolute; font-size: 24px; line-height: 1; animation: float 3.4s ease-in-out infinite; opacity: .9; }
+    .vg-tierchip { position: absolute; right: 10px; bottom: 10px; background: var(--ink); color: #fff; font-weight: 900; font-size: 12px; padding: 5px 10px; border-radius: 999px; }
+    .vg-prow { display: flex; align-items: flex-end; gap: 10px; margin: -46px 0 8px 6px; position: relative; }
+    .vg-pava { position: relative; flex: 0 0 auto; border-radius: 50%; background: var(--bg); padding: 4px; transition: transform .2s var(--spring); }
+    .vg-pava:active { transform: scale(.94); }
+    .vg-pava .vg-ava-w.ring { animation: holo 3s linear infinite, vg-glow 2.6s ease-in-out infinite; }
+    @keyframes vg-glow { 0%,100% { box-shadow: 0 0 0 0 rgba(255,107,203,0); } 50% { box-shadow: 0 0 18px 2px rgba(255,107,203,.55); } }
+    .vg-pava.celeb .vg-ava-w { box-shadow: 0 0 0 4px var(--yellow), 0 0 26px var(--pink); }
+    .vg-pplus { position: absolute; right: 2px; bottom: 4px; width: 28px; height: 28px; border-radius: 50%; background: var(--blue); color: #fff; border: 2.5px solid var(--ink); display: grid; place-items: center; font-weight: 900; font-size: 18px; line-height: 1; box-shadow: 0 0 0 3px var(--bg); }
+    .vg-prow .vg-counts { padding-bottom: 4px; }
+    .vg-prow .vg-counts b { font-size: 20px; }
+    .vg-pname { font-weight: 900; font-size: 19px; display: flex; align-items: center; gap: 2px; margin-top: 2px; }
+    .vg-pcat { font-size: 12px; font-weight: 800; color: var(--muted); margin: 1px 0 6px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .vg-pbio { font-size: 14px; font-weight: 600; line-height: 1.42; margin-bottom: 4px; overflow-wrap: anywhere; }
+    .vg-plink { font-size: 13px; font-weight: 800; color: var(--blue); margin-bottom: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .vg-pbtns { display: grid; grid-template-columns: 1fr 1fr auto; gap: 8px; margin-bottom: 14px; }
+    .vg-pbtns .btn { height: 40px; padding: 0 12px; font-size: 13px; }
+    .vg-fame { background: var(--ink); color: #fff; border-radius: 22px; padding: 14px 16px 12px; margin-bottom: 14px; }
+    .vg-fame-top { display: flex; justify-content: space-between; align-items: baseline; }
+    .vg-fame-top b { font-family: var(--font-display); font-weight: 400; font-size: 18px; }
+    .vg-fame-top span { font-weight: 900; color: var(--lime); font-size: 15px; }
+    .vg-fbar { position: relative; height: 14px; border-radius: 999px; background: #2a2833; margin: 34px 4px 10px; }
+    .vg-fbar i { position: absolute; left: 0; top: 0; bottom: 0; width: 0; border-radius: 999px; background: var(--holo); background-size: 300% 100%; animation: holo 4s linear infinite; transition: width 1.4s var(--spring); }
+    .vg-fmk { position: absolute; bottom: 20px; transform: translateX(-50%); font-size: 18px; line-height: 1; filter: grayscale(1); opacity: .4; }
+    .vg-fmk.on { filter: none; opacity: 1; }
+    .vg-fmk::after { content: ""; position: absolute; left: 50%; top: 22px; width: 2px; height: 8px; margin-left: -1px; background: rgba(255,255,255,.35); }
+    .vg-fame-sub { font-weight: 800; font-size: 13px; }
+    .vg-fame .fine { color: #9d9aab; }
+    .vg-hlc.new span { background: var(--paper); filter: none; opacity: 1; border-style: dashed; font-size: 28px; font-weight: 900; }
+    .vg-nudge { display: flex; align-items: center; gap: 10px; width: 100%; text-align: left; margin: 2px 0 10px; }
+    .vg-nudge b { flex: 1; font-size: 14px; }
+    .vg-ptabs { position: relative; display: grid; grid-template-columns: repeat(3, 1fr); border-bottom: 1.5px solid rgba(14,14,18,.12); margin: 4px 0 6px; }
+    .vg-ptab { height: 44px; display: grid; place-items: center; color: var(--muted); }
+    .vg-ptab.on { color: var(--ink); }
+    .vg-ptab .vg-i { width: 24px; height: 24px; }
+    .vg-ptab-ink { position: absolute; bottom: -1.5px; left: 0; width: 33.333%; height: 3px; background: var(--ink); border-radius: 3px; transition: transform .35s var(--spring); }
+    .vg-gnew { position: absolute; top: 4px; left: 4px; background: var(--lime); border: 1.5px solid var(--ink); border-radius: 6px; font-size: 9px; font-weight: 900; padding: 1px 4px; }
+    .vg-gtag { position: absolute; top: 4px; right: 4px; font-size: 14px; filter: drop-shadow(0 1px 2px rgba(0,0,0,.5)); }
+    .vg-empty { text-align: center; padding: 22px 12px; font-weight: 700; }
+    .vg-empty b { display: block; font-size: 15px; margin: 4px 0 2px; }
+    .vg-empty .muted { font-size: 13px; }
+    .vg-achgrid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px 4px; max-height: 58vh; overflow-y: auto; padding: 4px 0 8px; }
+    .vg-achgrid .vg-hlc { width: auto; }
+    .vg-mrow { display: flex; align-items: center; gap: 12px; width: 100%; text-align: left; }
+    .vg-mrow > span { font-size: 24px; }
+    .vg-mrow b { flex: 1; font-size: 15px; }
+    .vg-mrow small { font-weight: 800; color: var(--muted); font-size: 12px; }
+    .vg-biochips { flex-wrap: wrap; margin: 10px 0 0; padding: 0; overflow: visible; }
     `;
     document.head.appendChild(st);
   }

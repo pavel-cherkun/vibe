@@ -492,7 +492,7 @@
           <div class="psy-scale-lb"><span>Ок</span><span style="left:40%">Устал</span><span style="left:65%">На грани</span><span style="left:90%">🔥</span></div>
         </div>
         <p class="psy-m-line">${LINES[st.stage]}</p>
-        ${st.burnedOut ? `<div class="psy-leave">🛌 Больничный: ещё <b>${dur(st.leftMin)}</b> игрового времени (≈ ${Math.max(1, Math.round(st.leftMin * 2.5 / 60))} мин реальных). Рабочие задачи на паузе. Выйти можно, когда стресс ниже 50%.</div>` : ""}
+        ${st.burnedOut ? `<div class="psy-leave">🛌 Больничный: ещё <b>${dur(st.leftMin)}</b> игрового времени (≈ ${Math.max(1, Math.round(st.leftMin / 60))} мин реальных). Рабочие задачи на паузе. Выйти можно, когда стресс ниже 50%.</div>` : ""}
         <div class="psy-m-row">
           <span>💼 Продуктивность <b>${prod.value}%</b>${prod.note ? ` · ${esc(prod.note)}` : ""}</span>
           <span>❤️ Пульс <b>${V.body.heartRate()}</b></span>

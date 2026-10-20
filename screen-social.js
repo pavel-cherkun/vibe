@@ -191,6 +191,7 @@
         <div class="li"><div class="ic c-yellow">🔊</div><div class="tx"><b>Звуки и вибрация</b><small>Дофамин на максимум</small></div><button class="switch ${s.sound ? "on" : ""}" data-act="sound"></button></div>
         <button class="li" data-go="plus" style="width:100%;text-align:left"><div class="ic c-lilac">💎</div><div class="tx"><b>Плюс Вайб</b><small>${s.plus ? "Активна · 299 ₫/мес" : "Не подключена"}</small></div><span>›</span></button>
         <button class="li" data-act="name" style="width:100%;text-align:left"><div class="ic c-mint">✏️</div><div class="tx"><b>Имя</b><small>${Vibe.esc(s.name)}</small></div><span>›</span></button>
+        ${Vibe.app && !Vibe.app.installed() ? `<button class="li" data-act="install" style="width:100%;text-align:left"><div class="ic c-grad">📲</div><div class="tx"><b>Установить Vibe</b><small>На главный экран, на весь экран, без браузера</small></div><div class="amt">→</div></button>` : ""}
         <button class="li" data-act="save" style="width:100%;text-align:left"><div class="ic c-lime">💾</div><div class="tx"><b>Сохранение</b><small>Перенести жизнь на другой телефон</small></div><span>›</span></button>
         <button class="li" data-act="cheats" style="width:100%;text-align:left"><div class="ic c-black" style="color:#c6ff4d">🎮</div><div class="tx"><b>Консоль</b><small>Для тех, кто помнит motherlode</small></div><span>›</span></button>
         <button class="li" data-act="data" style="width:100%;text-align:left"><div class="ic c-sky">🕵️</div><div class="tx"><b>Мои данные</b><small>Что Vibe знает о тебе</small></div><span>›</span></button>
@@ -230,6 +231,7 @@
         const act = (e.target.closest("[data-act]") || {}).dataset;
         if (!act) return;
         if (act.act === "save") return Vibe.save.sheet();
+        if (act.act === "install") return Vibe.app.install();
         if (act.act === "cheats") return Vibe.cheats.sheet();
         if (act.act === "sound") {
           const on = !S().sound;

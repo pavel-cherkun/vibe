@@ -12,7 +12,7 @@
   const set = (p) => Vibe.state.set(p);
   const esc = (s) => Vibe.esc(s);
   const clamp = (v, a = 0, b = 100) => Math.max(a, Math.min(b, v));
-  const MS_MIN = 2500; // 1 игровая минута = 2,5 сек
+  const MS_MIN = 1000; // 1 игровая минута = 1 сек
   const PLUS = { id: "plus", name: "Плюс Вайб", e: "💎", price: 299 };
   const MUS = { id: "music", name: "Vibe Music Premium", e: "🎧", price: 199 };
   const hasPlus = () => !!S().plus;
@@ -709,7 +709,7 @@
           onTick(mm) {
             const cur = start + mm;
             bar.style.setProperty("--p", (cur / total) * 100 + "%");
-            tm.textContent = trailer ? `0:${String(Math.max(0, Math.ceil(10 - mm * 2.5))).padStart(2, "0")}` : `${hm(cur)} / ${hm(total)}`;
+            tm.textContent = trailer ? `0:${String(Math.max(0, Math.ceil(10 - (mm * MS_MIN) / 1000))).padStart(2, "0")}` : `${hm(cur)} / ${hm(total)}`;
             if (mm - lastSub >= (trailer ? 1.2 : 2)) { lastSub = mm; si = (si + 1) % subs.length; subEl.textContent = subs[si]; }
           },
           onMinute(w) {

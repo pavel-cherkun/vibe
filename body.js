@@ -289,7 +289,8 @@
     if (gap <= 0) return;
     const auto = gap > AUTO_GAP;
     const job = S().job;
-    let autoNight = 0, autoMeals = 0;
+    let autoNight = 0, autoMeals = 0, autoFood = 0, autoWork = 0;
+    const AUTO_SNACK = 120, AUTO_METRO = 122; // перекус у дома, метро туда-обратно
     while (m < now) {
       const step = Math.min(60 - (m % 60) || 60, now - m);
       const h = hourOf(m);
@@ -299,7 +300,9 @@
         if (isNight(h) && !b.sleeping && b.energy < 95) { startSleep(b, m, true); autoNight++; }
         if (!isNight(h) && b.sleeping && b.sleeping.auto && (b.energy >= 95 || h >= 9 || (h >= 7 && b.energy >= 70))) endSleep(b, m);
         // ест по расписанию, а если проспал завтрак и проголодался — перекусывает
-        if (!b.sleeping && m % 60 === 0 && ([8, 13, 19].includes(h) || (b.food < 20 && h >= 7))) { addMeal(b, b.fridge > 0 ? "cooked" : "basic"); if (b.fridge > 0) b.fridge--; autoMeals++; }
+        if (!b.sleeping && m % 60 === 0 && ([8, 13, 19].includes(h) || (b.food < 20 && h >= 7))) { addMeal(b, b.fridge > 0 ? "cooked" : "basic"); if (b.fridge > 0) b.fridge--; else autoFood += AUTO_SNACK; autoMeals++; }
+        // По будням ходит на работу: работу не теряет, но и задачи за тебя никто не делает
+        if (job && h === 9 && m % 60 === 0 && dayOf(m) % 7 < 5 && b.autoWorkDay !== dayOf(m) && !b.leave) { b.autoWorkDay = dayOf(m); autoWork++; }
         if (!b.sleeping && job && h >= 8 && h < 20 && dayOf(m) % 7 < 5) b.steps += (step / 60) * 450;
         else if (!b.sleeping) b.steps += (step / 60) * 220;
       } else if (!b.sleeping) b.steps += (step / 60) * 120;
@@ -340,9 +343,18 @@
       const was = S().body || {};
       if (b.food < 25 && (was.food ?? 100) >= 25) b.notes.push({ e: "🍽️", t: "Ты проголодался. Сытость 25% — продуктивность падает", go: "eat", label: "Поесть" });
       if (b.energy < 20 && (was.energy ?? 100) >= 20) b.notes.push({ e: "🥱", t: "Глаза слипаются. Пора спать — дома", go: "fit", label: "Спать" });
-    } else if (autoNight || autoMeals) {
+    } else if (autoNight || autoMeals || autoWork) {
       const last = (b.sleepLog || []).slice(-1)[0];
       if (last && last.auto) b.notes.push({ e: "😴", t: `Пока тебя не было, ты поспал ${last.hours} ч. Качество ${Math.round(last.q * 100)}%` });
+      const cost = autoFood + autoWork * AUTO_METRO;
+      if (cost && Vibe.game && Vibe.game.tx) {
+        const what = [autoFood ? `еда ×${autoFood / AUTO_SNACK}` : "", autoWork ? `метро на работу ×${autoWork}` : ""].filter(Boolean).join(", ");
+        Vibe.game.tx(`Автопилот: ${what}`, -cost, "🤖", "c-white");
+      }
+      if (autoWork && job) {
+        Vibe.state.set({ job: Object.assign({}, S().job, { lastTaskDay: Math.max(S().job.lastTaskDay || 0, b.autoWorkDay) }) });
+        b.notes.push({ e: "💼", t: `Ты ${autoWork} ${Vibe.game.plural(autoWork, "раз", "раза", "раз")} сходил на работу на автопилоте. Работу сохранил, к повышению не приблизился`, go: "job", label: "Работа" });
+      }
     }
     const notes = b.notes; delete b.notes;
     save(b);

@@ -3,11 +3,11 @@
    работа и повышения, жильё, ежедневные задания, цели жизни,
    ежедневный бонус и сводка «Пока тебя не было».
 
-   Время: 1 игровой день = 1 реальный час. Месяц = 30 дней.
+   Время: 1 игровая минута = 1 реальная секунда (день = 24 мин). Месяц = 30 дней.
    Всё считается по меткам времени, поэтому жизнь идёт и офлайн.
    ============================================================ */
 (function () {
-  const DAY_MS = 60 * 60 * 1000;
+  const DAY_MS = 24 * 60 * 1000;     // 1 игровая минута = 1 реальная секунда, день = 24 минуты
   const START_MIN = 9 * 60;           // жизнь начинается в 09:00
   const MONTHS = ["ноября", "декабря", "января", "февраля", "марта", "апреля", "мая", "июня", "июля", "августа", "сентября", "октября"];
   const MONTHS_NOM = ["Ноябрь", "Декабрь", "Январь", "Февраль", "Март", "Апрель", "Май", "Июнь", "Июль", "Август", "Сентябрь", "Октябрь"];
@@ -50,7 +50,7 @@
     };
   }
   // Сколько реальных минут до наступления игрового дня d
-  const realMinTo = (day) => Math.max(0, ((day * 1440 - START_MIN) / 1440) * 60 - (Date.now() - (g().start || Date.now())) / 60000);
+  const realMinTo = (day) => Math.max(0, ((day * 1440 - START_MIN) / 1440) * (DAY_MS / 60000) - (Date.now() - (g().start || Date.now())) / 60000);
 
   /* ---------- Транзакция ---------- */
   function tx(title, amount, emoji, col) {
@@ -65,7 +65,9 @@
     const dom = (day % 30) + 1;
     const ev = [];
     // Бытовые траты
-    ev.push({ kind: "daily", title: "Продукты, метро, кофе", a: -DAILY_COST, e: "🧾", col: "c-white", quiet: true });
+    // Бытовые траты больше не списываются абстрактно: платишь за то, что реально купил
+    // (а на автопилоте — за перекусы и метро, см. body.js). Событие нужно для учёта простоя на работе.
+    ev.push({ kind: "daily", title: "", a: 0, quiet: true });
     // Аренда
     if (dom === 1 && s.home && s.home.rent) ev.push({ kind: "rent", title: `Аренда · ${s.home.title}`, a: -s.home.rent, e: "🔑", col: "c-mint" });
     if (dom === 10) ev.push({ kind: "bill", title: "ЖКХ (опять подорожало)", a: -utilities(s.home), e: "💡", col: "c-yellow" });
@@ -89,7 +91,7 @@
 
   function applyEvent(ev, day) {
     if (ev.kind === "jar") { set({ jar: (S().jar || 0) + ev.jar + Math.round(ev.jar * SK.add("jarRate") / 0.12) }); return; }
-    tx(ev.title, ev.a, ev.e, ev.col);
+    if (ev.a) tx(ev.title, ev.a, ev.e, ev.col);
     const s = S();
     if (ev.kind === "salary") { stat("salaries"); if (Vibe.body) Vibe.body.effect("salary", { quiet: true }); }
     if ((ev.kind === "rent" || ev.kind === "bill" || ev.kind === "loan") && Vibe.body) Vibe.body.effect("bill", { quiet: true });
@@ -143,7 +145,7 @@
     const days = new Set(events.map((e) => e.day)).size;
     const groups = {};
     events.forEach((e) => { const k = e.kind === "daily" ? "Бытовые траты" : e.title; groups[k] = groups[k] || { e: e.e, a: 0, n: 0 }; groups[k].a += e.a; groups[k].n++; });
-    const rows = Object.entries(groups).sort((a, b) => b[1].a - a[1].a);
+    const rows = Object.entries(groups).filter(([, v]) => v.a).sort((a, b) => b[1].a - a[1].a);
     if (plus > 0) FX.confetti();
     Vibe.modal(`
       <div class="m-emo float">⏳</div>

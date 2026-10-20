@@ -77,7 +77,7 @@
         <div class="card tight c-yellow"><span class="emo">🏚️</span><b>18к/мес</b><small>аренда</small></div>
         <div class="card tight c-coral"><span class="emo">💼</span><b>нет</b><small>работы</small></div>
       </div>
-      <div class="card tight c-lilac" style="margin-top:12px;font-weight:700;font-size:13px">⏳ В Vibe время идёт всегда: 1 игровой день = 1 час. Зарплата, аренда и счета приходят сами — даже когда приложение закрыто.</div>
+      <div class="card tight c-lilac" style="margin-top:12px;font-weight:700;font-size:13px">⏳ В Vibe время идёт всегда: 1 игровая минута = 1 секунда, день — 24 минуты. Зарплата, аренда и счета приходят сами — даже когда приложение закрыто.</div>
       <button class="btn grad xl block" style="margin-top:16px" data-finish>Начать жизнь 🚀</button>`,
   ];
 

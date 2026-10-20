@@ -497,12 +497,12 @@
 
   Vibe.ACH_LIST = () => Object.entries(ACH);
 
-  // Живые часы во всех шапках: 1 игровая минута = 2,5 сек
+  // Живые часы во всех шапках: 1 игровая минута = 1 сек
   setInterval(() => {
     if (!Vibe.game || !S.game) return;
     const t = ui.clockText();
     document.querySelectorAll("[data-gclock]").forEach((el) => { if (el.textContent !== t) el.textContent = t; });
-  }, 2500);
+  }, 1000);
 })();
 
 /* ============================================================
@@ -539,4 +539,47 @@
     new MutationObserver((ms) => { for (const m of ms) m.addedNodes.forEach(walk); }).observe(document.body, { childList: true, subtree: true });
   };
   if (document.body) start(); else document.addEventListener("DOMContentLoaded", start);
+})();
+
+/* ============================================================
+   Приложение: установка на главный экран (PWA) и полный экран.
+   ============================================================ */
+(function () {
+  const standalone = () => window.matchMedia("(display-mode: standalone)").matches || window.matchMedia("(display-mode: fullscreen)").matches || navigator.standalone === true;
+  const ios = /iP(hone|ad|od)/.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+  let deferred = null;
+  window.addEventListener("beforeinstallprompt", (e) => { e.preventDefault(); deferred = e; });
+  window.addEventListener("appinstalled", () => { deferred = null; FX.confetti(); FX.toast("Vibe теперь на главном экране. Корпорация всегда под рукой", "📲", 3200); });
+  if ("serviceWorker" in navigator && location.protocol !== "file:") navigator.serviceWorker.register("sw.js").catch(() => {});
+
+  // В обычном браузере первый тап разворачивает игру на весь экран (где это разрешено; на iPhone — только через установку)
+  const fsOk = () => document.fullscreenEnabled && window.matchMedia("(pointer: coarse)").matches && !standalone() && !ios && !document.fullscreenElement;
+  const goFull = () => { if (fsOk()) document.documentElement.requestFullscreen({ navigationUI: "hide" }).catch(() => {}); };
+  document.addEventListener("pointerup", goFull, { once: true, capture: true });
+
+  Vibe.app = {
+    installed: standalone,
+    install() {
+      if (deferred) {
+        deferred.prompt();
+        deferred.userChoice.finally(() => { deferred = null; });
+        return;
+      }
+      Vibe.ui.sheet(`
+        <div class="display" style="font-size:26px">Установить Vibe</div>
+        <p style="font-weight:700;margin:8px 0 14px">Игра откроется на весь экран, как обычное приложение. Без адресной строки и без лишних вкладок.</p>
+        ${ios ? `
+        <div class="stack">
+          <div class="card tight"><b>1.</b> Открой сайт в Safari</div>
+          <div class="card tight"><b>2.</b> Нажми «Поделиться» <span style="font-size:20px">⬆️</span> внизу экрана</div>
+          <div class="card tight"><b>3.</b> Выбери «На экран „Домой“» и нажми «Добавить»</div>
+        </div>` : `
+        <div class="stack">
+          <div class="card tight"><b>1.</b> Открой меню браузера <span style="font-size:20px">⋮</span></div>
+          <div class="card tight"><b>2.</b> Выбери «Установить приложение» или «Добавить на главный экран»</div>
+        </div>`}
+        <button class="btn black block" style="margin-top:16px" data-close>Понятно</button>`);
+    },
+    fullscreen: goFull,
+  };
 })();

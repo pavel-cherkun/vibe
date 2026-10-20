@@ -493,7 +493,7 @@
           <div class="fz-map-tag sticker fz-jam" style="background:#ff3b3b;color:#fff;font-size:12px">Пробки: ${rush ? 9 : ri(4, 7)} баллов 🔥</div>
         </div>
         <div class="card fz-panel" data-panel></div>
-        <div class="fine" style="text-align:center">Время в пути — настоящее игровое: 1 минута = 2,5 секунды. Перемотки нет, есть такси. Стоимость поездки может измениться в любую сторону, но обычно вверх.</div>`;
+        <div class="fine" style="text-align:center">Время в пути — настоящее игровое: 1 минута = 1 секунда. Перемотки нет, есть такси. Стоимость поездки может измениться в любую сторону, но обычно вверх.</div>`;
     },
     mount(root, params = {}) {
       const sc = scope();

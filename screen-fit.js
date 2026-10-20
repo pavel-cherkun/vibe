@@ -2,7 +2,7 @@
    Vibe Fit — фитнес-браслет. Вкладка «fit».
    Показывает всё тело персонажа (body.js) и даёт на него влиять:
    сон, еда, шаги и тренировка, настроение, здоровье.
-   Обновляется на месте: подписка Vibe.body.on + тик каждые 2,5 с.
+   Обновляется на месте: подписка Vibe.body.on + тик каждую секунду (= игровая минута).
    Стиль: финтех-референс — чёрный / кислотный лайм / электрик-фиолет,
    точечные (dot-matrix) графики, толстый донат с орбитой иконок.
    ============================================================ */
@@ -684,7 +684,7 @@
       root.querySelectorAll("[data-ring], [data-moodarc]").forEach((c) => { const v = c.getAttribute("stroke-dashoffset"); c.setAttribute("stroke-dashoffset", "100"); timers.push(setTimeout(() => c.setAttribute("stroke-dashoffset", v), 250)); });
       root.querySelectorAll("[data-seg]").forEach((c) => { const v = c.getAttribute("stroke-dasharray"); c.setAttribute("stroke-dasharray", "0 100"); timers.push(setTimeout(() => c.setAttribute("stroke-dasharray", v), 300)); });
       root.querySelectorAll("[data-bub]").forEach((c) => { const v = c.style.getPropertyValue("--a"); c.style.setProperty("--a", "-90deg"); timers.push(setTimeout(() => c.style.setProperty("--a", v), 300)); });
-      timers.push(setInterval(() => { V.body.tick(); update(); }, 2500));
+      timers.push(setInterval(() => { V.body.tick(); update(); }, 1000));
       timers.push(setInterval(pulse, 2000));
       // Фейковая «скидка 15%», которая сгорает и тут же воскресает
       if (T < 2 && root.querySelector("[data-cd]")) {
