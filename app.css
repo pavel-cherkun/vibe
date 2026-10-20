@@ -409,3 +409,6 @@ input[type=range]::-moz-range-thumb { width: 28px; height: 28px; border-radius: 
 .toast.act:active { transform: scale(.97); }
 .toast .tx { flex: 1; min-width: 0; }
 .toast .go { flex: 0 0 auto; background: var(--lime); color: var(--ink); border-radius: 999px; padding: 5px 11px; font-size: 13px; font-weight: 900; white-space: nowrap; }
+
+/* Проспать до утра: экран гаснет и снова светлеет */
+body.fit-nightfade::after { content: ""; position: fixed; inset: 0; background: #0e0e2a; z-index: 300; animation: fade-in .6s ease both; pointer-events: none; }

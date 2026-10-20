@@ -586,6 +586,12 @@
       const PREP = TOTAL * 0.24;
       let phase = "cook", cookT = 0, k = 0, last = performance.now(), raf = 0, alive = true, step = 0;
       let eventDone = false, extra = 0, lastEta = -1, lastBar = -1, follow = false, drv = null;
+      // Доставка идёт в реальном времени и не начинается заново при повторном входе
+      const starts = Object.assign({}, S().trackStarts || {});
+      if (!starts[orderId]) { starts[orderId] = Date.now(); V.state.set({ trackStarts: Object.fromEntries(Object.entries(starts).slice(-20)) }); }
+      const elapsed = (Date.now() - starts[orderId]) / 1000;
+      const doneBefore = !!(S().trackDone || {})[orderId] || elapsed >= TOTAL;
+      const markDone = () => V.state.set({ trackDone: Object.fromEntries(Object.entries(Object.assign({}, S().trackDone || {}, { [orderId]: true })).slice(-20)) });
       const vehEmo = () => ctrl.svg.querySelector(".vm-veh .vm-emo");
       later(() => alive && ctrl.route(T.pts, { color: "#ff6bcb" }), 300);
 
@@ -598,11 +604,12 @@
         FX.toast(C.steps[i][1] + "!", C.steps[i][0], 1600);
       }
 
-      function startDrive() {
+      function startDrive(from = 0) {
         phase = "drive"; step = 1;
-        later(() => setStep(1), 0);
+        if (from) { eventDone = from >= 0.45; if (from >= 0.62) step = 2; stepsEl.forEach((el, n) => { el.classList.toggle("on", n <= step); el.classList.toggle("now", n === step); }); }
+        else later(() => setStep(1), 0);
         drv = ctrl.drive(T.pts, {
-          emoji: C.veh, color: "#ff6bcb", duration: (TOTAL - PREP) * 1000,
+          emoji: C.veh, color: "#ff6bcb", duration: (TOTAL - PREP) * 1000, start: from,
           onProgress(kk, p) {
             k = kk;
             if (follow && p) ctrl.fit([{ x: p.x - 150, y: p.y - 150 }, { x: p.x + 150, y: p.y + 150 }], 0, true);
@@ -646,10 +653,23 @@
         if (phase === "done") return;
         raf = requestAnimationFrame(frame);
       }
-      raf = requestAnimationFrame(frame);
+      if (doneBefore) {
+        // Заказ уже доставлен: показываем итог без повторной поездки и модалки
+        phase = "done"; step = 3;
+        etaEl.textContent = "0";
+        bar.style.setProperty("--p", "100%");
+        stepsEl.forEach((el) => { el.classList.add("on"); el.classList.remove("now"); });
+        later(() => alive && ctrl.center(T.home, 320), 350);
+        if (!(S().trackDone || {})[orderId]) markDone();
+      } else {
+        if (elapsed >= PREP) { cookT = PREP; startDrive((elapsed - PREP) / (TOTAL - PREP)); }
+        else cookT = elapsed;
+        raf = requestAnimationFrame(frame);
+      }
 
       function arrive() {
         if (!alive || phase === "done") return;
+        markDone();
         phase = "done"; step = 3;
         etaEl.textContent = "0";
         bar.style.setProperty("--p", "100%");

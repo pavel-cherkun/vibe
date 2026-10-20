@@ -181,9 +181,9 @@
           Vibe.resetTo("home");
           Vibe.game.boot();
           setTimeout(() => Vibe.modal(`
-            <div class="m-emo float">💼</div><div class="display" style="font-size:26px">Первая цель: найди работу</div>
-            <p>Денег хватит примерно на ${Vibe.game.runway()} дней. Заглядывай в Vibe Job — вакансии ждут. Отклики рассматривают по-настоящему долго.</p>
-            <button class="btn black block" data-close data-go="job">К вакансиям</button>`, { sound: "pop" }), 600);
+            <div class="m-emo float">📦</div><div class="display" style="font-size:26px">Ты переехал!</div>
+            <p>Комната в коммуналке, 19:00, коробки и пустой холодильник. Сегодня — только две вещи: поесть с кайфом и выспаться. Утро вечера мудренее, работу поищем завтра.</p>
+            <button class="btn black block" data-close data-go="eat">Заказать ужин 🍜</button>`, { sound: "pop" }), 600);
         }, 1200));
       }
 

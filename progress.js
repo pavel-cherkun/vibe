@@ -12,7 +12,7 @@
   /* ================= Постепенное открытие ================= */
   // Ступени: что открывается и за что
   // Сколько игровых минут прожито в этой жизни (1 реальный час = 1 игровой день)
-  const lived = () => (Vibe.game && S().game ? Math.max(0, Vibe.game.minutes() - 9 * 60) : 0);
+  const lived = () => (Vibe.game && S().game ? Math.max(0, Vibe.game.minutes() - (S().game.bornMin || 9 * 60)) : 0);
   const TIERS = [
     { id: "t0", t: "Старт", e: "🐣", screens: ["home", "fit", "calendar", "profile", "pay", "chats", "chat", "qr", "all", "job", "eat", "eat-place", "eat-track", "supermarket", "maps", "welcome", "notfound", "locked", "search", "mail", "ending"], cond: () => true, hint: "" },
     { id: "t1", t: "Первые часы", e: "📨", screens: ["gig", "learn", "people", "skills", "telecom", "flowers", "cola"], cond: (s) => ((s.life_apps || []).length > 0 || !!s.job) && lived() >= 240, hint: "Откликнись на вакансию в Vibe Job и проживи первые четыре часа" },

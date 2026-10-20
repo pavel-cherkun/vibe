@@ -196,7 +196,18 @@
   /* ---------- Куски, которые перерисовываются при изменении ---------- */
   function wakeHtml(b) {
     if (!b.sleeping) return "";
-    return `<button class="btn lime xl block fit-wake" data-act="wake">☀️ Проснуться</button>`;
+    const h = Math.floor(V.game.minutes() / 60) % 24;
+    const night = h >= 18 || h < 6;
+    return `${night ? `<button class="btn black xl block fit-wake" data-act="skipnight">⏩ Проспать до утра</button>` : ""}<button class="btn lime xl block fit-wake" data-act="wake">☀️ Проснуться</button>`;
+  }
+  // Сколько игровых часов спать до 07:00 (но проснуться за час до ближайшего события)
+  function hoursToMorning() {
+    const m = V.game.minutes();
+    let target = Math.floor(m / 1440) * 1440 + 7 * 60;
+    if (target <= m) target += 1440;
+    const ev = V.sched && V.sched.upcoming ? V.sched.upcoming(5).map((e) => V.sched.startMin(e)).filter((x) => x > m) : [];
+    if (ev.length) target = Math.min(target, Math.min(...ev) - 60);
+    return Math.max(0, (target - m) / 60);
   }
   function lastSleepHtml(b) {
     const last = (b.sleepLog || []).slice(-1)[0];
@@ -726,6 +737,20 @@
           FX.toast("Спокойной ночи. Браслет посторожит твой сон", "🌙");
           update();
           const hero = $(".fit-hero"); if (hero) hero.scrollIntoView({ behavior: "smooth", block: "start" });
+        }
+        if (act === "skipnight") {
+          const hrs = hoursToMorning();
+          if (hrs < 0.5) { FX.toast("Скоро важное дело в календаре. Досыпать некогда", "📅", 3000); return; }
+          FX.sound.pop();
+          document.body.classList.add("fit-nightfade");
+          setTimeout(() => {
+            Vibe.timeSkip(Math.round(hrs * 10) / 10);
+            const rec = V.body.wake();
+            document.body.classList.remove("fit-nightfade");
+            FX.toast(rec ? `Утро! ${T ? `Сон ${comma(rec.hours.toFixed(1))} ч, качество ${r0(rec.q * 100)}%` : `Проспал ${comma(rec.hours.toFixed(1))} ч`}. Утро вечера мудренее` : "Доброе утро!", "☀️", 3600);
+            update();
+          }, 700);
+          return;
         }
         if (act === "wake") {
           const rec = V.body.wake();

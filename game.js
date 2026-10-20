@@ -312,7 +312,11 @@
   }
 
   /* ---------- Цели жизни ---------- */
+  const meals = (s) => ((s.body && s.body.meals) || []).length;
+  const sleeps = (s) => ((s.body && s.body.sleepLog) || []).length;
   const GOALS = [
+    { id: "dinner", t: "Поужинать на новом месте", e: "🍜", r: 50, p: (s) => (meals(s) ? 1 : 0), go: "eat", how: "Закажи в Vibe Eat" },
+    { id: "night", t: "Выспаться на новом месте", e: "🛏️", r: 50, p: (s) => (sleeps(s) ? 1 : 0), go: "fit", how: "Лечь спать — в Vibe Fit" },
     { id: "job", t: "Найти работу", e: "💼", r: 150, p: (s) => (s.job ? 1 : 0), go: "job" },
     { id: "salary", t: "Получить первую зарплату", e: "💸", r: 150, p: (s) => Math.min(1, (s.stats.salaries || 0)), go: "job" },
     { id: "tasks", t: "Сделать 10 рабочих задач", e: "📋", r: 150, p: (s) => Math.min(1, (s.stats.tasks || 0) / 10), go: "job" },
@@ -393,13 +397,16 @@
     if (Vibe.current && Vibe.current.route.name === "job") return;
     if (inv) {
       FX.sound.success();
-      FX.toast(`Тебя пригласили на собеседование${inv > 1 ? ` (${inv})` : ""}! Загляни в Vibe Job → Отклики`, "📨", 4000, { go: "job", label: "Открыть" });
+      FX.toast(`Тебя пригласили на собеседование${inv > 1 ? ` (${inv})` : ""}! Загляни в Vibe Job → Отклики`, "📨", 4000, { go: "job", params: { tab: "apps" }, label: "Ответить" });
     } else if (rej) FX.toast(`Отказ по ${rej} ${plural(rej, "отклику", "откликам", "откликам")}. Бывает. Откликайся ещё`, "🥲", 3000, { go: "job", label: "Вакансии" });
   }
 
   /* ---------- Запуск ---------- */
+  // Жизнь начинается вечером дня переезда: устал, голоден, утро вечера мудренее
+  const BORN_MIN = 19 * 60;
   function begin() {
-    set({ game: { start: Date.now(), processedDay: 0 }, body: null });
+    const shift = ((BORN_MIN - START_MIN) / 1440) * DAY_MS;
+    set({ game: { start: Date.now() - shift, processedDay: 0, bornMin: BORN_MIN }, body: { energy: 42, food: 30, mood: 58 } });
   }
   function boot() {
     if (!S().profile) return;

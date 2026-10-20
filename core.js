@@ -335,6 +335,34 @@
     };
     bd.addEventListener("click", close);
     sh.addEventListener("click", (e) => { if (e.target.closest("[data-close]")) close(); });
+    // Свайп вниз закрывает лист (когда он прокручен до самого верха)
+    let y0 = null, dy = 0, t0 = 0, drag = false;
+    sh.addEventListener("touchstart", (e) => {
+      if (sh.scrollTop > 0 || e.touches.length > 1 || e.target.closest("input, textarea, [data-noswipe], .hscroll, .chips")) { y0 = null; return; }
+      y0 = e.touches[0].clientY; dy = 0; t0 = Date.now(); drag = false;
+    }, { passive: true });
+    sh.addEventListener("touchmove", (e) => {
+      if (y0 == null) return;
+      dy = e.touches[0].clientY - y0;
+      if (!drag && dy > 8 && sh.scrollTop <= 0) { drag = true; sh.style.transition = "none"; sh.style.animation = "none"; }
+      if (!drag) return;
+      if (e.cancelable) e.preventDefault();
+      sh.style.transform = `translate(-50%, ${Math.max(0, dy)}px)`;
+      bd.style.opacity = String(Math.max(0.2, 1 - dy / 400));
+    }, { passive: false });
+    sh.addEventListener("touchend", () => {
+      if (y0 == null || !drag) { y0 = null; return; }
+      const fast = dy / Math.max(1, Date.now() - t0) > 0.6;
+      y0 = null; drag = false;
+      sh.style.transition = "transform .25s var(--out)";
+      if (dy > 110 || (fast && dy > 40)) {
+        sh.style.transform = "translate(-50%, 110%)";
+        bd.classList.add("out");
+        setTimeout(() => { bd.remove(); sh.remove(); }, 250);
+        FX.haptic(8);
+        onClose && onClose();
+      } else { sh.style.transform = ""; bd.style.opacity = ""; }
+    });
     onMount && onMount(sh, close);
     return close;
   };

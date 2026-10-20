@@ -733,11 +733,13 @@
     render() {
       return `${Vibe.ui.head("Vibe Job", S().job ? "Работа · карьера · премии" : "Поиск работы · в моменте", Vibe.ui.vibikiPill())}<div data-body></div>`;
     },
-    mount(root) {
+    mount(root, params = {}) {
       const T = bag();
       const body = $(root, "[data-body]");
       const maps = new Set(), sheetMaps = new Set();
       let searching = false, tab = "vac", vmode = "list", filter = "all", first = true;
+      // Пришли из календаря или уведомления «ответить на приглашение» — сразу во вкладку откликов
+      if (params.tab === "apps") { tab = "apps"; searching = !!S().job; }
       let lastDay = Vibe.game.info().day, lastWork = null;
       const killMaps = () => { maps.forEach((m) => m.destroy()); maps.clear(); };
       const restaggerAll = (el) => $$(el, ".stagger").forEach(restagger);

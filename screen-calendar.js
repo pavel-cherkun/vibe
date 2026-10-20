@@ -275,7 +275,7 @@
 
     // Приглашения на собеседование
     const inv = invites();
-    if (inv.length) list.push({ id: "invite", e: "📨", t: `Ответить на приглашение${inv.length > 1 ? ` (${inv.length})` : ""}`, sub: "HR ждёт. Целых 4 секунды", rw: "+оффер?", act: { go: "job", label: "Пройти" }, urgent: true });
+    if (inv.length) list.push({ id: "invite", e: "📨", t: `Ответить на приглашение${inv.length > 1 ? ` (${inv.length})` : ""}`, sub: "HR ждёт. Целых 4 секунды", rw: "+оффер?", act: { go: "job", params: { tab: "apps" }, label: "Ответить" }, urgent: true });
 
     // Деньги на аренду
     if (s.home && s.home.rent) {
@@ -740,7 +740,7 @@
         const act = x.act || {};
         if (act.inline === "mom") { callMom(row); return; }
         if (act.inline === "cook") { cook(row); return; }
-        if (act.go) { FX.bump(row); Vibe.go(act.go); }
+        if (act.go) { FX.bump(row); Vibe.go(act.go, act.params || {}); }
       }
 
       // ---- Клики ----

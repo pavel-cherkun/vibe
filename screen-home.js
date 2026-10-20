@@ -55,6 +55,9 @@
   const lockedCount = () => [...GRID, ...BIG].filter((g) => g.go !== "all" && !open(g.go)).length;
   const openCount = () => [...GRID, ...BIG].filter((g) => g.go !== "all" && open(g.go)).length;
 
+  // «В планах» на главной — только ближайшие трое суток
+  const soonPlans = () => { try { const now = Vibe.game.minutes(); return Vibe.sched ? Vibe.sched.upcoming(6).filter((e) => Vibe.sched.startMin(e) - now < 3 * 1440).slice(0, 3) : []; } catch (e) { return []; } };
+
   function greeting() {
     const h = new Date().getHours();
     return h < 6 ? "Не спится" : h < 12 ? "Доброе утро" : h < 18 ? "Йо" : "Добрый вечер";
@@ -67,6 +70,22 @@
     const G = Vibe.game;
     const job = s.job;
     const left = job ? G.tasksLeft() : 0;
+    // Первый вечер после переезда: сначала поесть и выспаться, работа — утром
+    const g0 = G.goal();
+    if (g0 && (g0.id === "dinner" || g0.id === "night")) {
+      const line = g0.id === "dinner" ? (g0.done ? "Сытый человек — уже полчеловека успеха" : "Коробки подождут. Сначала — ужин с кайфом") : (g0.done ? "Доброе утро. Теперь можно и работу поискать" : "Утро вечера мудренее. Работу поищем завтра");
+      return g0.done ? `
+      <div class="card job-card c-lime first-eve">
+        <div class="li-ic c-white"><span class="emo wobble">${g0.e}</span></div>
+        <div style="flex:1;text-align:left"><b>${g0.t} ✓</b><small>${line}</small></div>
+        <button class="btn black sm" data-act="goal">+${g0.r} 🪙</button>
+      </div>` : `
+      <button class="card tap job-card c-lilac first-eve" data-go="${g0.go}">
+        <div class="li-ic c-white"><span class="emo float">${g0.e}</span></div>
+        <div style="flex:1;text-align:left"><small style="font-weight:900">Первый вечер на новом месте · ${g0.index} из 2</small><b>${g0.t}</b><small>${line}. ${g0.how}</small></div>
+        <span class="sticker" style="position:static;transform:rotate(6deg)">→</span>
+      </button>`;
+    }
     return `
       ${job ? `
       <button class="card tap job-card c-sky" data-go="job">
@@ -115,7 +134,7 @@
           <small class="muted">≈ ${u.real < 60 ? u.real + " мин" : Math.round(u.real / 60) + " ч"} реального времени</small>
         </div>`).join("")}</div>` : ""}
 
-      ${goal ? `
+      ${goal && goal.id !== "dinner" && goal.id !== "night" ? `
       <div class="card goal-card ${goal.done ? "c-yellow" : ""}">
         <div style="display:flex;gap:12px;align-items:center">
           <span class="emo ${goal.done ? "wobble" : "float"}" style="font-size:42px">${goal.e}</span>
@@ -125,9 +144,9 @@
         ${goal.done ? `<button class="btn black block" data-act="goal">Забрать +${goal.r} 🪙</button>` : `<button class="btn sm" data-go="${goal.go}">Как это сделать →</button>`}
       </div>` : ""}
 
-      ${Vibe.sched && Vibe.sched.upcoming(3).length ? `
+      ${soonPlans().length ? `
       <h2 class="sec">В планах <small data-go="calendar">календарь →</small></h2>
-      <div class="stack">${Vibe.sched.upcoming(3).map((e) => {
+      <div class="stack">${soonPlans().map((e) => {
         const st = Vibe.sched.startMin(e), d = Math.floor(st / 1440), now = Vibe.game.info().day;
         const when = (d === now ? "сегодня" : d === now + 1 ? "завтра" : `через ${d - now} дн.`) + " в " + String(e.hour).padStart(2, "0") + ":" + String(e.min || 0).padStart(2, "0");
         const live = Vibe.sched.active().some((x) => x.id === e.id);
@@ -148,14 +167,14 @@
       const s = S();
       const xpP = Math.round((s.xp / Vibe.need(s.level)) * 100);
       const grown = open("market"); // промо и реклама — когда жизнь уже наладилась
-      const lastEat = s.orders.find((o) => o.svc === "eat" && Date.now() - o.at < 30 * 60 * 1000);
+      const lastEat = s.orders.find((o) => o.svc === "eat" && Date.now() - o.at < 3 * 60 * 1000 && !(s.trackDone || {})[o.id]);
       return `
       <div class="home-top">
         <div class="logo home-logo">Vibe</div>
         <div style="display:flex;gap:10px;align-items:center">
           ${Vibe.ui.vibikiPill()}
-          <button class="icon-btn" data-go="chats" aria-label="Чаты">💬${Vibe.msg && Vibe.msg.unread() ? `<span class="dot-count" style="background:var(--lime)">${Vibe.msg.unread()}</span>` : ""}</button>
           <button class="icon-btn" ${Vibe.screens.mail ? 'data-go="mail"' : 'data-act="bell"'} aria-label="Почта">${Vibe.screens.mail ? "✉️" : "🔔"}${Vibe.mail && Vibe.mail.unread() ? `<span class="dot-count">${Vibe.mail.unread() > 99 ? "99+" : Vibe.mail.unread()}</span>` : ""}</button>
+          <button class="icon-btn" data-go="chats" aria-label="Чаты">💬${Vibe.msg && Vibe.msg.unread() ? `<span class="dot-count" style="background:var(--lime)">${Vibe.msg.unread()}</span>` : ""}</button>
         </div>
       </div>
 
@@ -201,7 +220,7 @@
 
       <div data-life>${lifeBlocks()}</div>
 
-      <h2 class="sec">Карта <small>${s.job ? "дом · работа" : "твой район"}</small></h2>
+      <h2 class="sec">Карта ${s.job ? `<small class="sec-link" data-go="maps" data-params='{"to":"work"}'>💼 на работу →</small>` : `<small>твой район</small>`}</h2>
       <div class="home-map" data-homemap data-go="maps"></div>
 
       ${lastEat ? `

@@ -410,7 +410,8 @@
   const smin = (e) => (Vibe.sched ? Vibe.sched.startMin(e) : e.day * 1440 + e.hour * 60 + (e.min || 0));
   function evList() {
     if (!Vibe.sched) return [];
-    try { return Vibe.sched.upcoming(5).filter((e) => e.place && Vibe.map.place(e.place)); } catch (err) { return []; }
+    // На карте — только то, что скоро (до 2 игровых суток): далёкие дни рождения не мигают
+    try { const now = Vibe.game.minutes(); return Vibe.sched.upcoming(8).filter((e) => e.place && Vibe.map.place(e.place) && Vibe.sched.startMin(e) - now < 2880).slice(0, 5); } catch (err) { return []; }
   }
   const evAt = (k) => evList().find((e) => e.place === k);
   function evWhen(e) {

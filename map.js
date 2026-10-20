@@ -69,12 +69,12 @@
     const S = Vibe.state.get();
     if (key === "home") {
       const h = S.home;
-      if (h && h.x != null) return { x: h.x, y: h.y, e: h.emoji || "🏠", label: "Дом", district: h.district };
+      if (h && h.x != null) return { x: h.x, y: h.y, e: "🏠", label: "Дом", district: h.district }; // на карте дом всегда домик
       return Object.assign(door(1, 4, 1), { e: "🏠", label: "Дом" });
     }
     if (key === "work") {
       const j = S.job;
-      if (j && j.x != null) return { x: j.x, y: j.y, e: j.emoji || "💼", label: "Работа" };
+      if (j && j.x != null) return { x: j.x, y: j.y, e: "💼", label: "Работа" }; // а работа — всегда портфель
       return null;
     }
     if (FIXED[key]) return Object.assign({}, FIXED[key]);
@@ -684,11 +684,11 @@
 
     /* --- Машинка по маршруту --- */
     const drives = new Set();
-    function drive(points, { emoji = "🚕", duration = 6000, follow = false, onProgress, onDone, color = "#ffe14d" } = {}) {
+    function drive(points, { emoji = "🚕", duration = 6000, follow = false, onProgress, onDone, color = "#ffe14d", start = 0 } = {}) {
       const g = document.createElementNS(NS, "g");
       g.innerHTML = `<circle r="17" fill="${color}" stroke="#0e0e12" stroke-width="3"/><text class="vm-emo" y="7" font-size="20" text-anchor="middle">${emoji}</text>`;
       gVeh.appendChild(g);
-      const t0 = performance.now();
+      const t0 = performance.now() - Math.max(0, Math.min(1, start)) * duration; // start — доля уже пройденного пути
       let raf, paused = 0, pausedAt = 0, stopped = false;
       const ctl = {
         stop() { stopped = true; cancelAnimationFrame(raf); g.remove(); drives.delete(ctl); },
