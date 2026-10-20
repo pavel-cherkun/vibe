@@ -51,12 +51,38 @@
     "Я подобрал тебе 37 предложений. Каждое — персональное.",
   ];
 
+  const open = (go) => !Vibe.unlock || Vibe.unlock.isOpen(go);
+  const lockedCount = () => [...GRID, ...BIG].filter((g) => g.go !== "all" && !open(g.go)).length;
+  const openCount = () => [...GRID, ...BIG].filter((g) => g.go !== "all" && open(g.go)).length;
+
   function greeting() {
     const h = new Date().getHours();
     return h < 6 ? "Не спится" : h < 12 ? "Доброе утро" : h < 18 ? "Йо" : "Добрый вечер";
   }
 
   // Блоки жизни: работа, ближайшие деньги, цель, задания дня
+  // Главное сообщение дня: работа (или её отсутствие) — между сторис и Vibe Pay
+  function mainMsg() {
+    const s = S();
+    const G = Vibe.game;
+    const job = s.job;
+    const left = job ? G.tasksLeft() : 0;
+    return `
+      ${job ? `
+      <button class="card tap job-card c-sky" data-go="job">
+        <div class="li-ic c-white"><span class="emo float">${job.emoji || "💼"}</span></div>
+        <div style="flex:1;text-align:left;min-width:0"><b>${Vibe.esc(G.jobTitle(job))}</b><small>${Vibe.esc(job.company)} · ${Vibe.rub(job.salary)}/мес</small>
+          <div class="progress" style="height:10px;margin-top:6px"><i style="--p:${job.perf || 0}%"></i></div><small>До повышения ${100 - (job.perf || 0)}%</small></div>
+        <span class="sticker" style="position:static;transform:rotate(6deg);background:${left ? "var(--lime)" : "#fff"}">${left ? `${left} задачи` : "✓"}</span>
+      </button>` : `
+      <button class="card tap job-card c-coral" data-go="job">
+        <div class="li-ic c-white"><span class="emo wobble">💼</span></div>
+        <div style="flex:1;text-align:left"><b>Ты без работы</b><small>Денег хватит примерно на ${G.runway()} дн. Пора искать</small></div>
+        <span class="sticker" style="position:static;transform:rotate(6deg)">ИСКАТЬ</span>
+      </button>`}
+  `;
+  }
+
   function lifeBlocks() {
     const s = S();
     const G = Vibe.game;
@@ -80,18 +106,6 @@
         <div class="fm-head"><b>⌚ Vibe Fit</b>${warn ? `<span class="badge" style="background:var(--coral)">${warn}</span>` : `<span class="badge">Продуктивность ${prod}%</span>`}</div>
         <div class="fm-bars">${bars.map(([e, t, v, c]) => `<div class="fm-bar"><span>${e}</span><div class="progress" style="height:10px;flex:1"><i style="--p:${Math.round(v)}%;background:${c}"></i></div><small>${Math.round(v)}%</small></div>`).join("")}</div>
       </button>` : ""}
-      ${job ? `
-      <button class="card tap job-card c-sky" data-go="job">
-        <div class="li-ic c-white"><span class="emo float">${job.emoji || "💼"}</span></div>
-        <div style="flex:1;text-align:left;min-width:0"><b>${Vibe.esc(G.jobTitle(job))}</b><small>${Vibe.esc(job.company)} · ${Vibe.rub(job.salary)}/мес</small>
-          <div class="progress" style="height:10px;margin-top:6px"><i style="--p:${job.perf || 0}%"></i></div><small>До повышения ${100 - (job.perf || 0)}%</small></div>
-        <span class="sticker" style="position:static;transform:rotate(6deg);background:${left ? "var(--lime)" : "#fff"}">${left ? `${left} задачи` : "✓"}</span>
-      </button>` : `
-      <button class="card tap job-card c-coral" data-go="job">
-        <div class="li-ic c-white"><span class="emo wobble">💼</span></div>
-        <div style="flex:1;text-align:left"><b>Ты без работы</b><small>Денег хватит примерно на ${G.runway()} дн. Пора искать!</small></div>
-        <span class="sticker" style="position:static;transform:rotate(6deg)">ИСКАТЬ</span>
-      </button>`}
 
       ${up.length ? `<div class="hscroll up-row">${up.map((u) => `
         <div class="up ${u.a > 0 ? "c-lime" : "c-white"}">
@@ -133,6 +147,7 @@
     render() {
       const s = S();
       const xpP = Math.round((s.xp / Vibe.need(s.level)) * 100);
+      const grown = open("market"); // промо и реклама — когда жизнь уже наладилась
       const lastEat = s.orders.find((o) => o.svc === "eat" && Date.now() - o.at < 30 * 60 * 1000);
       return `
       <div class="home-top">
@@ -156,7 +171,7 @@
         </div>
       </div>
 
-      <button class="field search tap" data-go="search" style="width:100%;margin:14px 0 16px;text-align:left">🔍 <span class="muted">Найди что угодно. Мы уже нашли тебя</span></button>
+      <button class="field search tap" data-go="search" style="width:100%;margin:14px 0 16px;text-align:left">🔍 <span class="muted search-ph">Найди что угодно</span></button>
 
       <div class="stories">
         ${STORIES.map((st, i) => `
@@ -164,6 +179,8 @@
             <span class="ring"><span class="in"><span class="emo">${st.e}</span></span></span>${st.t}
           </button>`).join("")}
       </div>
+
+      <div data-main>${mainMsg()}</div>
 
       <div class="paycard c-yellow tap" data-go="pay">
         <div class="pc-blob"></div>
@@ -177,7 +194,7 @@
           <button data-act="transfer"><span>↗</span>Перевести</button>
           <button data-go="job"><span>💼</span>Работа</button>
           <button data-go="qr"><span>▦</span>QR</button>
-          <button data-go="wheel"><span>🎡</span>Колесо</button>
+          ${open("wheel") ? `<button data-go="wheel"><span>🎡</span>Колесо</button>` : `<button data-go="eat"><span>🍜</span>Еда</button>`}
         </div>
         <div class="emo pc-emo float">💳</div>
       </div>
@@ -194,7 +211,7 @@
         <span class="sticker" style="position:static;transform:rotate(6deg)">→</span>
       </button>` : ""}
 
-      <h2 class="sec">Главное <small>4 из 34</small></h2>
+      <h2 class="sec">Главное <small>${openCount()} из ${GRID.length + BIG.length - 1} открыто</small></h2>
       <div class="big-tiles stagger">
         ${BIG.map((b) => `
           <button class="bt ${b.c} tap" data-go="${b.go}">
@@ -205,17 +222,21 @@
           </button>`).join("")}
       </div>
 
-      ${Vibe.ui.marquee(["КЭШБЕК ДО 30%*", "ПРЕДОДОБРЕНО", "−50% НА ВСЁ", "ДОСТАВКА 0 ₫*", "ТЫ ЗАСЛУЖИЛ"])}
+      ${grown ? Vibe.ui.marquee(["КЭШБЕК ДО 30%*", "ПРЕДОДОБРЕНО", "−50% НА ВСЁ", "ДОСТАВКА 0 ₫*", "ТЫ ЗАСЛУЖИЛ"]) : ""}
 
       <div class="svc-grid stagger">
-        ${GRID.map((g) => { const lk = Vibe.unlock && !Vibe.unlock.isOpen(g.go); return `
-          <button class="svc ${lk ? "locked-tile" : ""}" data-go="${g.go}">
-            <span class="svc-ic ${g.c}">${lk ? `<span class="dot-count" style="background:#fff;animation:none">🔒</span>` : g.badge ? `<span class="dot-count" style="background:var(--lime);animation-delay:${Math.random() * 2}s">${g.badge}</span>` : ""}<span class="emo">${g.e}</span></span>
+        ${GRID.filter((g) => g.go !== "all" && open(g.go)).map((g) => `
+          <button class="svc" data-go="${g.go}">
+            <span class="svc-ic ${g.c}">${g.badge ? `<span class="dot-count" style="background:var(--lime);animation-delay:${Math.random() * 2}s">${g.badge}</span>` : ""}<span class="emo">${g.e}</span></span>
             <b>${g.s}</b><small>${g.ru}</small>
-          </button>`; }).join("")}
+          </button>`).join("")}
+          <button class="svc" data-go="all">
+            <span class="svc-ic c-holo">${lockedCount() ? `<span class="dot-count" style="background:#fff;animation:none">🔒${lockedCount()}</span>` : ""}<span class="emo">🪐</span></span>
+            <b>Ещё</b><small>${lockedCount() ? "Откроются позже" : "Все сервисы"}</small>
+          </button>
       </div>
 
-      <div class="card c-black promo">
+      ${grown ? `<div class="card c-black promo">
         <div class="badge" style="background:var(--lime)">⚡ Персонально для тебя</div>
         <div class="display" style="font-size:30px;margin:12px 0 6px;color:var(--lime)">Предодобрено<br>500&nbsp;000&nbsp;₫</div>
         <p style="color:#bdbac8;font-size:14px">Кредит на всё, о чём ты мечтал. Даже на то, о чём не мечтал.</p>
@@ -225,18 +246,18 @@
         </div>
         <div class="fine" style="color:#77748a">*Ставка от 0% в первые 3 дня, далее от 39,9% годовых. Страхование жизни, здоровья, настроения и вайба включено. Отказ от страховки — в отделении, которое работает по четвергам с 9:00 до 9:15.</div>
         <div class="emo promo-emo float">🤑</div>
-      </div>
+      </div>` : ""}
 
-      <button class="card c-holo plus-card tap" data-go="plus">
+      ${open("plus") ? `<button class="card c-holo plus-card tap" data-go="plus">
         <div class="display" style="font-size:28px">Плюс Вайб</div>
         <div style="font-weight:800;margin:6px 0 12px">${s.plus ? "Ты в Плюсе. Кэшбек ×2 💎" : "Кэшбек ×2, доставка 0 ₫, музыка без рекламы"}</div>
         <span class="btn black sm">${s.plus ? "Управлять" : "Первый месяц за 1 ₫"}</span>
         <div class="emo plus-emo wobble">💎</div>
-      </button>
+      </button>` : ""}
 
       <h2 class="sec">Для тебя <small>подобрано Вайботом</small></h2>
       <div class="hscroll">
-        ${FEED.map((f) => `
+        ${FEED.filter((f) => open(f.go)).map((f) => `
           <button class="card feed-card ${f.c} tap" data-go="${f.go}">
             <div class="badge" style="background:#fff">${f.k}</div>
             <b>${f.t}</b>
@@ -305,7 +326,8 @@
       // Часы и живые блоки
       const clock = root.querySelector("[data-clock]");
       const life = root.querySelector("[data-life]");
-      const refreshLife = () => { if (life) { life.innerHTML = lifeBlocks(); } };
+      const mainEl = root.querySelector("[data-main]");
+      const refreshLife = () => { if (life) life.innerHTML = lifeBlocks(); if (mainEl) mainEl.innerHTML = mainMsg(); };
       const cv = setInterval(() => { if (clock) clock.textContent = "📅 " + Vibe.game.info().label; }, 3000);
       const offGame = Vibe.game.on(() => { refreshLife(); Vibe.refreshCounters(); });
       root.addEventListener("click", (e) => {
@@ -332,7 +354,9 @@
   .hello { display:flex; gap:12px; align-items:center; padding:12px 14px; }
   .hello-ava { width:58px; height:58px; border-radius:50%; border:var(--line); display:grid; place-items:center; font-size:32px; position:relative; flex:0 0 auto; }
   .hello-ava .lvl { position:absolute; bottom:-6px; right:-6px; background:var(--lime); border:2px solid var(--ink); border-radius:999px; font-size:12px; font-weight:900; padding:1px 7px; }
-  .search { cursor:pointer; }
+  .search { cursor:pointer; white-space:nowrap; overflow:hidden; }
+  .search .search-ph { overflow:hidden; text-overflow:ellipsis; }
+  [data-main] > .job-card { margin:0 0 14px; }
   .clock { font-size:12px; font-weight:800; color:var(--muted); margin-top:6px; }
   .fit-mini { display:block; width:100%; text-align:left; margin-top:14px; padding:12px 14px; }
   .fm-head { display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; }

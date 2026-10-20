@@ -1739,7 +1739,7 @@
         const ch = e.target.closest("[data-f]");
         if (ch) {
           const t = ch.dataset.f;
-          if (t === "near" && !S().job && !on.has(t)) { FX.shake(ch); FX.toast("Сначала найди работу — потом выбирай, где рядом", "💼"); return; }
+          if (t === "near" && !S().job && !on.has(t)) { FX.shake(ch); FX.toast("Сначала найди работу — потом выбирай, где рядом", "💼", 3000, { go: "job", label: "Работа" }); return; }
           on.has(t) ? on.delete(t) : on.add(t);
           ch.classList.toggle("on", on.has(t));
           FX.bump(ch);

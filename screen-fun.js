@@ -451,6 +451,10 @@
   .fz-top .tr { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; opacity: .95; }
   .fz-top.moving { background: #8b5cff; }
   .fz-wx { top: 56px; left: 10px; display: flex; gap: 8px; align-items: center; padding: 6px 10px 6px 8px; background: #fff; border: 2.5px solid var(--ink); border-radius: 16px; box-shadow: var(--shadow-sm); font-weight: 900; font-size: 12px; max-width: 70%; }
+  /* Карта: плашки не перекрывают компас и кнопки масштаба */
+  .fz-map .vmap-ui { top: 60px; }
+  .fz-map .vmap-hud { bottom: 46px; } /* панель «Куда едем?» наезжает на карту на 34px */
+  .fz-jam { right: 12px; left: auto; bottom: 48px; top: auto; transform: rotate(4deg); }
   .fz-wx .we { font-size: 26px; line-height: 1; }
   .fz-wx small { display: block; font-weight: 800; font-size: 10.5px; opacity: .75; }
   .fz-wx.wet { background: #d9ecff; } .fz-wx.sun { background: #fff6bf; } .fz-wx.storm { background: #e6dcff; }
@@ -485,7 +489,7 @@
           <div class="fz-vm" data-vmhost></div>
           <div class="fz-top" data-top></div>
           <div class="fz-map-tag fz-wx" data-wx></div>
-          <div class="fz-map-tag sticker" style="left:12px;bottom:46px;top:auto;background:#ff3b3b;color:#fff;font-size:12px">Пробки: ${rush ? 9 : ri(4, 7)} баллов 🔥</div>
+          <div class="fz-map-tag sticker fz-jam" style="background:#ff3b3b;color:#fff;font-size:12px">Пробки: ${rush ? 9 : ri(4, 7)} баллов 🔥</div>
         </div>
         <div class="card fz-panel" data-panel></div>
         <div class="fine" style="text-align:center">Время в пути — настоящее игровое: 1 минута = 2,5 секунды. Перемотки нет, есть такси. Стоимость поездки может измениться в любую сторону, но обычно вверх.</div>`;
@@ -3134,7 +3138,7 @@
         if (spinning) return;
         if (!isFree()) {
           if (S().vibiki < SPIN_COST) {
-            FX.shake(btn); FX.toast(`Нужно ${SPIN_COST} вайбиков. Поиграй в Vibe Games!`, "🪙");
+            FX.shake(btn); FX.toast(`Нужно ${SPIN_COST} вайбиков. Поиграй в Vibe Games!`, "🪙", 3000, { go: "games", label: "Играть" });
             return;
           }
           Vibe.state.set({ vibiki: S().vibiki - SPIN_COST });

@@ -242,6 +242,8 @@
       const idx = { home: 0, fit: 1, calendar: 3, profile: 4 }[route.name];
       tb.querySelectorAll(".tab").forEach((t) => t.classList.toggle("on", t.dataset.go === route.name));
       tb.querySelector(".blob").style.transform = `translateX(calc(${idx} * (100% + 12px)))`;
+      const av = tb.querySelector("[data-tab-ava]"), pa = (S.profile && S.profile.avatar) || "😎";
+      if (av && av.textContent !== pa) av.textContent = pa;
     }
     Vibe.refreshCounters();
   }
@@ -473,4 +475,40 @@
     const t = ui.clockText();
     document.querySelectorAll("[data-gclock]").forEach((el) => { if (el.textContent !== t) el.textContent = t; });
   }, 2500);
+})();
+
+/* ============================================================
+   Типографика: короткие слова не висят в конце строки.
+   Предлоги, союзы и частицы (1–3 буквы) приклеиваются к следующему слову,
+   число — к знаку ₫ и единицам, тире — к предыдущему слову.
+   Работает на всём, что появляется в DOM.
+   ============================================================ */
+(function () {
+  const SKIP = /^(SCRIPT|STYLE|TEXTAREA|INPUT|SVG|svg|text|tspan)$/;
+  const SHORT = /(^|[\s(«„"'\u00a0])([а-яёА-ЯЁ]{1,3}|[0-9]+)[ \t\n]+(?=\S)/g;
+  const DASH = /[ \t\n]+([—–])/g;
+  const UNIT = /(\d)[ \t\n]+(₫|%|дн\.?|мин|ч\b|км|м\b|кг|ГБ|МБ)/g;
+  function fixText(t) {
+    if (!/\s/.test(t)) return t;
+    let r = t.replace(UNIT, "$1\u00a0$2").replace(DASH, "\u00a0$1");
+    // дважды: «и в доме» — оба коротких слова подряд
+    r = r.replace(SHORT, "$1$2\u00a0").replace(SHORT, "$1$2\u00a0");
+    return r;
+  }
+  function walk(root) {
+    if (!root) return;
+    if (root.nodeType === 3) { const n = fixText(root.data); if (n !== root.data) root.data = n; return; }
+    if (root.nodeType !== 1 || SKIP.test(root.nodeName) || root.isContentEditable) return;
+    const w = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, {
+      acceptNode: (n) => (n.parentNode && SKIP.test(n.parentNode.nodeName)) || (n.parentNode && n.parentNode.closest && n.parentNode.closest("svg")) ? NodeFilter.FILTER_REJECT : NodeFilter.FILTER_ACCEPT,
+    });
+    const nodes = []; let n; while ((n = w.nextNode())) nodes.push(n);
+    nodes.forEach((t) => { const f = fixText(t.data); if (f !== t.data) t.data = f; });
+  }
+  Vibe.typo = { fix: fixText, walk };
+  const start = () => {
+    walk(document.body);
+    new MutationObserver((ms) => { for (const m of ms) m.addedNodes.forEach(walk); }).observe(document.body, { childList: true, subtree: true });
+  };
+  if (document.body) start(); else document.addEventListener("DOMContentLoaded", start);
 })();

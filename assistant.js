@@ -156,7 +156,7 @@
     set({ ab_rem: list.map((x) => (due.some((d) => d.id === x.id) ? Object.assign({}, x, { done: true }) : x)) });
     due.forEach((r, i) => setTimeout(() => {
       if (r.alarm && Vibe.body && Vibe.body.get().sleeping && Vibe.body.wake) { try { Vibe.body.wake(); } catch (e) {} }
-      FX.toast(`${r.alarm ? "⏰" : "🔔"} ${r.text}`, "🤖", 4200);
+      FX.toast(`${r.alarm ? "⏰" : "🔔"} ${r.text}`, "🤖", 4200, { go: "chat", params: { id: "zabotik" }, label: "Чат" });
       const line = `${r.alarm ? "⏰ Будильник!" : "🔔 Напоминаю:"} ${r.text}`;
       if (Vibe.msg && Vibe.msg.send) { try { Vibe.msg.send("zabotik", line, { from: "zabotik" }); } catch (e) { console.error(e); } }
       else if (Vibe.mail && Vibe.mail.send) Vibe.mail.send({ from: "Вайбот", subject: r.alarm ? "⏰ Будильник" : "🔔 Напоминание", body: `${line}\n\nЯ всегда рядом. Даже когда ты этого не просил 💜`, kind: "official" });

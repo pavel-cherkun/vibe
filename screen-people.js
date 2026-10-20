@@ -830,7 +830,7 @@
         const pl = e.target.closest("[data-play]");
         if (pl) {
           if (Vibe.body && Vibe.body.get().sleeping) { FX.toast("Ты спишь. Хобби во сне не считается", "😴"); return; }
-          if (Vibe.body && Vibe.body.get().energy < 12) { FX.shake(pl); FX.toast("Сил нет совсем. Сначала поспи", "🥱"); return; }
+          if (Vibe.body && Vibe.body.get().energy < 12) { FX.shake(pl); FX.toast("Сил нет совсем. Сначала поспи", "🥱", 3000, { go: "fit", label: "Спать" }); return; }
           playSession(def, (score) => {
             setHob(def.id, { last: nowMin() });
             hobEffect(def.id, score);

@@ -350,7 +350,7 @@
   function canTrain(from) {
     if (V.body && V.body.get().sleeping) { FX.toast("Ты спишь. Тренировка во сне — это к «Йоге-нидре»", "😴"); return false; }
     if (!atGym()) {
-      FX.shake(from); FX.toast(`Сначала доберись до зала: ${gymLabel()}`, "📍", 2800);
+      FX.shake(from); FX.toast(`Сначала доберись до зала: ${gymLabel()}`, "📍", 2800, { go: "maps", label: "Маршрут" });
       return false;
     }
     if (!gymOpen()) { FX.toast(`Зал открыт ${hh(OPEN)}–${hh(CLOSE)}. Охранник Гена не пускает`, "🔒", 2800); return false; }

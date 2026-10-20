@@ -12,59 +12,59 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Dela+Gothic+One&family=Rubik+Wet+Paint&family=Manrope:wght@500;600;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="app.css?v=18">
+<link rel="stylesheet" href="app.css?v=22">
 </head>
 <body>
 <div id="app">
   <div id="stack"></div>
   <nav id="tabbar" class="hidden">
     <div class="blob"></div>
-    <button class="tab" data-go="home" data-silent><span class="emo">🏠</span>Главная</button>
-    <button class="tab" data-go="fit" data-silent><span class="emo">⌚</span>Fit</button>
+    <button class="tab" data-go="home" data-silent aria-label="Главная"><svg class="ico" viewBox="0 0 24 24"><path d="M3.5 11 12 4l8.5 7"/><path d="M5.5 9.5V20h13V9.5"/><path d="M10 20v-5.5h4V20"/></svg></button>
+    <button class="tab" data-go="fit" data-silent aria-label="Vibe Fit"><svg class="ico" viewBox="0 0 24 24"><rect x="6" y="6.5" width="12" height="11" rx="3.5"/><path d="M9 6.5 9.6 3h4.8l.6 3.5M9 17.5l.6 3.5h4.8l.6-3.5"/><path d="M8.6 12h1.8l1-2 1.4 4 1-2h1.6"/></svg></button>
     <button class="qr" data-go="qr" aria-label="Сканировать QR">
       <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round"><path d="M4 8V5a1 1 0 0 1 1-1h3M16 4h3a1 1 0 0 1 1 1v3M20 16v3a1 1 0 0 1-1 1h-3M8 20H5a1 1 0 0 1-1-1v-3M7 12h10"/></svg>
     </button>
-    <button class="tab" data-go="calendar" data-silent><span class="emo">📅</span>Календарь</button>
-    <button class="tab" data-go="profile" data-silent><span class="emo">😎</span>Профиль</button>
+    <button class="tab" data-go="calendar" data-silent aria-label="Календарь"><svg class="ico" viewBox="0 0 24 24"><rect x="4" y="5.5" width="16" height="14.5" rx="3"/><path d="M4 10h16M8.5 3.5v3.5M15.5 3.5v3.5"/><circle cx="12" cy="15" r="1.3" fill="currentColor" stroke="none"/></svg></button>
+    <button class="tab" data-go="profile" data-silent aria-label="Профиль"><span class="ava" data-tab-ava>😎</span></button>
   </nav>
 </div>
 <div id="fx-layer"></div>
 <canvas id="confetti"></canvas>
 <div id="toast-root"></div>
 
-<script src="core.js?v=18"></script>
-<script src="fx.js?v=18"></script>
-<script src="mascot.js?v=18"></script>
-<script src="map.js?v=18"></script>
-<script src="game.js?v=18"></script>
-<script src="body.js?v=18"></script>
-<script src="world.js?v=18"></script>
-<script src="progress.js?v=18"></script>
-<script src="chars.js?v=18"></script>
-<script src="skills.js?v=18"></script>
-<script src="screen-onboarding.js?v=18"></script>
-<script src="screen-home.js?v=18"></script>
-<script src="screen-pay.js?v=18"></script>
-<script src="screen-social.js?v=18"></script>
-<script src="screen-commerce.js?v=18"></script>
-<script src="screen-life.js?v=18"></script>
-<script src="screen-fun.js?v=18"></script>
-<script src="screen-fit.js?v=18"></script>
-<script src="screen-calendar.js?v=18"></script>
-<script src="screen-gig.js?v=18"></script>
-<script src="screen-people.js?v=18"></script>
-<script src="screen-messenger.js?v=18"></script>
-<script src="screen-flowers.js?v=18"></script>
-<script src="screen-vibegram.js?v=18"></script>
-<script src="screen-mail.js?v=18"></script>
-<script src="screen-skills.js?v=18"></script>
-<script src="screen-psy.js?v=18"></script>
-<script src="screen-search.js?v=18"></script>
-<script src="screen-media.js?v=18"></script>
-<script src="screen-telecom.js?v=18"></script>
-<script src="screen-insure.js?v=18"></script>
-<script src="screen-fitness.js?v=18"></script>
-<script src="assistant.js?v=18"></script>
+<script src="core.js?v=22"></script>
+<script src="fx.js?v=22"></script>
+<script src="mascot.js?v=22"></script>
+<script src="map.js?v=22"></script>
+<script src="game.js?v=22"></script>
+<script src="body.js?v=22"></script>
+<script src="world.js?v=22"></script>
+<script src="progress.js?v=22"></script>
+<script src="chars.js?v=22"></script>
+<script src="skills.js?v=22"></script>
+<script src="screen-onboarding.js?v=22"></script>
+<script src="screen-home.js?v=22"></script>
+<script src="screen-pay.js?v=22"></script>
+<script src="screen-social.js?v=22"></script>
+<script src="screen-commerce.js?v=22"></script>
+<script src="screen-life.js?v=22"></script>
+<script src="screen-fun.js?v=22"></script>
+<script src="screen-fit.js?v=22"></script>
+<script src="screen-calendar.js?v=22"></script>
+<script src="screen-gig.js?v=22"></script>
+<script src="screen-people.js?v=22"></script>
+<script src="screen-messenger.js?v=22"></script>
+<script src="screen-flowers.js?v=22"></script>
+<script src="screen-vibegram.js?v=22"></script>
+<script src="screen-mail.js?v=22"></script>
+<script src="screen-skills.js?v=22"></script>
+<script src="screen-psy.js?v=22"></script>
+<script src="screen-search.js?v=22"></script>
+<script src="screen-media.js?v=22"></script>
+<script src="screen-telecom.js?v=22"></script>
+<script src="screen-insure.js?v=22"></script>
+<script src="screen-fitness.js?v=22"></script>
+<script src="assistant.js?v=22"></script>
 <script>Vibe.start();</script>
 </body>
 </html>

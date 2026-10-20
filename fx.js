@@ -192,14 +192,29 @@
   }
 
   /* ---------- Тост ---------- */
-  function toast(text, emoji = "✨", ms = 2400) {
+  // opts: { go, params, onClick, label } — уведомление можно нажать и сразу сделать то, о чём оно просит.
+  // Третьим аргументом можно передать сразу opts.
+  function toast(text, emoji = "✨", ms = 2400, opts) {
+    if (ms && typeof ms === "object") { opts = ms; ms = 2400; }
+    opts = opts || {};
     const root = document.getElementById("toast-root");
     const el = document.createElement("div");
-    el.className = "toast";
-    el.innerHTML = `<span class="emo wobble">${emoji}</span><span>${text}</span>`;
+    const act = !!(opts.go || opts.onClick);
+    el.className = "toast" + (act ? " act" : "");
+    el.innerHTML = `<span class="emo wobble">${emoji}</span><span class="tx">${text}</span>${act ? `<span class="go">${opts.label || "→"}</span>` : ""}`;
     root.appendChild(el);
     while (root.children.length > 3) root.firstChild.remove();
-    setTimeout(() => { el.classList.add("out"); setTimeout(() => el.remove(), 320); }, ms);
+    const kill = () => { el.classList.add("out"); setTimeout(() => el.remove(), 320); };
+    if (act) {
+      el.setAttribute("role", "button");
+      el.addEventListener("click", () => {
+        haptic(8);
+        kill();
+        if (opts.onClick) opts.onClick();
+        if (opts.go && window.Vibe) Vibe.go(opts.go, opts.params || {});
+      });
+    }
+    setTimeout(kill, act ? Math.max(ms, 3600) : ms);
   }
 
   /* ---------- Глобальный отклик на касание ---------- */

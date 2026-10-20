@@ -65,7 +65,7 @@
     const t = MOM_LINES[Math.floor(Math.random() * MOM_LINES.length)];
     let sent = false;
     if (Vibe.msg && Vibe.msg.send) { try { Vibe.msg.send("mom", t, { from: "mom" }); sent = true; } catch (e) {} }
-    setTimeout(() => FX.toast(`${sent ? "Сообщение от мамы: " : "Мама: "}${t}`, "👩", 4200), 3000);
+    setTimeout(() => FX.toast(`${sent ? "Сообщение от мамы: " : "Мама: "}${t}`, "👩", 4200, sent ? { go: "chat", params: { id: "mom" }, label: "Ответить" } : null), 3000);
   }
 
   // Пересчитать стадию; события и тосты — в post (после save)
@@ -338,15 +338,15 @@
     // Предупреждения, пока игрок в приложении
     if (!auto) {
       const was = S().body || {};
-      if (b.food < 25 && (was.food ?? 100) >= 25) b.notes.push({ e: "🍽️", t: "Ты проголодался. Сытость 25% — продуктивность падает" });
-      if (b.energy < 20 && (was.energy ?? 100) >= 20) b.notes.push({ e: "🥱", t: "Глаза слипаются. Пора спать — дома" });
+      if (b.food < 25 && (was.food ?? 100) >= 25) b.notes.push({ e: "🍽️", t: "Ты проголодался. Сытость 25% — продуктивность падает", go: "eat", label: "Поесть" });
+      if (b.energy < 20 && (was.energy ?? 100) >= 20) b.notes.push({ e: "🥱", t: "Глаза слипаются. Пора спать — дома", go: "fit", label: "Спать" });
     } else if (autoNight || autoMeals) {
       const last = (b.sleepLog || []).slice(-1)[0];
       if (last && last.auto) b.notes.push({ e: "😴", t: `Пока тебя не было, ты поспал ${last.hours} ч. Качество ${Math.round(last.q * 100)}%` });
     }
     const notes = b.notes; delete b.notes;
     save(b);
-    notes.forEach((n, i) => setTimeout(() => FX.toast(n.t, n.e, 3200), 600 + i * 1200));
+    notes.forEach((n, i) => setTimeout(() => FX.toast(n.t, n.e, 3200, n.go ? { go: n.go, label: n.label } : null), 600 + i * 1200));
     maybeBurnModal();
   }
 
@@ -434,7 +434,7 @@
     updateStage(b, notes, false);
     save(b);
     if (msg && !opts.quiet) setTimeout(() => FX.toast(msg, "⌚", 2200), 900);
-    notes.forEach((n, i) => setTimeout(() => FX.toast(n.t, n.e, 3200), 1800 + i * 1200));
+    notes.forEach((n, i) => setTimeout(() => FX.toast(n.t, n.e, 3200, n.go ? { go: n.go, label: n.label } : null), 1800 + i * 1200));
     maybeBurnModal();
   }
 

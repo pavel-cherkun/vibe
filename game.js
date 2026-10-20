@@ -271,9 +271,12 @@
   function quests() {
     const s = S();
     let q = s.quests;
-    if (!q || q.day !== todayKey()) {
+    // Задание не должно вести в сервис, который ещё закрыт
+    const qScreen = (id) => (id.startsWith("visit:") ? id.slice(6) : { taxi: "maps", work: "job", apply: "job", pay: "pay" }[id] || id);
+    const qOpen = (id) => !Vibe.unlock || Vibe.unlock.isOpen(qScreen(id));
+    if (!q || q.day !== todayKey() || q.items.some((it) => !qOpen(it.id) && !it.n)) {
       let h = 0; for (const c of todayKey()) h = (h * 31 + c.charCodeAt(0)) >>> 0;
-      const pool = QUESTS.filter((x) => s.job || x.id !== "work").filter((x) => !s.job || x.id !== "apply");
+      const pool = QUESTS.filter((x) => s.job || x.id !== "work").filter((x) => !s.job || x.id !== "apply").filter((x) => qOpen(x.id));
       const pick = [];
       while (pick.length < 3) { const x = pool[h % pool.length]; if (!pick.includes(x.id)) pick.push(x.id); h = (h * 1103515245 + 12345) >>> 0; }
       q = { day: todayKey(), items: pick.map((id) => ({ id, n: 0 })), claimed: [] };
@@ -390,8 +393,8 @@
     if (Vibe.current && Vibe.current.route.name === "job") return;
     if (inv) {
       FX.sound.success();
-      FX.toast(`Тебя пригласили на собеседование${inv > 1 ? ` (${inv})` : ""}! Загляни в Vibe Job → Отклики`, "📨", 4000);
-    } else if (rej) FX.toast(`Отказ по ${rej} ${plural(rej, "отклику", "откликам", "откликам")}. Бывает. Откликайся ещё`, "🥲", 3000);
+      FX.toast(`Тебя пригласили на собеседование${inv > 1 ? ` (${inv})` : ""}! Загляни в Vibe Job → Отклики`, "📨", 4000, { go: "job", label: "Открыть" });
+    } else if (rej) FX.toast(`Отказ по ${rej} ${plural(rej, "отклику", "откликам", "откликам")}. Бывает. Откликайся ещё`, "🥲", 3000, { go: "job", label: "Вакансии" });
   }
 
   /* ---------- Запуск ---------- */

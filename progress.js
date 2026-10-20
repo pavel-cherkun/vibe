@@ -11,15 +11,17 @@
 
   /* ================= Постепенное открытие ================= */
   // Ступени: что открывается и за что
+  // Сколько игровых минут прожито в этой жизни (1 реальный час = 1 игровой день)
+  const lived = () => (Vibe.game && S().game ? Math.max(0, Vibe.game.minutes() - 9 * 60) : 0);
   const TIERS = [
-    { id: "t0", t: "Старт", e: "🐣", screens: ["home", "fit", "calendar", "profile", "pay", "chats", "chat", "qr", "all", "job", "eat", "eat-place", "eat-track", "supermarket", "maps", "wheel", "plus", "welcome", "notfound", "locked", "search", "mail", "skills", "ending", "telecom"], cond: () => true, hint: "" },
-    { id: "t1", t: "Первый отклик", e: "📨", screens: ["gig", "learn", "people", "gram", "gram-profile", "reels", "flowers", "cola"], cond: (s) => (s.life_apps || []).length > 0 || !!s.job, hint: "Откликнись на любую вакансию в Vibe Job" },
-    { id: "t2", t: "Нашёл работу", e: "💼", screens: ["market", "music", "games", "rent", "health", "clean", "drive", "gov", "psy", "insure", "fitness", "media", "books", "cinema"], cond: (s) => !!s.job || ((s.stats || {}).salaries || 0) > 0, hint: "Устройся на работу" },
+    { id: "t0", t: "Старт", e: "🐣", screens: ["home", "fit", "calendar", "profile", "pay", "chats", "chat", "qr", "all", "job", "eat", "eat-place", "eat-track", "supermarket", "maps", "welcome", "notfound", "locked", "search", "mail", "ending"], cond: () => true, hint: "" },
+    { id: "t1", t: "Первые часы", e: "📨", screens: ["gig", "learn", "people", "skills", "telecom", "flowers", "cola"], cond: (s) => ((s.life_apps || []).length > 0 || !!s.job) && lived() >= 240, hint: "Откликнись на вакансию в Vibe Job и проживи первые четыре часа" },
+    { id: "t2", t: "Нашёл работу", e: "💼", screens: ["gram", "gram-profile", "reels", "market", "music", "games", "rent", "health", "clean", "drive", "gov", "psy", "insure", "fitness", "media", "books", "cinema", "plus", "wheel"], cond: (s) => !!s.job && lived() >= 720, hint: "Устройся на работу и продержись полдня" },
     { id: "t3", t: "Первая зарплата", e: "💸", screens: ["tickets", "match", "style", "hobby", "invest", "pets", "charity", "travel"], cond: (s) => ((s.stats || {}).salaries || 0) > 0, hint: "Дождись первой зарплаты (аванс 15-го)" },
-    { id: "t4", t: "Взрослая жизнь", e: "🏠", screens: ["home-buy", "auto"], cond: (s) => ((s.stats || {}).promotions || 0) > 0 || s.balance >= 100000, hint: "Получи повышение или накопи 100 000 ₫" },
+    { id: "t4", t: "Взрослая жизнь", e: "🏠", screens: ["home-buy", "auto"], cond: (s) => ((s.stats || {}).promotions || 0) > 0 || s.balance >= 100000, hint: "Получи повышение или накопи 100 000 ₫" },
   ];
   const NAMES = {
-    gig: ["Vibe Gig", "🚲"], learn: ["Vibe Learn", "🎓"], people: ["Близкие", "🫂"], market: ["Vibe Market", "🛍️"], music: ["Vibe Music", "🎧"],
+    gig: ["Vibe Gig", "🚲"], skills: ["Навыки", "⭐"], telecom: ["Vibe Телеком", "📶"], plus: ["Плюс Вайб", "💎"], wheel: ["Колесо вайба", "🎡"], learn: ["Vibe Learn", "🎓"], people: ["Близкие", "🫂"], market: ["Vibe Market", "🛍️"], music: ["Vibe Music", "🎧"],
     games: ["Vibe Games", "🎮"], rent: ["Vibe Rent", "🔑"], health: ["Vibe Health", "💊"], clean: ["Vibe Clean", "🫧"], drive: ["Vibe Drive", "🚗"],
     gov: ["Госвайб", "🏛️"], tickets: ["Vibe Tickets", "🎤"], match: ["Vibe Match", "💘"], style: ["Vibe Style", "🧥"], hobby: ["Хобби", "🎸"],
     invest: ["Vibe Invest", "🚀"], gram: ["Vibegram", "📸"], flowers: ["Vibe Цветы", "💐"], cola: ["Vibe Cola", "🥤"], psy: ["Vibe Психолог", "🛋️"],
@@ -40,7 +42,9 @@
     // Проверить новые ступени и отпраздновать
     check({ silent = false } = {}) {
       const s = S();
-      if (!s.profile) return;
+      if (!s.profile || !s.game) return;
+      // Пока игрок в онбординге или под модалкой — не открываем ничего
+      if (/welcome/.test(location.hash) || (!silent && document.querySelector(".modal"))) return;
       const have = s.unlocked || [];
       const fresh = TIERS.filter((t) => t.id !== "t0" && !have.includes(t.id) && (s.unlockAll || t.cond(s)));
       if (!fresh.length) return;
