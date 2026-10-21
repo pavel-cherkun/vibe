@@ -929,7 +929,7 @@
   .mx-chips { display:flex; gap:8px; flex-wrap:wrap; }
   .mx-chips .chip[disabled] { opacity:.35; pointer-events:none; }
 
-  .mx-head { position:sticky; top:0; z-index:5; display:flex; align-items:center; gap:10px; margin:calc(-1 * (var(--safe-top) + 12px)) -16px 0; padding:calc(var(--safe-top) + 12px) 16px 10px; background:var(--bg); border-bottom:2px solid var(--ink); }
+  .mx-head { position:sticky; top:calc(-1 * (var(--safe-top) + 12px)); z-index:5; display:flex; align-items:center; gap:10px; margin:calc(-1 * (var(--safe-top) + 12px)) -16px 0; padding:calc(var(--safe-top) + 12px) 16px 10px; background:var(--bg); border-bottom:2px solid var(--ink); }
   .mx-who { flex:1; min-width:0; display:flex; align-items:center; gap:10px; text-align:left; }
   .mx-wt { min-width:0; display:flex; flex-direction:column; }
   .mx-wt b { font-family:var(--font-display); font-weight:400; font-size:19px; line-height:1.05; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }

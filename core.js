@@ -225,6 +225,9 @@
     if (!prev || mode === "replace") el.classList.add("fade-in");
     else if (tabSwitch) el.classList.add("fade-in");
     else el.classList.add(mode === "back" ? "enter-back" : "enter");
+    // После анимации входа снимаем её класс: иначе transform из fill-mode делает экран
+    // контейнером для position:fixed, и нижние панели (ввод в чате, меню Vibegram) уезжают со скроллом
+    el.addEventListener("animationend", (e) => { if (e.target === el) el.classList.remove("enter", "enter-back", "fade-in"); });
     if (prev) {
       prev.el.classList.add(mode === "back" && !tabSwitch ? "leave-back" : tabSwitch || mode === "replace" ? "leave-fade" : "leave");
       if (mode === "back") prev.el.style.zIndex = 2;
