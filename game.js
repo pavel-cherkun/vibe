@@ -14,7 +14,9 @@
   const DAILY_COST = 150;             // бытовые траты в день
   const OVERDRAFT = 0.01;             // проценты за минус на карте, в день
   const BONUS_DIV = 300;              // премия за задачу ≈ оклад / 300 (раньше /120 — премия была +50% к окладу)
-  // ЖКХ, 10-го: зависит от жилья (комната дешевле, своя квартира — дороже)
+  // День зарплаты: Корпорация «для удобства» списывает все автоплатежи в этот же день
+  const PAYDAY = 30;
+  // ЖКХ (в день зарплаты): зависит от жилья (комната дешевле, своя квартира — дороже)
   const utilities = (h) => (h && h.own ? 4500 : Math.round((1500 + ((h && h.rent) || 0) * 0.05) / 100) * 100);
   const PHONE = 590;                  // связь, 5-го
   const TAX = 0.13;
@@ -56,6 +58,7 @@
   function tx(title, amount, emoji, col) {
     const s = S();
     set({ balance: s.balance + amount, tx: [{ t: title, c: emoji, a: amount, d: info().date, col }, ...s.tx].slice(0, 60) });
+    if (Vibe.emit) Vibe.emit("tx", { title: String(title || ""), amount });
   }
   const stat = (k, n = 1) => set({ stats: Object.assign({}, S().stats, { [k]: ((S().stats || {})[k] || 0) + n }) });
 
@@ -69,8 +72,8 @@
     // (а на автопилоте — за перекусы и метро, см. body.js). Событие нужно для учёта простоя на работе.
     ev.push({ kind: "daily", title: "", a: 0, quiet: true });
     // Аренда
-    if (dom === 1 && s.home && s.home.rent) ev.push({ kind: "rent", title: `Аренда · ${s.home.title}`, a: -s.home.rent, e: "🔑", col: "c-mint" });
-    if (dom === 10) ev.push({ kind: "bill", title: "ЖКХ (опять подорожало)", a: -utilities(s.home), e: "💡", col: "c-yellow" });
+    if (dom === PAYDAY && s.home && s.home.rent) ev.push({ kind: "rent", title: `Аренда · ${s.home.title}`, a: -s.home.rent, e: "🔑", col: "c-mint" });
+    if (dom === PAYDAY) ev.push({ kind: "bill", title: "ЖКХ (опять подорожало)", a: -utilities(s.home), e: "💡", col: "c-yellow" });
     if (Vibe.world) Vibe.world.dayEvents(dom).forEach((x) => ev.push(x));
     // Зарплата
     if (s.job) {
@@ -83,7 +86,7 @@
       }
     }
     // Кредиты
-    (s.loans || []).forEach((l) => { if (l.left > 0 && dom === l.dom) ev.push({ kind: "loan", title: `Платёж по кредиту «${l.name}»`, a: -l.monthly, e: "🏦", col: "c-pink", loan: l.id }); });
+    (s.loans || []).forEach((l) => { if (l.left > 0 && dom === PAYDAY) ev.push({ kind: "loan", title: `Платёж по кредиту «${l.name}»`, a: -l.monthly, e: "🏦", col: "c-pink", loan: l.id }); });
     // Проценты за минус
     if (s.balance < 0) ev.push({ kind: "overdraft", title: `Проценты за минус на карте (${String(OVERDRAFT * 100).replace(".", ",")}% в день)`, a: -Math.ceil(Math.abs(s.balance) * OVERDRAFT), e: "🫠", col: "c-coral", quiet: true });
     return ev;
@@ -128,6 +131,9 @@
 
   // Показать события: онлайн — по одному, офлайн — сводкой
   function announce(events) {
+    // День зарплаты (30-е): зарплата и каскад автоплатежей одним экраном
+    const pay = events.find((e) => e.kind === "salary" && /^Зарплата/.test(e.title));
+    if (pay && Vibe.month && new Set(events.map((e) => e.day)).size <= 2) { Vibe.refreshCounters(); return Vibe.month.payday(events); }
     const loud = events.filter((e) => !e.quiet);
     if (events.length > 3) return summary(events);
     loud.forEach((ev, i) => setTimeout(() => {
@@ -167,9 +173,9 @@
     const nextDom = (dom) => { for (let d = now.day + 1; d <= now.day + 31; d++) if ((d % 30) + 1 === dom) return d; return null; };
     const add = (dom, t, a, e) => { const d = nextDom(dom); if (d != null) res.push({ in: d - now.day, day: d, t, a, e, real: Math.round(realMinTo(d)) }); };
     if (s.job) { const net = netOf(s.job); add(15, "Аванс", Math.round(net * 0.4), "💸"); add(30, "Зарплата", Math.round(net * 0.6) + (s.job.bonus || 0), "💰"); }
-    if (s.home && s.home.rent) add(1, "Аренда", -s.home.rent, "🔑");
-    add(10, "ЖКХ", -utilities(s.home), "💡");
-    (s.loans || []).forEach((l) => add(l.dom, `Кредит «${l.name}»`, -l.monthly, "🏦"));
+    if (s.home && s.home.rent) add(PAYDAY, "Аренда", -s.home.rent, "🔑");
+    add(PAYDAY, "ЖКХ", -utilities(s.home), "💡");
+    (s.loans || []).forEach((l) => add(PAYDAY, `Кредит «${l.name}»`, -l.monthly, "🏦"));
     return res.sort((a, b) => a.in - b.in).slice(0, limit);
   }
   // На сколько дней хватит денег без дохода
@@ -247,7 +253,7 @@
   function addLoan({ name = "Мечта", amount, rate = 0.299, months = 24 }) {
     const r = rate / 12;
     const monthly = Math.round((amount * r) / (1 - Math.pow(1 + r, -months)));
-    const loan = { id: Date.now(), name, amount, rate, months, monthly, left: months, dom: (info().dom % 28) + 1 };
+    const loan = { id: Date.now(), name, amount, rate, months, monthly, left: months, dom: PAYDAY };
     set({ loans: [...(S().loans || []), loan] });
     tx(`Кредит «${name}»`, amount, "🤑", "c-pink");
     stat("loans");

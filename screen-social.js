@@ -176,7 +176,7 @@
 
       ${Vibe.subs && Vibe.subs.list().length ? `
       <h2 class="sec">Подписки <small>${Vibe.rub(Vibe.subs.total())}/мес</small></h2>
-      <div class="card" style="padding:4px 16px">${Vibe.subs.list().map((x) => `<div class="li"><div class="ic c-lilac">${x.e}</div><div class="tx"><b>${Vibe.esc(x.name)}</b><small>${Vibe.rub(x.price)} · списание ${x.dom}-го</small></div>${x.id === "plus" ? `<button class="btn sm" data-go="plus">Управлять</button>` : `<button class="btn sm" data-unsub="${x.id}">Отменить</button>`}</div>`).join("")}</div>` : ""}
+      <div class="card" style="padding:4px 16px">${Vibe.subs.list().map((x) => `<div class="li"><div class="ic c-lilac">${x.e}</div><div class="tx"><b>${Vibe.esc(x.name)}</b><small>${Vibe.rub(x.price)} · списание 30-го</small></div>${x.id === "plus" ? `<button class="btn sm" data-go="plus">Управлять</button>` : `<button class="btn sm" data-unsub="${x.id}">Отменить</button>`}</div>`).join("")}</div>` : ""}
 
       <h2 class="sec">Достижения <small>${s.achievements.length} из ${Vibe.ACH_LIST().length}</small></h2>
       <div class="grid3 stagger">

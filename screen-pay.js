@@ -96,6 +96,11 @@
         <div style="flex:1;text-align:left"><b>Кэшбек на ${Vibe.game.info().monthName.toLowerCase()}</b><small>${Vibe.cashback && Vibe.cashback.chosen() ? Vibe.cashback.chosen().map((id) => { const c = Vibe.cashback.CATS.find((x) => x.id === id); return c ? `${c.e} ${Math.round(c.r * 100)}%` : ""; }).join(" · ") : "Выбери категории — иначе всего 0,5%"}</small></div>
         <span>›</span>
       </button>
+      ${Vibe.month ? (() => { const L = Vibe.month.ledger(); const H = Vibe.state.get().monHist || []; return `<button class="card tap cb-strip" data-act="months" style="margin-top:10px">
+        <span class="emo" style="font-size:28px">📊</span>
+        <div style="flex:1;text-align:left"><b>Этот месяц: −${Vibe.rub(L.out)}</b><small>пришло +${Vibe.rub(L.inc)} · кэшбек ${Vibe.fmt(L.cb)} 🪙${H.length ? ` · итогов в архиве: ${H.length}` : " · итоги — 1-го числа"}</small></div>
+        <span>›</span>
+      </button>`; })() : ""}
 
       <div class="pay-actions stagger">
         <button class="pa c-lime" data-act="transfer"><span class="emo">↗️</span>Перевести</button>
@@ -109,7 +114,7 @@
       <div class="stack">${loans.map((l) => `
         <div class="card tight c-pink" style="display:flex;gap:12px;align-items:center">
           <span class="emo" style="font-size:30px">🏦</span>
-          <div style="flex:1"><b>«${Vibe.esc(l.name)}» · ${Vibe.rub(l.monthly)}/мес</b><div style="font-size:12px;font-weight:700">Осталось ${l.left} из ${l.months} платежей · списание ${l.dom}-го</div>
+          <div style="flex:1"><b>«${Vibe.esc(l.name)}» · ${Vibe.rub(l.monthly)}/мес</b><div style="font-size:12px;font-weight:700">Осталось ${l.left} из ${l.months} платежей · списание 30-го</div>
           <div class="progress" style="height:8px;margin-top:6px"><i style="--p:${Math.round(((l.months - l.left) / l.months) * 100)}%"></i></div></div>
         </div>`).join("")}</div>` : ""}
 
@@ -154,6 +159,7 @@
         if (act === "credit") openCredit();
         if (act === "jar") openJar();
         if (act === "cashback") Vibe.cashback.sheet();
+        if (act === "months") Vibe.month.history();
         if (act === "cat") {
           FX.bump(a.querySelector(".bar-v"));
           FX.burst(a, { emojis: [a.querySelector(".emo").textContent], count: 8 });

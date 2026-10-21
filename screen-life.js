@@ -1832,7 +1832,7 @@
           ${block && !here ? `<div class="lf-note" style="margin-bottom:10px;background:var(--coral)">🙅‍♀️ ${block}</div>` : ""}
           ${here ? `<button class="btn xl block" disabled>Ты уже здесь живёшь 🏠</button>` : `<button class="btn black xl block" data-move>Переехать · ${rub(c.total)} 🚚</button>`}
           <button class="btn block" data-view style="margin-top:10px">Записаться на просмотр 👀</button>
-          <div class="fine">Дальше аренда ${rub(f.p)} списывается 1-го числа каждого месяца. *«Страховой платёж» — это не залог. Залог — это другое. Чем — мы сами не до конца понимаем.</div>`, {
+          <div class="fine">Дальше аренда ${rub(f.p)} списывается 30-го, в день зарплаты. Автоматически. *«Страховой платёж» — это не залог. Залог — это другое. Чем — мы сами не до конца понимаем.</div>`, {
           onMount(sh, close) {
             const el = $(sh, "[data-fmap]");
             const home = Vibe.map.place("home"), work = Vibe.map.place("work");
@@ -1874,7 +1874,7 @@
         Vibe.modal(`
           <div class="m-emo float">🚚</div>
           <div class="display">Новоселье!</div>
-          <p>${f.t}, район «${inf.district}». Аренда ${rub(f.p)}/мес спишется 1-го числа${inf.work != null ? `. До работы ${inf.work} мин на метро` : ""}. Соседи уже стучат по батарее — приветствуют.${homeItems().length ? ` Вещи переехали: ${homeItems().map((i) => i.e || "📦").join(" ")}.` : ""} Сон здесь — ${sleepPct(S().home)}%.</p>
+          <p>${f.t}, район «${inf.district}». Аренда ${rub(f.p)}/мес спишется 30-го, в день зарплаты${inf.work != null ? `. До работы ${inf.work} мин на метро` : ""}. Соседи уже стучат по батарее — приветствуют.${homeItems().length ? ` Вещи переехали: ${homeItems().map((i) => i.e || "📦").join(" ")}.` : ""} Сон здесь — ${sleepPct(S().home)}%.</p>
           <button class="btn black block" data-close>Распаковывать коробки 📦</button>
           <div class="fine">Коробки распаковываются примерно 2 года. Последняя — никогда.</div>`, { sound: "levelup" });
         T.to(() => FX.burst({ x: innerWidth / 2, y: innerHeight / 2 - 80 }, { emojis: ["📦", "🔑", "🏠", "✨"], count: 20 }), 300);

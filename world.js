@@ -510,7 +510,7 @@
   // Списание подписок и проценты по копилке — через игровые события дня
   Vibe.world.dayEvents = function (dom) {
     const out = [];
-    subs.list().forEach((x) => { if (x.dom === dom) out.push({ kind: "bill", title: `Подписка · ${x.name}`, a: -x.price, e: x.e, col: "c-lilac", quiet: true }); });
+    subs.list().forEach((x) => { if (dom === 30) out.push({ kind: "bill", title: `Подписка · ${x.name}`, a: -x.price, e: x.e, col: "c-lilac", quiet: true }); });
     const jar = S().jar || 0;
     if (dom === 1 && jar > 0) out.push({ kind: "jar", title: "Проценты по копилке (12% годовых)", a: 0, jar: Math.round(jar * 0.01), e: "🐷", col: "c-lime", quiet: true });
     return out;

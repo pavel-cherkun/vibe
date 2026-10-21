@@ -55,7 +55,7 @@
   });
 
   function celebrate(t) {
-    if (document.querySelector(".modal")) return setTimeout(() => celebrate(t), 2000);
+    if (document.querySelector(".modal, .mr-ov")) return setTimeout(() => celebrate(t), 2000);
     FX.confetti();
     Vibe.modal(`
       <div class="badge" style="background:var(--lime)">${t.e} ${t.t}</div>
@@ -267,7 +267,9 @@
     if (!s.profile || !s.game || document.querySelector(".modal,.sheet")) return;
     if (cashback.chosen() || s.cbNag === month()) return;
     set({ cbNag: month() });
-    FX.toast("Новый месяц — новые категории кэшбека! Выбери в Vibe Pay", "🪙", 3500);
+    // На старте жизни не отвлекаем: сначала первый вечер
+    if (!(s.goalsDone || []).includes("night") && Vibe.game.info().day < 1) { set({ cbNag: null }); return; }
+    FX.toast("Новый месяц — новые категории кэшбека", "🪙", 4200, { onClick: () => cashback.sheet(), label: "Выбрать" });
   }, 15000);
 
   /* ================= Чит-коды ================= */

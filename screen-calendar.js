@@ -104,16 +104,15 @@
     const s = S();
     const dom = domOf(day);
     const ev = [];
-    if (dom === 1 && s.home && s.home.rent) ev.push({ e: "🔑", t: "Аренда", sub: s.home.title || "жильё", a: -s.home.rent, col: "c-mint" });
-    if (dom === 5) ev.push({ e: "📶", t: "Связь и интернет", a: -590, col: "c-sky", quiet: true });
-    if (dom === 10) ev.push({ e: "💡", t: "ЖКХ", sub: "опять подорожало", a: -3200, col: "c-yellow" });
-    if (Vibe.subs) Vibe.subs.list().forEach((x) => { if (x.dom === dom) ev.push({ e: x.e, t: x.name, sub: "подписка", a: -x.price, col: "c-lilac", quiet: true }); });
+    if (dom === 30 && s.home && s.home.rent) ev.push({ e: "🔑", t: "Аренда", sub: s.home.title || "жильё", a: -s.home.rent, col: "c-mint" });
+    if (dom === 30) ev.push({ e: "💡", t: "ЖКХ", sub: "опять подорожало", a: -3200, col: "c-yellow" });
+    if (Vibe.subs) Vibe.subs.list().forEach((x) => { if (dom === 30) ev.push({ e: x.e, t: x.name, sub: "подписка", a: -x.price, col: "c-lilac", quiet: true }); });
     if (s.job) {
       const net = Math.round(s.job.salary * (1 - TAX));
       if (dom === 15) ev.push({ e: "💸", t: "Аванс", sub: s.job.company, a: Math.round(net * 0.4), col: "c-lime" });
       if (dom === 30) ev.push({ e: "💰", t: "Зарплата", sub: s.job.company, a: Math.round(net * 0.6) + (s.job.bonus || 0), col: "c-lime" });
     }
-    (s.loans || []).forEach((l) => { if (l.left > 0 && dom === l.dom) ev.push({ e: "🏦", t: `Кредит «${l.name}»`, sub: `осталось ${l.left} плат.`, a: -l.monthly, col: "c-pink" }); });
+    (s.loans || []).forEach((l) => { if (l.left > 0 && dom === 30) ev.push({ e: "🏦", t: `Кредит «${l.name}»`, sub: `осталось ${l.left} плат.`, a: -l.monthly, col: "c-pink" }); });
     const planned = Vibe.sched ? Vibe.sched.forDay(day) : [];
     planned.forEach((p) => ev.push({ e: p.e, t: p.title, sub: `${String(p.hour).padStart(2, "0")}:${String(p.min || 0).padStart(2, "0")}${p.status === "done" ? " · ✅ был" : p.status === "missed" ? " · ❌ пропущено" : ""}`, col: "c-orange", concert: true, go: "maps" }));
     if (!planned.some((p) => p.kind === "concert")) concertsOn(day).forEach((t) => ev.push({ e: "🎤", t: t.t, sub: `${t.place || "концерт"} · 20:00`, col: "c-orange", concert: true }));

@@ -150,7 +150,7 @@
     if (vib > 0) Vibe.reward({ vibiki: vib, xp: Math.min(60, 10 + Math.round(amount / 200)), from });
     else Vibe.reward({ xp: Math.min(60, 10 + Math.round(amount / 200)), silent: true });
     if (cb.cat && vib > 0) setTimeout(() => FX.toast(`Кэшбек ${Math.round(cb.rate * 100)}% «${cb.cat}»: +${Vibe.fmt(vib)} вайбиков`, cb.e || "🪙", 2200), 1200);
-    Vibe.emit("pay", { amount, title: String(title || "") });
+    Vibe.emit("pay", { amount, title: String(title || ""), vib, cbCat: cb.cat || null, cbE: cb.e || null });
     return true;
   };
 
