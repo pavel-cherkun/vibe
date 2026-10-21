@@ -181,7 +181,10 @@
         const at = d * 1440 + pg.h * 60 + rnd(0, 25);
         if (at < now - 5) return;
         meta[key] = d;
-        plans.push([id, { at, t: pick(pg.t), ask: pg.ask || null }]);
+        // Лестница охлаждения (care.js) меняет, о чём человек ещё пишет
+        const texts = !isBot && Vibe.care ? Vibe.care.pingTexts(id, pg.t) : pg.t;
+        if (!texts.length) return;
+        plans.push([id, { at, t: pick(texts), ask: pg.ask || null }]);
       });
     };
     contacts().forEach((id) => { const ch = C() && C().raw(id); if (ch) consider(id, ch.pings, false); });
@@ -275,6 +278,8 @@
     t.m.push(Object.assign({ i: uid(), f: "me", t: text, at: nowMin() }, extra.k ? { k: extra.k } : {}, extra.g ? { g: extra.g } : {}));
     t.u = 0;
     save(id, t);
+    // Ответ от Vibe Заботы — не общение: ни близости, ни опыта
+    if (extra.auto) return;
     if (Vibe.game) Vibe.game.track("chat");
     Vibe.reward({ xp: 2, silent: true });
     const b = bots[id];
@@ -782,8 +787,9 @@
       <div class="mx-bottom">
         <div class="mx-chips mx-qr" data-chips>${chipsHtml(w.id, w)}</div>
         ${w.bot ? "" : `<div class="mx-acts">
-          <button class="btn pink" data-a="gift">🎁 Подарок</button>
-          <button class="btn yellow" data-a="meet">📍 Позвать</button>
+          ${w.id === "mom" && Vibe.care ? `<button class="btn lime" data-a="call">📞 Позвонить</button>
+          <button class="btn" data-a="care">🤖 ${Vibe.care.state().auto ? "Забота: вкл" : "Vibe Забота"}</button>` : `<button class="btn pink" data-a="gift">🎁 Подарок</button>
+          <button class="btn yellow" data-a="meet">📍 Позвать</button>`}
           <button class="btn" data-a="prof">👤 Профиль</button>
         </div>`}
         <form class="mx-form" data-form><input data-input placeholder="Сообщение…" autocomplete="off" maxlength="300"><button type="submit" aria-label="Отправить">➤</button></form>
@@ -896,6 +902,8 @@
         if (e.target.closest("[data-gram]")) { Vibe.go("gram-profile", { id }); return; }
         if (e.target.closest("[data-prof]") || e.target.closest('[data-a="prof"]')) { profile(id); return; }
         if (e.target.closest('[data-a="gift"]')) { giftSheet(id); return; }
+        if (e.target.closest('[data-a="call"]') && Vibe.care) { Vibe.care.call(e.target.closest('[data-a="call"]')); return; }
+        if (e.target.closest('[data-a="care"]') && Vibe.care) { Vibe.care.sheet(); return; }
         if (e.target.closest('[data-a="meet"]')) { meetSheet(id); return; }
       };
       root.addEventListener("click", onClick);

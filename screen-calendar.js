@@ -712,6 +712,8 @@
         later(() => refreshTodos(true), 250);
       }
       function callMom(from) {
+        // Ручной звонок — сцена из Vibe Заботы (care.js)
+        if (Vibe.care) { Vibe.care.call(from, () => { markDone("mom"); refreshTodos(true); }); return; }
         if (Vibe.body) Vibe.body.effect("mom");
         markDone("mom");
         Vibe.reward({ xp: 15, from });

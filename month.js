@@ -201,19 +201,40 @@
     raf = requestAnimationFrame(loop);
   }
 
+  /* ---------- Ира, менеджер по кэшбеку ----------
+     Раз в месяц среди категорий лежит её записка. Ответить можно только
+     выбрав её карту (кэшбека она не даёт). Потом Иры не станет — без объяснений. */
+  const IRA_GONE = 4;
+  function iraLine(stage, picks) {
+    if (stage === 0) return "Если вы это читаете — меня зовут Ира, я менеджер по кэшбеку";
+    if (stage === 1) return picks ? `Спасибо тем ${12 + picks * 7}, кто меня выбрал. Я не одна` : "Это снова Ира. Кофемашина сломалась";
+    if (stage === 2) return "Ира всё ещё здесь";
+    return "Ира в отпуске (нет)";
+  }
+  // Вызывается при открытии ритуала: двигает историю на месяц вперёд (один раз за месяц)
+  function iraCard(m) {
+    if (m < 1) return null;
+    let I = Object.assign({ stage: -1, m: -1, picks: 0 }, S().ira || {});
+    if (I.m !== m) { I = Object.assign({}, I, { stage: I.stage + 1, m }); set({ ira: I }); }
+    if (I.stage >= IRA_GONE) return { gone: I.stage === IRA_GONE };
+    return { id: "ira", e: "✉️", r: 0.01, t: iraLine(I.stage, I.picks), ira: true };
+  }
+
   /* ---------- Ритуал выбора кэшбека ---------- */
   function ritual() {
     if (!live() || !Vibe.cashback) return;
     const cb = Vibe.cashback;
     const m = curM(), mi = m % 12;
     const offer = cb.offer();
+    const ira = iraCard(m);
+    if (ira && ira.id) offer.splice(5, 1, ira);
     const cur = cb.chosen();
     const lim = cb.limit();
     const last = (S().monHist || [])[0];
     const lastBest = last ? Object.entries(last.cbCats || {}).sort((a, b) => b[1] - a[1])[0] : null;
     const pick = new Set(cur || []);
     const card = (c) => `
-      <button class="mr-cc ${cur ? "turned" : ""} ${pick.has(c.id) ? "on stamped" : ""}" data-cc="${c.id}" ${cur ? "disabled" : ""}>
+      <button class="mr-cc ${c.ira ? "ira" : ""} ${cur ? "turned" : ""} ${pick.has(c.id) ? "on stamped" : ""}" data-cc="${c.id}" ${cur ? "disabled" : ""}>
         <span class="mr-cc-in">
           <span class="mr-cc-back"><b>V</b><small>кэшбек</small></span>
           <span class="mr-cc-face"><span class="emo">${c.e}</span><b>${Math.round(c.r * 100)}%</b><small>${esc(c.t)}</small><i class="mr-stamp">ЗАФИКСИРОВАНО</i></span>
@@ -224,6 +245,7 @@
       <div class="mr-rit-in">
         <small class="mr-k" style="color:var(--lime)">Раз в месяц · ${NOM[mi]}</small>
         <div class="mr-title">Кэшбек на ${PREP[mi]}</div>
+        ${ira && ira.gone ? `<div class="mr-ai">Категории этого месяца подобраны ИИ. Мы ценим креативность наших сотрудников!</div>` : ""}
         <p class="mr-p" data-sub>${cur ? `Категории зафиксированы до 30 ${GEN[mi]}. Новые — 1 ${GEN[(mi + 1) % 12]}. Мы уважаем твой выбор. Почти.` : `8 категорий, ${lim} выбора, ${NOM[mi].toLowerCase()} целиком. Передумать нельзя — это и есть кэшбек.`}</p>
         <div class="mr-cgrid">${offer.map(card).join("")}</div>
         ${cur ? `<button class="btn lime xl block" data-mr-x style="margin-top:16px">Понятно</button>` : `<button class="btn lime xl block" data-flip style="margin-top:16px">🎴 Открыть категории</button>`}
@@ -260,6 +282,11 @@
       if (e.target.closest("[data-ok]") && pick.size === lim) {
         cb.choose([...pick]);
         Vibe.emit("cashback", [...pick]);
+        if (pick.has("ira")) {
+          const I = Object.assign({ picks: 0 }, S().ira || {});
+          set({ ira: Object.assign({}, I, { picks: I.picks + 1 }) });
+          if (I.picks + 1 === 2 && Vibe.msg) Vibe.msg.send("zabotik", "Мы заметили, что вы выбираете нерабочие категории! Подобрать вам что-то полезное? 😊", { from: "zabotik", delay: 40 });
+        }
         const b = btn(); b.disabled = true; b.textContent = "Фиксируем…";
         el.querySelectorAll(".mr-cc.on").forEach((x, k) => timers.push(setTimeout(() => { x.classList.add("stamped"); FX.haptic(12); }, 260 * k)));
         el.querySelectorAll(".mr-cc:not(.on)").forEach((x) => x.classList.add("dim"));
@@ -402,7 +429,12 @@
   .mr-cc-face b { font-family: var(--font-display); font-weight: 400; font-size: 20px; line-height: 1; }
   .mr-cc-face small { font-size: 10px; font-weight: 800; line-height: 1.1; }
   .mr-cc.on .mr-cc-face { background: var(--lime); }
-  .mr-stamp { position: absolute; left: -10%; right: -10%; top: 42%; transform: rotate(-18deg) scale(2.2); opacity: 0; background: #e0263e; color: #fff; font-style: normal; font-weight: 900; font-size: 8px; letter-spacing: .5px; padding: 3px 0; transition: transform .35s cubic-bezier(.2,1.6,.4,1), opacity .2s; }
+  .mr-cc.ira .mr-cc-face { background: #fff7d6; justify-content: flex-start; padding-top: 8px; }
+  .mr-cc.ira .mr-cc-face b { font-size: 14px; }
+  .mr-cc.ira .mr-cc-face small { font-size: 8.5px; line-height: 1.15; font-weight: 700; font-style: italic; }
+  .mr-cc.ira.on .mr-cc-face { background: #ffe9a8; }
+  .mr-ai { margin-top: 10px; font-size: 12px; font-weight: 800; color: #a9a6b8; border: 1.5px dashed #5a566b; border-radius: 12px; padding: 8px 10px; }
+  .mr-stamp { position: absolute; left: -10%; right: -10%; top: 74%; transform: rotate(-18deg) scale(2.2); opacity: 0; background: #e0263e; color: #fff; font-style: normal; font-weight: 900; font-size: 8px; letter-spacing: .5px; padding: 3px 0; transition: transform .35s cubic-bezier(.2,1.6,.4,1), opacity .2s; }
   .mr-cc.stamped .mr-stamp { opacity: 1; transform: rotate(-18deg) scale(1); }
 
   /* День зарплаты */

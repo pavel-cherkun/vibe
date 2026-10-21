@@ -790,6 +790,7 @@
         if (act === "mom") {
           if (!awake(a)) return;
           if (meta().momDay === dayNow()) { FX.shake(a); FX.toast("Ты уже звонил. Мама: «Что-то случилось?!»", "👩"); return; }
+          if (V.care) { V.care.call(a, () => { setMeta({ momDay: dayNow() }); update(); }); return; }
           setMeta({ momDay: dayNow() });
           const L = ["«Ты поел? А шапку надел?»", "«Тётя Галя спрашивает, когда свадьба»", "«Я тебе денег скинуть? Ладно, не скину»", "«Ты похудел. Или потолстел. Приезжай»", "«Папа передаёт привет. Молча»"];
           FX.burst(a, { emojis: ["💜", "📞", "👩", "🥰"], count: 14 });
