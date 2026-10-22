@@ -10,7 +10,7 @@
 (function () {
   const S = () => Vibe.state.get();
   const clamp = (v, a = 0, b = 100) => Math.max(a, Math.min(b, v));
-  const AUTO_GAP = 90;              // игровых минут без игрока → автопилот
+  const AUTO_GAP = 240;             // игровых минут без игрока → автопилот (≈ 4 реальные минуты)
   const DRAIN = 3.5;                // −энергии в час бодрствования (болезнь: +1,5)
   const SLEEP_GAIN = 16;            // +энергии в час сна × качество сна
   const STEP_GOAL = 8000;
@@ -169,7 +169,7 @@
   }
   function maybeBurnModal() {
     const b = B();
-    if (!b.burnModal || document.hidden || document.querySelector(".modal")) return;
+    if (!b.burnModal || document.hidden || (Vibe.busy ? Vibe.busy() : document.querySelector(".modal"))) return;
     b.burnModal = false;
     Vibe.state.set({ body: b });
     setTimeout(showBurnModal, 400);
@@ -286,7 +286,8 @@
     if (b.lastMin == null) { b.lastMin = now; b.stepsDay = dayOf(now); save(b); return; }
     let m = b.lastMin;
     const gap = now - m;
-    if (gap <= 0) return;
+    // Меньше игровой минуты — нечего считать и незачем сериализовать всё состояние
+    if (gap < 1) return;
     const auto = gap > AUTO_GAP;
     const job = S().job;
     let autoNight = 0, autoMeals = 0, autoFood = 0, autoWork = 0;

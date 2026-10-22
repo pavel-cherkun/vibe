@@ -1073,7 +1073,7 @@
         if (e.target.closest("[data-deal]")) { const d = deal(); if (d) composer({ kind: "ad", e: pick(["🥤", "👟", "🛏️", "🍵", "🎧", "🥟"]), s: "💸✨🤝", bg: 3, text: `Обожаю ${d.brand}! Пользуюсь каждый день (с сегодняшнего)`, tags: ["реклама"], sug: [] }, { deal: d }); }
       });
       const iv = setInterval(() => {
-        root.querySelectorAll("[data-likes]").forEach((el) => { const q = cache.get(el.dataset.likes); if (q) { const v = fmt(likesOf(q)); if (el.textContent !== v) { el.textContent = v; FX.bump(el); } } });
+        root.querySelectorAll("[data-likes]").forEach((el) => { const q = cache.get(el.dataset.likes); if (q) { const v = fmt(likesOf(q)); if (!Vibe.sameText(el, v)) { el.textContent = v; FX.bump(el); } } });
         const mf = root.querySelector("[data-myf]");
         if (mf) { const v = followers(); if (+mf.dataset.val !== v) { FX.countTo(mf, v, { fmt: kfmt }); FX.bump(mf); } }
         updBadge(root);

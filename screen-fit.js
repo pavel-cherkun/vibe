@@ -521,7 +521,7 @@
       const born = Date.now();
 
       const $ = (sel) => root.querySelector(sel);
-      const txt = (k, v) => { const el = $(`[data-t="${k}"]`); if (el && el.textContent !== String(v)) el.textContent = v; };
+      const txt = (k, v) => { const el = $(`[data-t="${k}"]`); if (el && !V.sameText(el, v)) el.textContent = v; };
       const bar = (k, p) => { const el = $(`[data-b="${k}"]`); if (el) el.style.setProperty("--p", clamp(p).toFixed(1) + "%"); };
       const ring = (k, p) => { const el = $(`[data-ring="${k}"]`); if (el) el.setAttribute("stroke-dashoffset", (100 - clamp(p)).toFixed(2)); };
       const num = (k, v, fmt = V.fmt) => {
@@ -744,7 +744,7 @@
           FX.sound.pop();
           document.body.classList.add("fit-nightfade");
           setTimeout(() => {
-            Vibe.timeSkip(Math.round(hrs * 10) / 10);
+            Vibe.timeSkip(Math.round(hrs * 10) / 10, true);
             const rec = V.body.wake();
             document.body.classList.remove("fit-nightfade");
             FX.toast(rec ? `Утро! ${T ? `Сон ${comma(rec.hours.toFixed(1))} ч, качество ${r0(rec.q * 100)}%` : `Проспал ${comma(rec.hours.toFixed(1))} ч`}. Утро вечера мудренее` : "Доброе утро!", "☀️", 3600);

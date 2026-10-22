@@ -23,7 +23,7 @@
   const spend = (mins) => {
     const g = S().game; if (!g) return;
     Vibe.state.set({ game: Object.assign({}, g, { start: g.start - (mins / 1440) * G().DAY_MS }) });
-    G().tick({ silent: true });
+    G().tick();
   };
 
   /* ---------- Что пишет Vibe Забота ---------- */

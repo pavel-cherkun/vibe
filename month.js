@@ -55,9 +55,28 @@
     set(patch);
     return S().mon;
   }
-  function add(amount, title, vib, cbCat) {
+  // Учёт события, которое произошло в день `day` (догоняющий тик), а не «сейчас»
+  function ledgerFor(day) {
+    const md = Math.floor(day / 30);
+    const L = S().mon;
+    if (!L || L.m < md) {
+      const patch = { mon: fresh(md) };
+      if (L && L.n > 0) { patch.monHist = [L, ...(S().monHist || [])].slice(0, 12); patch.monRecap = L.m; }
+      set(patch);
+      return { L: S().mon, hist: false };
+    }
+    if (L.m === md) return { L, hist: false };
+    // Событие прошлого месяца, который уже в архиве
+    const H = S().monHist || [];
+    const k = H.findIndex((x) => x.m === md);
+    if (k >= 0) return { L: H[k], hist: true, k };
+    return null;
+  }
+  function add(amount, title, vib, cbCat, day) {
     if (!live()) return;
-    const L0 = ledger();
+    let target = null;
+    if (day != null) { target = ledgerFor(day); if (!target) return; }
+    const L0 = target ? target.L : ledger();
     const L = Object.assign({}, L0, { cats: Object.assign({}, L0.cats), cbCats: Object.assign({}, L0.cbCats) });
     if (amount > 0) L.inc += amount;
     else if (amount < 0) {
@@ -67,12 +86,13 @@
       if (/Eat/.test(title)) L.eat++;
       if (/такси/i.test(title)) L.taxi++;
     }
-    if (vib > 0) { L.cb += vib; const k = cbCat || "Базовый 1%"; L.cbCats[k] = (L.cbCats[k] || 0) + vib; }
+    if (vib > 0) { L.cb += vib; const k = cbCat || "Базовая ставка"; L.cbCats[k] = (L.cbCats[k] || 0) + vib; }
     L.n++;
-    set({ mon: L });
+    if (target && target.hist) { const H = (S().monHist || []).slice(); H[target.k] = L; set({ monHist: H }); }
+    else set({ mon: L });
   }
   Vibe.on("pay", (d) => add(-d.amount, d.title, d.vib, d.cbCat));
-  Vibe.on("tx", (d) => { if (d.amount) add(d.amount, d.title); });
+  Vibe.on("tx", (d) => { if (d.amount) add(d.amount, d.title, 0, null, d.day); });
 
   /* ---------- Оверлей (общий для итогов, ритуала и зарплаты) ---------- */
   let ov = null;
@@ -138,7 +158,7 @@
         <div class="mr-huge"><span data-cnt="${L.cb}" data-sign="+">0</span> 🪙</div>
         <p class="mr-p" style="margin-top:0">вайбиков за месяц</p>
         ${cbRows.length ? `<div class="mr-list">${cbRows.slice(0, 4).map(([c, v]) => `<div><span>${esc(c)}</span><b>+${Vibe.fmt(v)}</b></div>`).join("")}</div>` : ""}
-        ${zero.length ? `<p class="mr-p">${zero.map((c) => `«${esc(c.t)}» — 0 вайбиков`).join(", ")}. Выбор был смелый.</p>` : chosenNames.length ? `<p class="mr-p">Все твои категории сработали. Подозрительно хорошо.</p>` : `<p class="mr-p">Ты не выбрал категории и жил на базовом 1%. Как в 2007-м.</p>`}
+        ${zero.length ? `<p class="mr-p">${zero.map((c) => `«${esc(c.t)}» — 0 вайбиков`).join(", ")}. Выбор был смелый.</p>` : chosenNames.length ? `<p class="mr-p">Все твои категории сработали. Подозрительно хорошо.</p>` : `<p class="mr-p">Категории не выбраны — весь месяц на базовой ставке 0,5%. Как в 2007-м.</p>`}
       </div>`,
       `<div class="mr-s mr-sky">
         <small class="mr-k">Жизнь в цифрах</small>
@@ -303,11 +323,15 @@
   function payday(events) {
     const evs = events.filter((e) => e.a);
     if (!evs.length) return;
+    // Не перебиваем открытый ритуал, итоги, модалку или экран концовки — ждём своей очереди
+    if (ov || document.querySelector(".modal, .sheet") || /welcome|ending/.test(location.hash)) { setTimeout(() => payday(events), 2000); return; }
     const pos = evs.filter((e) => e.a > 0).sort((a, b) => b.a - a.a);
     const neg = evs.filter((e) => e.a < 0).sort((a, b) => a.a - b.a);
     const total = evs.reduce((s, e) => s + e.a, 0);
     const after = S().balance, before = after - total;
-    const mi = G().info().month;
+    // Месяц — по дню самой зарплаты, а не по «сейчас» (тик мог захватить и следующий день)
+    const pd = (evs.find((e) => e.kind === "salary") || {}).day;
+    const mi = pd != null ? Math.floor(pd / 30) % 12 : G().info().month;
     const rows = [...pos, ...neg];
     const el = open("mr-pay", `
       <div class="mr-pay-in">

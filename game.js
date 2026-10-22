@@ -11,7 +11,7 @@
   const START_MIN = 9 * 60;           // жизнь начинается в 09:00
   const MONTHS = ["ноября", "декабря", "января", "февраля", "марта", "апреля", "мая", "июня", "июля", "августа", "сентября", "октября"];
   const MONTHS_NOM = ["Ноябрь", "Декабрь", "Январь", "Февраль", "Март", "Апрель", "Май", "Июнь", "Июль", "Август", "Сентябрь", "Октябрь"];
-  const DAILY_COST = 150;             // бытовые траты в день
+  const DAILY_COST = 150;             // оценка бытовых трат в день — только для прогноза «денег хватит на N дн.»
   const OVERDRAFT = 0.01;             // проценты за минус на карте, в день
   const BONUS_DIV = 300;              // премия за задачу ≈ оклад / 300 (раньше /120 — премия была +50% к окладу)
   // День зарплаты: Корпорация «для удобства» списывает все автоплатежи в этот же день
@@ -31,6 +31,17 @@
   const listeners = new Set();
 
   /* ---------- Время ---------- */
+  // Миграция старых сохранений: раньше игровой день длился реальный час. Пересчитываем start так,
+  // чтобы текущая игровая минута сохранилась, а не умножилась в 2,5 раза. Заодно — постоянный сид мира.
+  (function migrate() {
+    const gg = S().game;
+    if (!gg || !gg.start) return;
+    const patch = {};
+    if (!gg.dayMs) { const now = Date.now(); patch.start = now - (now - gg.start) * (DAY_MS / (60 * 60 * 1000)); patch.dayMs = DAY_MS; }
+    else if (gg.dayMs !== DAY_MS) { const now = Date.now(); patch.start = now - (now - gg.start) * (DAY_MS / gg.dayMs); patch.dayMs = DAY_MS; }
+    if (gg.seed == null) patch.seed = Math.floor(gg.start / 60000) >>> 0;
+    if (Object.keys(patch).length) set({ game: Object.assign({}, gg, patch) });
+  })();
   function minutesNow(ts = Date.now()) {
     const start = g().start || ts;
     return START_MIN + ((ts - start) / DAY_MS) * 1440;
@@ -55,10 +66,11 @@
   const realMinTo = (day) => Math.max(0, ((day * 1440 - START_MIN) / 1440) * (DAY_MS / 60000) - (Date.now() - (g().start || Date.now())) / 60000);
 
   /* ---------- Транзакция ---------- */
-  function tx(title, amount, emoji, col) {
+  // day — игровой день события (для догоняющего тика: деньги попадают в свой месяц)
+  function tx(title, amount, emoji, col, day) {
     const s = S();
     set({ balance: s.balance + amount, tx: [{ t: title, c: emoji, a: amount, d: info().date, col }, ...s.tx].slice(0, 60) });
-    if (Vibe.emit) Vibe.emit("tx", { title: String(title || ""), amount });
+    if (Vibe.emit) Vibe.emit("tx", { title: String(title || ""), amount, day });
   }
   const stat = (k, n = 1) => set({ stats: Object.assign({}, S().stats, { [k]: ((S().stats || {})[k] || 0) + n }) });
 
@@ -71,11 +83,7 @@
     // Бытовые траты больше не списываются абстрактно: платишь за то, что реально купил
     // (а на автопилоте — за перекусы и метро, см. body.js). Событие нужно для учёта простоя на работе.
     ev.push({ kind: "daily", title: "", a: 0, quiet: true });
-    // Аренда
-    if (dom === PAYDAY && s.home && s.home.rent) ev.push({ kind: "rent", title: `Аренда · ${s.home.title}`, a: -s.home.rent, e: "🔑", col: "c-mint" });
-    if (dom === PAYDAY) ev.push({ kind: "bill", title: "ЖКХ (опять подорожало)", a: -utilities(s.home), e: "💡", col: "c-yellow" });
-    if (Vibe.world) Vibe.world.dayEvents(dom).forEach((x) => ev.push(x));
-    // Зарплата
+    // Зарплата приходит первой — и тут же уходит каскадом автоплатежей
     if (s.job) {
       const net = netOf(s.job);
       if (dom === 15) ev.push({ kind: "salary", title: `Аванс · ${s.job.company}`, a: Math.round(net * 0.4), e: "💸", col: "c-lime" });
@@ -85,6 +93,10 @@
         if (bonus) ev.push({ kind: "bonus", title: "Премия за задачи", a: bonus, e: "🏆", col: "c-yellow" });
       }
     }
+    // Аренда и ЖКХ — в день зарплаты
+    if (dom === PAYDAY && s.home && s.home.rent) ev.push({ kind: "rent", title: `Аренда · ${s.home.title}`, a: -s.home.rent, e: "🔑", col: "c-mint" });
+    if (dom === PAYDAY) ev.push({ kind: "bill", title: "ЖКХ (опять подорожало)", a: -utilities(s.home), e: "💡", col: "c-yellow" });
+    if (Vibe.world) Vibe.world.dayEvents(dom).forEach((x) => ev.push(x));
     // Кредиты
     (s.loans || []).forEach((l) => { if (l.left > 0 && dom === PAYDAY) ev.push({ kind: "loan", title: `Платёж по кредиту «${l.name}»`, a: -l.monthly, e: "🏦", col: "c-pink", loan: l.id }); });
     // Проценты за минус
@@ -94,7 +106,7 @@
 
   function applyEvent(ev, day) {
     if (ev.kind === "jar") { set({ jar: (S().jar || 0) + ev.jar + Math.round(ev.jar * SK.add("jarRate") / 0.12) }); return; }
-    if (ev.a) tx(ev.title, ev.a, ev.e, ev.col);
+    if (ev.a) tx(ev.title, ev.a, ev.e, ev.col, day);
     const s = S();
     if (ev.kind === "salary") { stat("salaries"); if (Vibe.body) Vibe.body.effect("salary", { quiet: true }); }
     if ((ev.kind === "rent" || ev.kind === "bill" || ev.kind === "loan") && Vibe.body) Vibe.body.effect("bill", { quiet: true });
@@ -119,11 +131,13 @@
     let last = g().processedDay ?? 0;
     const events = [];
     let guard = 0;
-    while (last < nowDay && guard++ < 400) {
-      last++;
-      dayEvents(last).forEach((ev) => { applyEvent(ev, last); events.push(Object.assign({ day: last }, ev)); });
-    }
-    if (events.length) set({ game: Object.assign({}, g(), { processedDay: last }) });
+    Vibe.state.batch(() => {
+      while (last < nowDay && guard++ < 400) {
+        last++;
+        dayEvents(last).forEach((ev) => { applyEvent(ev, last); events.push(Object.assign({ day: last }, ev)); });
+      }
+      if (events.length) set({ game: Object.assign({}, g(), { processedDay: last }) });
+    });
     if (events.length && !silent) announce(events);
     if (events.length) listeners.forEach((fn) => fn(events));
     return events;
@@ -135,7 +149,11 @@
     const pay = events.find((e) => e.kind === "salary" && /^Зарплата/.test(e.title));
     if (pay && Vibe.month && new Set(events.map((e) => e.day)).size <= 2) { Vibe.refreshCounters(); return Vibe.month.payday(events); }
     const loud = events.filter((e) => !e.quiet);
-    if (events.length > 3) return summary(events);
+    // Тихие служебные события (daily, a:0) не считаются: сводка — только про деньги
+    const money = events.filter((e) => e.a);
+    if (!money.length) return;
+    if (money.length > 3) return summary(money, events);
+    if (Vibe.busy && Vibe.busy() && loud.some((e) => e.kind === "salary")) return setTimeout(() => announce(events), 1500);
     loud.forEach((ev, i) => setTimeout(() => {
       if (ev.kind === "salary") {
         FX.confetti();
@@ -145,10 +163,11 @@
     Vibe.refreshCounters();
   }
 
-  function summary(events) {
+  function summary(events, all = events) {
+    if (Vibe.busy && Vibe.busy()) return setTimeout(() => summary(events, all), 1500);
     const plus = events.filter((e) => e.a > 0).reduce((s, e) => s + e.a, 0);
     const minus = events.filter((e) => e.a < 0).reduce((s, e) => s + e.a, 0);
-    const days = new Set(events.map((e) => e.day)).size;
+    const days = new Set(all.map((e) => e.day)).size;
     const groups = {};
     events.forEach((e) => { const k = e.kind === "daily" ? "Бытовые траты" : e.title; groups[k] = groups[k] || { e: e.e, a: 0, n: 0 }; groups[k].a += e.a; groups[k].n++; });
     const rows = Object.entries(groups).filter(([, v]) => v.a).sort((a, b) => b[1].a - a[1].a);
@@ -365,7 +384,8 @@
     const streak = s.lastLogin === yKey ? (s.streak || 0) + 1 : 1;
     const reward = Math.min(500, 40 + streak * 20);
     set({ lastLogin: today, streak });
-    setTimeout(() => {
+    const show = () => {
+      if (Vibe.busy && Vibe.busy()) return setTimeout(show, 1500);
       Vibe.modal(`
         <div class="display" style="font-size:26px">Ежедневный бонус</div>
         <p>Ты заходишь ${streak} ${plural(streak, "день", "дня", "дней")} подряд 🔥 Не прерывай серию!</p>
@@ -390,7 +410,8 @@
           });
         },
       });
-    }, 900);
+    };
+    setTimeout(show, 900);
   }
 
   /* ---------- Уведомления об откликах (на любом экране) ---------- */
@@ -414,12 +435,12 @@
   const BORN_MIN = 19 * 60;
   function begin() {
     const shift = ((BORN_MIN - START_MIN) / 1440) * DAY_MS;
-    set({ game: { start: Date.now() - shift, processedDay: 0, bornMin: BORN_MIN }, body: { energy: 42, food: 30, mood: 58 } });
+    set({ game: { start: Date.now() - shift, processedDay: 0, bornMin: BORN_MIN, dayMs: DAY_MS, seed: (Math.random() * 4294967295) >>> 0 }, body: { energy: 42, food: 30, mood: 58 } });
   }
   function boot() {
     if (!S().profile) return;
     const ev = tick({ silent: true });
-    if (ev.length) setTimeout(() => (ev.length > 3 ? summary(ev) : announce(ev)), 700);
+    if (ev.length) setTimeout(() => announce(ev), 700);
     dailyBonus();
     if (Vibe.body) Vibe.body.tick();
     setInterval(() => { if (!document.hidden) { tick(); checkApps(); if (Vibe.body) Vibe.body.tick(); if (Vibe.world) Vibe.world.tick(); } }, 5000);

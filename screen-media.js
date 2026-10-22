@@ -400,7 +400,7 @@
         <div class="card ${on ? "c-lime" : ""}" style="margin-top:14px;display:flex;align-items:center;gap:12px">
           <span class="emo ${on ? "float" : "wobble"}" style="font-size:38px">${on ? "💎" : "🫥"}</span>
           <div style="flex:1;min-width:0"><b style="font-size:16px;display:block">${on ? "Плюс активен" : "Ты пока не в семье"}</b>
-            <span style="font-size:12px;font-weight:700" class="${on ? "" : "muted"}">${on ? `${Vibe.rub(PLUS.price)}/мес${sub ? ` · списание ${sub.dom}-го` : ""} · в Плюсе ${hours} ч` : "Без Плюса доступны 2 книги и трейлеры"}</span></div>
+            <span style="font-size:12px;font-weight:700" class="${on ? "" : "muted"}">${on ? `${Vibe.rub(PLUS.price)}/мес${sub ? " · списание 30-го" : ""} · в Плюсе ${hours} ч` : "Без Плюса доступны 2 книги и трейлеры"}</span></div>
           ${on ? `<button class="btn sm" data-act="cancel">Отменить</button>` : ""}
         </div>
         ${on ? "" : `<button class="btn grad xl block" style="margin-top:14px" data-md-sub>Подключить · ${Vibe.rub(PLUS.price)}/мес <span class="arrow">→</span></button>`}

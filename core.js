@@ -7,6 +7,11 @@
 
   /* ---------- Форматирование ---------- */
   Vibe.fmt = (n) => Math.round(n).toString().replace(/\B(?=(\d{3})+(?!\d))/g, " ");
+  // Типограф меняет пробелы на неразрывные, поэтому «текст изменился?» сравниваем без их учёта
+  const nb = (x) => String(x == null ? "" : x).replace(/\u00a0/g, " ");
+  Vibe.sameText = (el, v) => !!el && nb(el.textContent) === nb(v);
+  // Экран занят: модалка, лист, оверлей итогов/ритуала/зарплаты, онбординг или концовка — новое окно ждёт очереди
+  Vibe.busy = () => !!document.querySelector(".modal, .sheet, .mr-ov") || /welcome|ending/.test(location.hash);
   Vibe.rub = (n) => Vibe.fmt(n) + " ₫";
   Vibe.esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
 
@@ -45,15 +50,28 @@
   let S;
   try { S = Object.assign({}, DEFAULT, JSON.parse(localStorage.getItem(KEY) || "{}")); } catch (e) { S = Object.assign({}, DEFAULT); }
   const listeners = new Set();
+  // Замок: после записи чужого сохранения (импорт, бэкап, новая жизнь) память больше не пишется,
+  // иначе тик за секунды до перезагрузки затрёт новое сохранение старым
+  let locked = false, batching = 0, dirty = false;
+  const write = () => { if (!locked) { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) {} } };
   Vibe.state = {
     get: () => S,
     set(patch) {
       Object.assign(S, typeof patch === "function" ? patch(S) : patch);
-      try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) {}
+      if (batching) { dirty = true; return; }
+      write();
       listeners.forEach((fn) => fn(S));
     },
+    // Пакет: много set подряд (догоняющий тик) — одна запись в storage и один вызов подписчиков
+    batch(fn) {
+      batching++;
+      try { return fn(); } finally {
+        if (--batching === 0 && dirty) { dirty = false; write(); listeners.forEach((f) => f(S)); }
+      }
+    },
     on(fn) { listeners.add(fn); return () => listeners.delete(fn); },
-    reset() { try { localStorage.removeItem(KEY); } catch (e) {} location.reload(); },
+    lock() { locked = true; },
+    reset() { locked = true; try { localStorage.removeItem(KEY); } catch (e) {} location.reload(); },
   };
 
   /* ---------- Уровни и награды ---------- */
@@ -156,6 +174,7 @@
 
   Vibe.addMoney = function (amount, { title, emoji = "💸", col = "c-lime" } = {}) {
     Vibe.state.set({ balance: S.balance + amount, tx: [{ t: title, c: emoji, a: amount, d: "Только что", col }, ...S.tx].slice(0, 40) });
+    Vibe.emit("tx", { title: String(title || ""), amount });
     Vibe.refreshCounters();
   };
 
@@ -280,6 +299,9 @@
     if (route.name === "welcome") { history.replaceState(null, "", "#/home"); return Vibe.start(); }
     stack = route.name === "home" ? ["home"] : ["home", route.key];
     if (route.name !== "home" && !location.hash) history.replaceState(null, "", "#/home");
+    // Открыли экран по ссылке или после перезагрузки: подкладываем главную в историю,
+    // чтобы «Назад» вёл на неё, а не уводил со страницы (в PWA — не молчал)
+    else if (route.name !== "home") { const h = location.hash; history.replaceState(null, "", "#/home"); history.pushState(null, "", h); }
     render(route, "first");
   };
 
@@ -467,7 +489,7 @@
       <div style="margin:14px 4px;display:grid;gap:6px;font-weight:700">
         ${feeList.map((f) => `<div style="display:flex;justify-content:space-between"><span class="muted">${f.t}</span><span>${f.a ? Vibe.rub(f.a) : "0 ₫ 🎉"}</span></div>`).join("")}
         <div style="display:flex;justify-content:space-between;align-items:baseline;margin-top:6px"><span class="display" style="font-size:20px">Итого</span><span class="big-num" style="font-size:28px">${Vibe.rub(total)}</span></div>
-        <div class="badge" style="justify-self:start;background:var(--yellow)">🪙 +${Vibe.fmt(Math.round(total * 0.03 * (S.plus ? 2 : 1)))} вайбиков кэшбеком</div>
+        <div class="badge" style="justify-self:start;background:var(--yellow)">🪙 +${Vibe.fmt(Math.round(total * ((Vibe.cashback ? Vibe.cashback.rate(svc === "eat" ? "Vibe Eat" : "Vibe Market").rate : 0.005)) * (S.plus ? 2 : 1)))} вайбиков кэшбеком</div>
       </div>
       ${Vibe.vibikiPay && Vibe.vibikiPay(total) > 0 ? `<div class="card tight" style="display:flex;align-items:center;gap:12px;margin-bottom:12px"><span style="font-size:26px">🪙</span><div style="flex:1;font-weight:800">Списать ${Vibe.fmt(Vibe.vibikiPay(total))} вайбиков<div class="muted" style="font-size:12px">1 вайбик = 1 ₫, до 30% суммы</div></div><button class="switch" data-vib></button></div>` : ""}
       <button class="btn black xl block" data-pay>Оплатить через Vibe Pay <span class="arrow">→</span></button>
@@ -504,7 +526,7 @@
   setInterval(() => {
     if (!Vibe.game || !S.game) return;
     const t = ui.clockText();
-    document.querySelectorAll("[data-gclock]").forEach((el) => { if (el.textContent !== t) el.textContent = t; });
+    document.querySelectorAll("[data-gclock]").forEach((el) => { if (!Vibe.sameText(el, t)) el.textContent = t; });
   }, 1000);
 })();
 
@@ -516,14 +538,16 @@
    ============================================================ */
 (function () {
   const SKIP = /^(SCRIPT|STYLE|TEXTAREA|INPUT|SVG|svg|text|tspan)$/;
-  const SHORT = /(^|[\s(«„"'\u00a0])([а-яёА-ЯЁ]{1,3}|[0-9]+)[ \t\n]+(?=\S)/g;
+  // Короткие слова (1–3 буквы), числа и длинные предлоги приклеиваются к следующему слову
+  const SHORT = /(^|[\s(«„"'\u00a0])([а-яёА-ЯЁ]{1,3}|[0-9]+|через|после|перед|между|около|возле|кроме|среди|вокруг|вместо|сквозь)[ \t\n]+(?=\S)/gi;
   const DASH = /[ \t\n]+([—–])/g;
-  const UNIT = /(\d)[ \t\n]+(₫|%|дн\.?|мин|ч\b|км|м\b|кг|ГБ|МБ)/g;
+  // \b в JS не видит кириллицу — границу слова проверяем явно
+  const UNIT = /(\d)[ \t\n]+(₫|%|дн\.?|мин|ч(?![а-яё])|км|м(?![а-яё])|кг|ГБ|МБ)/g;
   function fixText(t) {
     if (!/\s/.test(t)) return t;
     let r = t.replace(UNIT, "$1\u00a0$2").replace(DASH, "\u00a0$1");
     // дважды: «и в доме» — оба коротких слова подряд
-    r = r.replace(SHORT, "$1$2\u00a0").replace(SHORT, "$1$2\u00a0");
+    r = r.replace(SHORT, "$1$2\u00a0").replace(SHORT, "$1$2\u00a0").replace(SHORT, "$1$2\u00a0");
     return r;
   }
   function walk(root) {

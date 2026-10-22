@@ -35,7 +35,7 @@
   const zab = (text, mood = "sly") => `<div class="lf-zab">${Vibe.zabotik(58, mood)}<div class="lf-bubble" data-zab>${text}</div></div>`;
   function say(root, text) {
     const b = root.querySelector("[data-zab]");
-    if (!b || b.textContent === text) return;
+    if (!b || Vibe.sameText(b, text)) return;
     b.textContent = text;
     FX.bump(b);
   }
@@ -1746,7 +1746,7 @@
   function homeNow() {
     const h = S().home;
     if (!h) return `<div class="card c-coral"><div class="lf-row" style="justify-content:flex-start;gap:12px"><span class="emo wobble" style="font-size:42px">🛋️</span><div style="flex:1;min-width:0"><div class="lf-mini" style="color:var(--ink)">Ты живёшь</div><b style="display:block">У мамы на диване · 0 ₫/мес</b><div style="font-size:12px;font-weight:700">Мама намекает. Каждый день. Громко.</div><div class="lf-pills" style="margin-top:6px">${sleepBadge(null)}</div></div></div>${thingsHtml()}</div>`;
-    return `<div class="card c-lime"><div class="lf-row" style="justify-content:flex-start;gap:12px"><span class="emo float" style="font-size:42px">${h.emoji || "🏠"}</span><div style="flex:1;min-width:0"><div class="lf-mini" style="color:var(--ink)">Ты живёшь</div><b style="display:block">${esc(h.title)}</b><div style="font-size:12px;font-weight:800">${h.own ? "своя квартира 🔑 · аренда 0 ₫" : `аренда ${rub(h.rent || 0)}/мес · списание 1-го`}${h.district ? " · 📍 " + h.district : ""}</div><div class="lf-pills" style="margin-top:6px">${sleepBadge(h)}</div></div></div>${thingsHtml()}</div>`;
+    return `<div class="card c-lime"><div class="lf-row" style="justify-content:flex-start;gap:12px"><span class="emo float" style="font-size:42px">${h.emoji || "🏠"}</span><div style="flex:1;min-width:0"><div class="lf-mini" style="color:var(--ink)">Ты живёшь</div><b style="display:block">${esc(h.title)}</b><div style="font-size:12px;font-weight:800">${h.own ? "своя квартира 🔑 · аренда 0 ₫" : `аренда ${rub(h.rent || 0)}/мес · списание 30-го, в день зарплаты`}${h.district ? " · 📍 " + h.district : ""}</div><div class="lf-pills" style="margin-top:6px">${sleepBadge(h)}</div></div></div>${thingsHtml()}</div>`;
   }
   const RENT_CHIPS = [["lt40", "💸 До 40к"], ["Комната", "🚪 Комната"], ["Студия", "🛏️ Студия"], ["1-к", "🚪 1-к"], ["2-к", "🛋️ 2-к"], ["near", "💼 Рядом с работой"], ["С котом", "🐈 С котом"]];
 

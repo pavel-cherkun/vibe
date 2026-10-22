@@ -102,6 +102,7 @@
         const data = JSON.parse(json);
         if (!data || !data.profile) return { ok: false, why: "Это не сохранение Vibe" };
         save.backup("before-import");
+        Vibe.state.lock();
         localStorage.setItem(KEY, JSON.stringify(data));
         return { ok: true };
       } catch (e) {
@@ -130,6 +131,7 @@
     restore(i) {
       const b = save.backups()[i];
       if (!b || !b.data) return false;
+      Vibe.state.lock();
       localStorage.setItem(KEY, b.data);
       location.reload();
       return true;
@@ -160,7 +162,7 @@
           sh.querySelector("[data-file]").addEventListener("click", () => { save.download(); FX.toast("Файл сохранения скачан", "💾"); });
           const load = (txt) => {
             let r;
-            try { const obj = JSON.parse(txt); r = obj && obj.profile ? (save.backup("before-import"), localStorage.setItem(KEY, JSON.stringify(obj)), { ok: true }) : { ok: false, why: "Это не сохранение Vibe" }; }
+            try { const obj = JSON.parse(txt); r = obj && obj.profile ? (save.backup("before-import"), Vibe.state.lock(), localStorage.setItem(KEY, JSON.stringify(obj)), { ok: true }) : { ok: false, why: "Это не сохранение Vibe" }; }
             catch (e) { r = save.importCode(txt); }
             if (!r.ok) { FX.toast(r.why, "🫠"); FX.shake(sh); return; }
             FX.confetti(); FX.toast("Жизнь загружена. Перезапускаем…", "✅");
@@ -204,7 +206,8 @@
     CATS,
     offer() {
       const m = month();
-      let h = (S().game && S().game.start) ? (S().game.start / 1000 + m * 7919) >>> 0 : m;
+      const gs = S().game || {};
+      let h = gs.seed != null ? (gs.seed + m * 7919) >>> 0 : gs.start ? (gs.start / 1000 + m * 7919) >>> 0 : m;
       const pool = CATS.slice(); const out = [];
       while (out.length < 8 && pool.length) { h = (h * 1103515245 + 12345) >>> 0; out.push(pool.splice(h % pool.length, 1)[0]); }
       return out;
@@ -234,7 +237,7 @@
       const lim = cashback.limit();
       Vibe.ui.sheet(`
         <div class="display" style="font-size:26px">Кэшбек на ${Vibe.game.info().monthName.toLowerCase()}</div>
-        <p class="muted" style="font-weight:700;margin:6px 0 12px">${cur ? "Категории выбраны до конца месяца. Мы уважаем твой выбор. Почти." : `Выбери ${lim} категории. Без выбора — ${BASE * 100}% на всё. Подумай хорошо: передумать нельзя.`}</p>
+        <p class="muted" style="font-weight:700;margin:6px 0 12px">${cur ? "Категории выбраны до конца месяца. Мы уважаем твой выбор. Почти." : `Выбери ${lim} категории. Без выбора — ${String(BASE * 100).replace(".", ",")}% на всё. Подумай хорошо: передумать нельзя.`}</p>
         <div class="cb-grid">${offer.map((c) => `<button class="cb-card ${pick.has(c.id) ? "on" : ""}" data-cb="${c.id}" ${cur ? "disabled" : ""}><span class="emo">${c.e}</span><b>${Math.round(c.r * 100)}%</b><small>${c.t}</small></button>`).join("")}</div>
         ${cur ? "" : `<button class="btn black block" style="margin-top:14px" data-cbok disabled>Выбрать 0 из ${lim}</button>`}
         <div class="fine">Кэшбек начисляется вайбиками. 1 вайбик = 1 ₫ при оплате до 30% покупки. «Вздохи» и «Тревога» пока не тарифицируются. ${S().plus ? "С «Плюс Вайб» — 4 категории и кэшбек ×2." : "С «Плюс Вайб» — 4 категории и кэшбек ×2."}</div>`, {
@@ -366,7 +369,7 @@
   });
 
   // Перемотка времени для тестировщика (testingcheats true)
-  Vibe.timeSkip = function (hours) {
+  Vibe.timeSkip = function (hours, quiet) {
     const s = S();
     if (!s.game) return;
     Vibe.state.set({ game: Object.assign({}, s.game, { start: s.game.start - (hours / 24) * Vibe.game.DAY_MS }) });
@@ -374,7 +377,7 @@
     if (Vibe.body) Vibe.body.tick();
     if (Vibe.world) Vibe.world.tick();
     unlock.check();
-    FX.toast(`⏩ +${hours >= 24 ? hours / 24 + " дн." : hours + " ч"} игрового времени`, "⏳");
+    if (!quiet) FX.toast(`⏩ +${hours >= 24 ? hours / 24 + " дн." : hours + " ч"} игрового времени`, "⏳");
   };
 
   // Периодические задачи

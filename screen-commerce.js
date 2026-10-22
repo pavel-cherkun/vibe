@@ -1438,7 +1438,7 @@
         if (document.hidden) return;
         petRefresh(root);
         const f = root.querySelector("#pt-food");
-        if (f && f.textContent !== String(petFood())) f.textContent = petFood();
+        if (f && !Vibe.sameText(f, petFood())) f.textContent = petFood();
       }, 5000);
       root.addEventListener("click", (e) => {
         const ad = e.target.closest("[data-adopt]");

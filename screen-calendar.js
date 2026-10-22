@@ -138,11 +138,13 @@
   function dateLine(I) {
     return `${I.dom} ${MONTHS[I.month]} · ${WD[wd(I.day)]}`;
   }
+  // Игровые минуты → реальные (день длится DAY_MS)
+  const realOf = (gameMin) => (gameMin * (G().DAY_MS / 60000)) / 1440;
   function heroNote(I, minOfDay) {
-    const toMid = (1440 - minOfDay) / 24;
+    const toMid = realOf(1440 - minOfDay);
     let extra = "";
-    if (S().job && isWorkday(I.day) && minOfDay >= 540 && minOfDay < 1140) extra = ` · до конца работы ~${fmtReal((1140 - minOfDay) / 24)}`;
-    else if (minOfDay < 540 && S().job && isWorkday(I.day)) extra = ` · до работы ~${fmtReal((540 - minOfDay) / 24)}`;
+    if (S().job && isWorkday(I.day) && minOfDay >= 540 && minOfDay < 1140) extra = ` · до конца работы ~${fmtReal(realOf(1140 - minOfDay))}`;
+    else if (minOfDay < 540 && S().job && isWorkday(I.day)) extra = ` · до работы ~${fmtReal(realOf(540 - minOfDay))}`;
     return `День жизни №${I.day + 1} · до полуночи ~${fmtReal(toMid)}${extra}`;
   }
   function heroHtml(I) {
@@ -321,7 +323,7 @@
       const at = b.sleeping ? b.sleeping.at % 1440 : null;
       const ok = at != null && at >= 12 * 60 && at < 23 * 60;
       const missed = !ok && (h >= 23 || h < 7);
-      list.push({ id: "sleep", e: "😴", t: "Лечь спать до 23:00", sub: ok ? "легенда режима" : missed ? "не успел, но поспать всё ещё можно" : `осталось ~${fmtReal((1380 - mod) / 24)}`, rw: "+энергия", act: { go: "fit", label: "Спать" }, done: ok, missed: missed && !b.sleeping });
+      list.push({ id: "sleep", e: "😴", t: "Лечь спать до 23:00", sub: ok ? "легенда режима" : missed ? "уже поздно, но поспать всё ещё можно" : `осталось ~${fmtReal(realOf(1380 - mod))}`, rw: "+энергия", act: { go: "fit", label: "Спать" }, done: ok, missed: missed && !b.sleeping });
     }
 
     // Задания дня
@@ -545,7 +547,7 @@
         <h2 class="cal-h v">Продуктивность</h2>
         <div data-prod>${prodHtml(list)}</div>
 
-        <div class="fine">1&nbsp;игровой день длится 1&nbsp;реальный час, поэтому зарплата приходит быстрее, чем в&nbsp;жизни. Это единственное место, где так бывает.</div>
+        <div class="fine">1&nbsp;игровой день длится 24&nbsp;реальные минуты, поэтому зарплата приходит быстрее, чем в&nbsp;жизни. Это единственное место, где так бывает.</div>
       </div>`;
     },
 
@@ -589,7 +591,7 @@
         const t = I.time;
         const ds = [t[0], t[1], t[3], t[4]];
         root.querySelectorAll("[data-dg]").forEach((el, i) => {
-          if (el.textContent === ds[i]) return;
+          if (Vibe.sameText(el, ds[i])) return;
           el.textContent = ds[i];
           if (flip) { el.classList.remove("flip"); void el.offsetWidth; el.classList.add("flip"); }
         });

@@ -270,7 +270,7 @@
       if (!id) return;
       const ev = EVENTS.find((e) => e.id === id);
       if (!ev) return set({ pendingEvent: null });
-      if (document.querySelector(".modal")) return;
+      if (Vibe.busy ? Vibe.busy() : document.querySelector(".modal")) return;
       events.show(ev);
     },
   });
@@ -332,7 +332,8 @@
     n = Math.imul(n, 0x27d4eb2d); n ^= n >>> 15;
     return (n >>> 0) / 4294967296;
   }
-  const wSeed = () => { const g = S().game; return g && g.start ? Math.floor(g.start / 60000) % 1000003 : 4242; };
+  // Сид мира не зависит от start: перемотка («доспать», звонок) не должна перебрасывать погоду
+  const wSeed = () => { const g = S().game; return g ? (g.seed != null ? g.seed : Math.floor((g.start || 0) / 60000)) % 1000003 : 4242; };
   const wr = (day, k) => h01((wSeed() * 31 + day * 977 + k * 7919) | 0);
   const wDayCache = new Map();
   const W_E = { sun: "☀️", cloud: "☁️", rain: "🌧️", snow: "🌨️", storm: "⛈️" };
