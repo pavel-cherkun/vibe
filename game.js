@@ -249,7 +249,7 @@
       stat("promotions");
       setTimeout(() => {
         FX.confetti(); FX.confetti({ count: 80 });
-        Vibe.modal(`<div class="m-emo float">🚀</div><div class="display">Повышение!</div><p>Теперь ты ${Vibe.esc(jobTitle(S().job))}. Оклад ${Vibe.rub(salary)}. Ответственности ×3, зарплата ×${String(1.25 + SK.add("promoRaise")).replace(".", ",")}. Справедливо.</p><button class="btn black block" data-close>Я заслужил</button>`, { sound: "levelup" });
+        Vibe.modal(`<div class="m-emo float">🚀</div><div class="display">Повышение!</div><p>Теперь ты ${Vibe.esc(jobTitle(S().job))}. Оклад ${Vibe.rub(salary)}. Ответственности ×3, зарплата ×${String(1.25 + SK.add("promoRaise")).replace(".", ",")}. Справедливо.</p><button class="btn black block" data-close>Я {заслужил|заслужила}</button>`, { sound: "levelup" });
       }, 500);
     }
     return { bonus, promoted, perf };

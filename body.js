@@ -78,7 +78,7 @@
         if (b.stress < 50) {
           b.leave = null;
           b.burn = b.stress >= UP[0] ? 1 : 0;
-          notes.push({ e: "🌱", t: "Больничный закончился. Ты вернулся — береги себя, это не спринт" });
+          notes.push({ e: "🌱", t: "Больничный закончился. Ты {вернулся|вернулась} — береги себя, это не спринт" });
           const st = b.burn;
           post.push(() => Vibe.emit && Vibe.emit("burnout", { stage: st, recovered: true, stress: Math.round(b.stress) }));
         } else {
@@ -105,7 +105,7 @@
     if (st !== prev) {
       post.push(() => Vibe.emit && Vibe.emit("stress", { stage: st, prev }));
       if (!quiet) {
-        if (st > prev && st === 1) notes.push({ e: "😮‍💨", t: "Браслет: ты устал. Продуктивность −10%. Отдых — это тоже работа" });
+        if (st > prev && st === 1) notes.push({ e: "😮‍💨", t: "Браслет: ты {устал|устала}. Продуктивность −10%. Отдых — это тоже работа" });
         if (st > prev && st === 2) notes.push({ e: "😵‍💫", t: "Браслет: ты на грани. Продуктивность −25%. Пульс выше, сон хуже. Пора тормозить" });
         if (st < prev) notes.push({ e: "🌤️", t: `Стресс отступает: «${STAGES[st].t}»` });
       }
@@ -155,7 +155,7 @@
         <span class="bo-cloud" style="top:70px;animation-delay:-6s;font-size:28px">☁️</span>
         <div class="bo-fly"><span class="bo-bal">🎈</span><span class="bo-str"></span><span class="bo-ava">${ava}</span></div>
         <span class="bo-puff">💨</span>
-        <div class="bo-sign">Ушёл в себя. Вернусь через ${LEAVE_DAYS} дня</div>
+        <div class="bo-sign">{Ушёл|Ушла} в себя. Вернусь через ${LEAVE_DAYS} дня</div>
       </div>
       <div class="display" style="font-size:30px">Выгорание</div>
       <p>Твой тамагочи улетел. Больничный на ${LEAVE_DAYS} игровых дня: рабочие задачи на паузе, продуктивность 0%, настроение не выше 45.</p>
@@ -245,8 +245,8 @@
       b.stressLog = [...(b.stressLog || []), { day: prevDay, v: Math.round(b.stress || 0) }].slice(-7);
       b.steps = 0; b.stepsDay = newDay;
       b.meals = (b.meals || []).filter((m) => m.day >= newDay - 6);
-      if (b.health < 35 && !b.sick && Math.random() < 0.35) { b.sick = true; b.notes.push({ e: "🤒", t: "Ты заболел. Продуктивность ×0,5. Помогут врач (Vibe Health) и сон" }); }
-      if (b.sick && b.health > 60) { b.sick = false; b.notes.push({ e: "💪", t: "Ты выздоровел!" }); }
+      if (b.health < 35 && !b.sick && Math.random() < 0.35) { b.sick = true; b.notes.push({ e: "🤒", t: "Ты {заболел|заболела}. Продуктивность ×0,5. Помогут врач (Vibe Health) и сон" }); }
+      if (b.sick && b.health > 60) { b.sick = false; b.notes.push({ e: "💪", t: "Ты {выздоровел|выздоровела}!" }); }
     }
   }
 
@@ -312,7 +312,7 @@
         b.energy = clamp(b.energy + SLEEP_GAIN * b.sleeping.q * (Vibe.skills ? Vibe.skills.mult("sleep") : 1) * k);
         b.food = clamp(b.food - 1.5 * k);
         if (b.cur) b.cur.mins += step;
-        if (b.energy >= 100 && !isNight(h)) { const rec = endSleep(b, m); if (rec && !auto) b.notes.push({ e: "☀️", t: `Ты проснулся. Сон ${rec.hours} ч, качество ${Math.round(rec.q * 100)}%` }); }
+        if (b.energy >= 100 && !isNight(h)) { const rec = endSleep(b, m); if (rec && !auto) b.notes.push({ e: "☀️", t: `Ты {проснулся|проснулась}. Сон ${rec.hours} ч, качество ${Math.round(rec.q * 100)}%` }); }
       } else {
         b.energy = clamp(b.energy - (b.sick ? DRAIN + 1.5 : DRAIN) * (Vibe.skills ? Vibe.skills.mult("energyDrain") : 1) * k);
         b.food = clamp(b.food - 5 * k);
@@ -342,11 +342,11 @@
     // Предупреждения, пока игрок в приложении
     if (!auto) {
       const was = S().body || {};
-      if (b.food < 25 && (was.food ?? 100) >= 25) b.notes.push({ e: "🍽️", t: "Ты проголодался. Сытость 25% — продуктивность падает", go: "eat", label: "Поесть" });
+      if (b.food < 25 && (was.food ?? 100) >= 25) b.notes.push({ e: "🍽️", t: "Ты {проголодался|проголодалась}. Сытость 25% — продуктивность падает", go: "eat", label: "Поесть" });
       if (b.energy < 20 && (was.energy ?? 100) >= 20) b.notes.push({ e: "🥱", t: "Глаза слипаются. Пора спать — дома", go: "fit", label: "Спать" });
     } else if (autoNight || autoMeals || autoWork) {
       const last = (b.sleepLog || []).slice(-1)[0];
-      if (last && last.auto) b.notes.push({ e: "😴", t: `Пока тебя не было, ты поспал ${last.hours} ч. Качество ${Math.round(last.q * 100)}%` });
+      if (last && last.auto) b.notes.push({ e: "😴", t: `Пока тебя не было, ты {поспал|поспала} ${last.hours} ч. Качество ${Math.round(last.q * 100)}%` });
       const cost = autoFood + autoWork * AUTO_METRO;
       if (cost && Vibe.game && Vibe.game.tx) {
         const what = [autoFood ? `еда ×${autoFood / AUTO_SNACK}` : "", autoWork ? `метро на работу ×${autoWork}` : ""].filter(Boolean).join(", ");
@@ -354,7 +354,7 @@
       }
       if (autoWork && job) {
         Vibe.state.set({ job: Object.assign({}, S().job, { lastTaskDay: Math.max(S().job.lastTaskDay || 0, b.autoWorkDay) }) });
-        b.notes.push({ e: "💼", t: `Ты ${autoWork} ${Vibe.game.plural(autoWork, "раз", "раза", "раз")} сходил на работу на автопилоте. Работу сохранил, к повышению не приблизился`, go: "job", label: "Работа" });
+        b.notes.push({ e: "💼", t: `Ты ${autoWork} ${Vibe.game.plural(autoWork, "раз", "раза", "раз")} {сходил|сходила} на работу на автопилоте. Работу сохранил, к повышению не приблизился`, go: "job", label: "Работа" });
       }
     }
     const notes = b.notes; delete b.notes;
@@ -399,7 +399,7 @@
     salary: (b) => { b.mood = clamp(b.mood + 15); addStress(b, -6, "Пришла зарплата", "💸"); return null; },
     bill: (b) => { b.mood = clamp(b.mood - 4); addStress(b, 3, "Счета и списания", "🧾"); return null; },
     social: (b) => { b.mood = clamp(b.mood + 10); b.energy = clamp(b.energy - 4); addStress(b, -6, "Встреча с близкими", "🫂"); return "🫂 Встреча с близкими: настроение +10"; },
-    mom: (b) => { b.mood = clamp(b.mood + 6); addStress(b, -3, "Разговор с мамой", "📞"); return "📞 Поговорил с мамой. Настроение +6"; },
+    mom: (b) => { b.mood = clamp(b.mood + 6); addStress(b, -3, "Разговор с мамой", "📞"); return "📞 {Поговорил|Поговорила} с мамой. Настроение +6"; },
     // ---- Стресс и выгорание ----
     // Сессия с психологом. opts.power: 0.2 (коуч-позитивщик) … 1,3 (очно в клинике)
     therapy: (b, o) => {
@@ -485,7 +485,7 @@
       next: stage < 3 ? UP[stage] : null, why: (b.stressWhy || []).slice().reverse(), log: b.stressLog || [], streak: b.workStreak || 0,
     };
   }
-  // Изменить стресс извне: Vibe.body.addStress(+4, "Опоздал на работу", "⏰")
+  // Изменить стресс извне: Vibe.body.addStress(+4, "{Опоздал|Опоздала} на работу", "⏰")
   function addStressPub(d, why, e) { effect("stress", { d, why, e, quiet: true }); }
 
   // Чужие события, которые бьют по нервам (если их кто-то эмитит)

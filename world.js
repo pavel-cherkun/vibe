@@ -111,7 +111,7 @@
       if (e.checkedIn) return { ok: true, e, already: true };
       patchEv(id, { checkedIn: true, checkedAt: m });
       const ne = sched.get(id);
-      FX.toast(`Ты пришёл раньше на ${dur(s0 - m)}. Отметился ✅ — начнётся в ${hm(s0)}`, "🛋️", 3400);
+      FX.toast(`Ты {пришёл|пришла} раньше на ${dur(s0 - m)}. {Отметился|Отметилась} ✅ — начнётся в ${hm(s0)}`, "🛋️", 3400);
       Vibe.emit && Vibe.emit("checkin", ne);
       return { ok: true, e: ne };
     },
@@ -128,7 +128,7 @@
       if (late) {
         Vibe.emit && Vibe.emit("late", e);
         const line = (LATE_LINES[e.kind] || (() => "Календарь всё запомнил. И Вайбот тоже"))(e);
-        FX.toast(`${e.e} Опоздал на ${dur(late)}: ${e.title}. ${line}`, "😬", 4200);
+        FX.toast(`${e.e} {Опоздал|Опоздала} на ${dur(late)}: ${e.title}. ${line}`, "😬", 4200);
         Vibe.reward({ vibiki: 8, xp: 12 });
       } else {
         FX.confetti({ count: 70 });
@@ -143,7 +143,7 @@
       // Зал ожидания: началось → кто на месте, тот посетил; ушёл — отметка снята
       sched.list().filter((e) => e.status === "planned" && e.place && sched.startMin(e) <= m && sched.startMin(e) + e.dur >= m).forEach((e) => {
         if (here === e.place) sched.attend(e.id, { late: 0 });
-        else if (e.checkedIn) { patchEv(e.id, { checkedIn: false }); FX.toast(`Ты ушёл из зала ожидания: ${e.title}. Отметка снята`, "🚪", 3000); }
+        else if (e.checkedIn) { patchEv(e.id, { checkedIn: false }); FX.toast(`Ты {ушёл|ушла} из зала ожидания: ${e.title}. Отметка снята`, "🚪", 3000); }
       });
       const missed = sched.list().filter((e) => e.status === "planned" && sched.startMin(e) + e.dur < m);
       if (!missed.length) return;

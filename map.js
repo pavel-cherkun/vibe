@@ -91,6 +91,8 @@
     if (key.startsWith("flat:")) {
       const h = hash(key);
       const b = HOME_BLOCKS[h % HOME_BLOCKS.length];
+      // Родители живут в соседнем городе на другом берегу
+      if (key === "flat:Мама") return Object.assign(door(b[0], b[1], (h >> 4) % 6), { e: "🏡", label: "Родители · другой берег" });
       return Object.assign(door(b[0], b[1], (h >> 4) % 6), { e: "🏠", label: "Квартира" });
     }
     return null;

@@ -16,7 +16,7 @@
   const TIERS = [
     { id: "t0", t: "Старт", e: "🐣", screens: ["home", "fit", "calendar", "profile", "pay", "chats", "chat", "qr", "all", "job", "eat", "eat-place", "eat-track", "supermarket", "maps", "welcome", "notfound", "locked", "search", "mail", "ending"], cond: () => true, hint: "" },
     { id: "t1", t: "Первые часы", e: "📨", screens: ["gig", "learn", "people", "skills", "telecom", "flowers", "cola"], cond: (s) => ((s.life_apps || []).length > 0 || !!s.job) && lived() >= 240, hint: "Откликнись на вакансию в Vibe Job и проживи первые четыре часа" },
-    { id: "t2", t: "Нашёл работу", e: "💼", screens: ["gram", "gram-profile", "reels", "market", "music", "games", "rent", "health", "clean", "drive", "gov", "psy", "insure", "fitness", "media", "books", "cinema", "plus", "wheel"], cond: (s) => !!s.job && lived() >= 720, hint: "Устройся на работу и продержись полдня" },
+    { id: "t2", t: "{Нашёл|Нашла} работу", e: "💼", screens: ["gram", "gram-profile", "reels", "market", "music", "games", "rent", "health", "clean", "drive", "gov", "psy", "insure", "fitness", "media", "books", "cinema", "plus", "wheel"], cond: (s) => !!s.job && lived() >= 720, hint: "Устройся на работу и продержись полдня" },
     { id: "t3", t: "Первая зарплата", e: "💸", screens: ["tickets", "match", "style", "hobby", "invest", "pets", "charity", "travel"], cond: (s) => ((s.stats || {}).salaries || 0) > 0, hint: "Дождись первой зарплаты (аванс 15-го)" },
     { id: "t4", t: "Взрослая жизнь", e: "🏠", screens: ["home-buy", "auto"], cond: (s) => ((s.stats || {}).promotions || 0) > 0 || s.balance >= 100000, hint: "Получи повышение или накопи 100 000 ₫" },
   ];

@@ -14,15 +14,15 @@
       hello: ["Я у подъезда.", "Какой подъезд?", "А, это не тот дом."] },
     bank: { n: "Vibe Pay · поддержка", e: "🏦", c: "c-yellow", last: "Ваше обращение очень важно для нас", unread: 0,
       hello: ["Здравствуйте! Ваше обращение очень важно для нас.", "Вы 1 248-й в очереди. Пока ждёте — оформите кредит?"] },
-    mom: { n: "Мама", e: "👩", c: "c-mint", last: "Ты поел?", unread: 2,
-      hello: ["Ты поел?", "Купи шапку. Холодно."] },
+    mom: { n: "Мама", e: "👩", c: "c-mint", last: "Ты {поел|поела}?", unread: 2,
+      hello: ["Ты {поел|поела}?", "Купи шапку. Холодно."] },
     promo: { n: "Vibe · Акции", e: "📣", c: "c-orange", last: "−90% на всё! Ну, почти на всё", unread: 12,
-      hello: ["🔥 −90% на всё!*", "*На товары, которых нет в наличии", "Успей, пока не успел!"] },
+      hello: ["🔥 −90% на всё!*", "*На товары, которых нет в наличии", "Успей, пока не успел никто!"] },
   };
 
   const ZAB_REPLIES = {
     "Как сэкономить?": ["Отличный вопрос! Подключи «Плюс Вайб» — и экономь кэшбеком 💎", "А ещё можно не покупать. Но это не наш метод 😅"],
-    "Хочу кредит": ["Уже одобрено! Ещё до того, как ты спросил 🤑", "Перейди в Vibe Pay → Кредит. Или я сам всё сделаю?"],
+    "Хочу кредит": ["Уже одобрено! Ещё до того, как ты {спросил|спросила} 🤑", "Перейди в Vibe Pay → Кредит. Или я сам всё сделаю?"],
     "Мне грустно": ["Понимаю. Вот 3 вещи, которые помогут: рамен 🍜, новые кроссовки 👟, ещё один рамен 🍜", "Шучу. Иногда помогает просто выйти на улицу. Но такси туда — в Vibe Maps 🚕"],
     "Кто ты?": ["Я Вайбот. Я забочусь о тебе. И о показателях выручки 📈", "Но в первую очередь о тебе! Наверное."],
     "Подари вайбики": ["Ладно, ладно. Держи 🪙", "__reward__"],
@@ -113,7 +113,7 @@
         FX.sound.like();
         Vibe.reward({ xp: 3, silent: true });
         if (id === "zabotik") reply(ZAB_REPLIES[text] || ["Интересно! Кстати, у нас скидка на это 😉", "Шучу. Или нет. Загляни в Vibe Market 🛍️"]);
-        else if (id === "mom") reply(["Хорошо. А ты поел?"]);
+        else if (id === "mom") reply(["Хорошо. А ты {поел|поела}?"]);
         else reply(["Ваше сообщение очень важно для нас 🙏"]);
       };
       root.addEventListener("click", (e) => {
@@ -191,6 +191,7 @@
         <div class="li"><div class="ic c-yellow">🔊</div><div class="tx"><b>Звуки и вибрация</b><small>Дофамин на максимум</small></div><button class="switch ${s.sound ? "on" : ""}" data-act="sound"></button></div>
         <button class="li" data-go="plus" style="width:100%;text-align:left"><div class="ic c-lilac">💎</div><div class="tx"><b>Плюс Вайб</b><small>${s.plus ? "Активна · 299 ₫/мес" : "Не подключена"}</small></div><span>›</span></button>
         <button class="li" data-act="name" style="width:100%;text-align:left"><div class="ic c-mint">✏️</div><div class="tx"><b>Имя</b><small>${Vibe.esc(s.name)}</small></div><span>›</span></button>
+        <button class="li" data-act="gender" style="width:100%;text-align:left"><div class="ic c-lilac">${(s.profile || {}).g === "f" ? "👩" : "👨"}</div><div class="tx"><b>Обращаться ко мне</b><small>${(s.profile || {}).g === "f" ? "Она — «ты пришла»" : "Он — «ты пришёл»"}</small></div><div class="amt">⇄</div></button>
         ${Vibe.app && !Vibe.app.installed() ? `<button class="li" data-act="install" style="width:100%;text-align:left"><div class="ic c-grad">📲</div><div class="tx"><b>Установить Vibe</b><small>На главный экран, на весь экран, без браузера</small></div><div class="amt">→</div></button>` : ""}
         <button class="li" data-act="save" style="width:100%;text-align:left"><div class="ic c-lime">💾</div><div class="tx"><b>Сохранение</b><small>Перенести жизнь на другой телефон</small></div><span>›</span></button>
         <button class="li" data-act="cheats" style="width:100%;text-align:left"><div class="ic c-black" style="color:#c6ff4d">🎮</div><div class="tx"><b>Консоль</b><small>Для тех, кто помнит motherlode</small></div><span>›</span></button>
@@ -232,6 +233,7 @@
         if (!act) return;
         if (act.act === "save") return Vibe.save.sheet();
         if (act.act === "install") return Vibe.app.install();
+        if (act.act === "gender") { const p = Object.assign({}, S().profile); p.g = p.g === "f" ? "m" : "f"; Vibe.state.set({ profile: p }); FX.toast(p.g === "f" ? "Теперь к тебе обращаются «ты пришла»" : "Теперь к тебе обращаются «ты пришёл»", "🪞"); Vibe.replace("profile"); return; }
         if (act.act === "cheats") return Vibe.cheats.sheet();
         if (act.act === "sound") {
           const on = !S().sound;
@@ -394,7 +396,7 @@
       if (Vibe.subs) Vibe.subs.remove("plus");
       Vibe.achieve("cancel");
       FX.confetti();
-      Vibe.modal(`<div class="m-emo float">🏆</div><div class="display">Получилось!</div><p>Ты отменил подписку. Это удаётся 3% пользователей. Вайбот гордится тобой. И немного обижен.</p><button class="btn black block" data-close>Я свободен</button>`, { sound: "levelup", onClose: () => Vibe.replace("plus") });
+      Vibe.modal(`<div class="m-emo float">🏆</div><div class="display">Получилось!</div><p>Ты {отменил|отменила} подписку. Это удаётся 3% пользователей. Вайбот гордится тобой. И немного обижен.</p><button class="btn black block" data-close>Я свободен</button>`, { sound: "levelup", onClose: () => Vibe.replace("plus") });
       return;
     }
     const m = MAZE[i];

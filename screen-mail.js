@@ -214,7 +214,7 @@
   /* ================= Письмо деда ================= */
   const lives = () => (L && L.lives) || 0;
   function grandpaBody() {
-    return "Здравствуй, родной мой.\n\nЕсли ты открыл это письмо — значит, стало невыносимо. Я знаю, как это бывает. Я сам сорок лет проработал в большой конторе, где все были «одной семьёй». Семьёй, которая платит два раза в месяц.\n\nУ меня для тебя подарок. Маленькая ферма в долине: старый дом, сарай, грядки и пара упрямых куриц. Там нет кэшбека, зато есть тишина.\n\nНикаких уведомлений. Никаких предодобренных кредитов. Только утро, земля и то, что ты вырастишь сам.\n\nКлюч под горшком с геранью. Решать тебе. Я в тебя верю.\n\nТвой дедушка 👴" +
+    return "Здравствуй, родной мой.\n\nЕсли ты {открыл|открыла} это письмо — значит, стало невыносимо. Я знаю, как это бывает. Я сам сорок лет проработал в большой конторе, где все были «одной семьёй». Семьёй, которая платит два раза в месяц.\n\nУ меня для тебя подарок. Маленькая ферма в долине: старый дом, сарай, грядки и пара упрямых куриц. Там нет кэшбека, зато есть тишина.\n\nНикаких уведомлений. Никаких предодобренных кредитов. Только утро, земля и то, что ты вырастишь сам.\n\nКлюч под горшком с геранью. Решать тебе. Я в тебя верю.\n\nТвой дедушка 👴" +
       (lives() ? `\n\nP.S. Это уже ${lives() + 1}-я твоя жизнь. Ничего. Не у всех получается с первой. Грядки ждут.` : "");
   }
   function openGrandpa() {
@@ -237,7 +237,20 @@
       </div>`, {
       sound: "pop",
       onMount(m, cl) {
+        let warned = false;
         m.querySelector("[data-break]").addEventListener("click", (e) => {
+          // Сначала честное предупреждение: это письмо — одна из концовок
+          if (!warned) {
+            warned = true;
+            const btn = e.currentTarget;
+            btn.textContent = "Всё равно открыть ✉️";
+            const w = document.createElement("div");
+            w.className = "vm-warn";
+            w.innerHTML = "<b>Это письмо открывает концовку «Долина».</b> Жизнь не закончится сразу — уехать или остаться решаешь ты. Но запечатать письмо обратно нельзя.";
+            btn.parentNode.insertBefore(w, btn);
+            FX.bump(w); FX.haptic(10);
+            return;
+          }
           const env = m.querySelector("[data-env]");
           env.classList.add("open");
           FX.burst(env, { emojis: ["🍂", "🌾", "✨", "🐔"], count: 14 });
@@ -408,7 +421,7 @@
     top: { t: "Топ-менеджер", e: "👔", legend: true, d: "Дорос до директора. Корпорация гордится. Совет директоров — тоже немного.", hint: "Дорасти до 6-го уровня должности" },
     celeb: { t: "Селеба", e: "🌟", legend: true, d: "Тебя узнают на улицах Vibe City. Даже курьер Тимур просит селфи.", hint: "Максимальная слава в Vibegram" },
     rich: { t: "Миллионер", e: "💎", legend: true, d: "10 000 000 ₫ на карте. Кэшбек наконец-то заметен.", hint: "Накопить 10 000 000 ₫" },
-    soul: { t: "Душа компании", e: "🫶", legend: true, d: "Пятеро людей любят тебя на все десять сердечек. Это дороже любого кэшбека.", hint: "10 сердечек с пятью людьми" },
+    soul: { t: "Остаться вручную", corp: "Душа компании", e: "🫶", legend: true, d: "Пятеро людей рядом — не по подписке. Это дороже любого кэшбека.", hint: "Пять человек на 7+ сердечках" },
     bankrupt: { t: "Банкротство", e: "💀", d: "Коллекторы передают привет. Корпорация — тоже: «Мы всегда рядом».", hint: "Уйти в глубокий минус надолго" },
     valley: { t: "Долина", e: "🌾", d: "Там нет кэшбека, зато есть тишина.", hint: "Есть письмо, которое стоит открыть. Когда-нибудь" },
     legend: { t: "Легенда Vibe City", e: "👑", d: "" },
@@ -418,7 +431,7 @@
     top: (s) => !!s.job && (s.job.level || 0) >= 6,
     celeb: () => !!(Vibe.gram && Vibe.gram.fame && Vibe.gram.fame() >= 100),
     rich: (s) => s.balance >= 10000000,
-    soul: () => !!(Vibe.chars && Vibe.chars.list && Vibe.chars.hearts && Vibe.chars.list().filter((c) => Vibe.chars.hearts(c.id) >= 10).length >= 5),
+    soul: () => !!(Vibe.chars && Vibe.chars.list && Vibe.chars.hearts && Vibe.chars.list().filter((c) => Vibe.chars.hearts(c.id) >= 7).length >= 5),
   };
   const E = () => S().endings || {};
   const setE = (p) => set({ endings: Object.assign({}, E(), p) });
@@ -501,7 +514,7 @@
           try { ok = COND[id](s); } catch (e) { ok = false; }
           if (ok && !seenList().includes(id)) {
             markSeen(id);
-            send({ id: `legend_${id}`, kind: "official", from: "Корпорация Vibe", fe: "👑", subject: `Дорогая семья Vibe! У нас новая Легенда: ${ENDINGS[id].t}`, body: `Дорогая семья Vibe!\n\n${s.name || "Наш житель"} стал Легендой Vibe City. Путь: «${ENDINGS[id].t}».\n\nМы всегда в тебя верили. Особенно после того, как ты начал приносить нам прибыль.`, action: { label: "🎬 Смотреть финал", ending: id }, quiet: true });
+            send({ id: `legend_${id}`, kind: "official", from: "Корпорация Vibe", fe: "👑", subject: `Дорогая семья Vibe! У нас новая Легенда: ${ENDINGS[id].corp || ENDINGS[id].t}`, body: `Дорогая семья Vibe!\n\n${s.name || "Наш житель"} {стал|стала} Легендой Vibe City. Путь: «${ENDINGS[id].corp || ENDINGS[id].t}».\n\nМы всегда в тебя верили. Особенно после того, как ты {начал|начала} приносить нам прибыль.`, action: { label: "🎬 Смотреть финал", ending: id }, quiet: true });
             legendModal(id);
             break;
           }
@@ -574,8 +587,8 @@
       <div class="chips vm-tabs">${TABS.map((t) => { const n = unread(t.id); return `<button class="chip ${t.id === curTab ? "on" : ""}" data-tab="${t.id}">${t.e} ${t.t}${n ? `<span class="vm-cnt">${n}</span>` : ""}</button>`; }).join("")}</div>
       ${curTab === "spam" && rest.length ? `<div class="vm-note c-coral">🛡️ Не плати незнакомцам. Даже если они принцы.</div>` : ""}
       <div class="vm-list stagger">
-        ${gp ? grandpaHTML(gp) : ""}
         ${rest.length ? rest.map(itemHTML).join("") : `<div class="card vm-empty"><div class="emo float" style="font-size:64px">${curTab === "spam" ? "🧹" : "📭"}</div><b>${curTab === "spam" ? "Спама нет. Подозрительно." : "Пусто. Письма придут с ходом жизни."}</b><div class="muted">Банк, Госвайб, HR и мама уже пишут.</div></div>`}
+        ${gp ? grandpaHTML(gp) : ""}
       </div>
       <button class="card tap vm-end" data-go="ending"><span style="font-size:32px">🏁</span><div style="flex:1;text-align:left"><b>Финалы жизни</b><div class="muted" style="font-size:12px;font-weight:700">Открыто в этой жизни: ${seenN} из 6${lives() ? ` · прожито жизней: ${lives()}` : ""}</div></div><span style="font-size:20px">→</span></button>
       <div class="fine">Vibe Почта читает ваши письма, чтобы подбирать персональные предложения. Вы ведь не против? Вы согласились в пункте 3.14.</div>`;
@@ -732,7 +745,7 @@
           <p class="ve-sub">${esc(sm.name)} уехал. Без уведомлений. Без кэшбека. Курицы не ставят дедлайнов.</p>
           ${creditsHTML(sm, "valley")}
           ${statsHTML(sm)}
-          <div class="card" style="margin-top:12px"><b>Кого ты оставил в городе</b><div style="margin-top:8px">${relHTML(sm.rel)}</div></div>
+          <div class="card" style="margin-top:12px"><b>Кого ты {оставил|оставила} в городе</b><div style="margin-top:8px">${relHTML(sm.rel)}</div></div>
           <div class="card c-lime" style="margin-top:12px;text-align:center"><b>📜 Наследство для новой жизни: ${rub(bonus)}</b><div style="font-size:12px;font-weight:700;margin-top:4px">+ вайбики и письмо от тебя самого</div></div>
           <button class="btn black xl block" style="margin-top:16px" data-newlife="valley">🌱 Начать новую жизнь</button>
           <div class="fine">«Там нет кэшбека, зато есть тишина». — Дедушка</div>
@@ -816,6 +829,7 @@
   .vm-dot { position: absolute; top: -5px; right: -5px; width: 16px; height: 16px; border-radius: 50%; background: var(--pink); border: 2px solid var(--ink); animation: badge-bounce 2.4s var(--spring) infinite; }
   .vm-done { position: absolute; bottom: 8px; right: 10px; font-weight: 900; color: #12a150; font-size: 13px; }
   .vm-gp { background: #fdf1d6; border-style: dashed; }
+  .vm-warn { background: #fff4d6; border-radius: 14px; padding: 10px 12px; font-size: 13px; font-weight: 700; margin: 10px 0; text-align: left; }
   .vm-gp.sealed { background: linear-gradient(135deg, #fdf1d6, #f5deb0); border-style: solid; animation: vm-glow 2.6s ease-in-out infinite; }
   @keyframes vm-glow { 50% { box-shadow: 0 3px 0 var(--ink), 0 0 0 5px rgba(255,181,71,.45); } }
   .vm-gp-env { width: 50px; height: 50px; font-size: 34px; display: grid; place-items: center; position: relative; flex: 0 0 auto; }

@@ -6,7 +6,7 @@
   const AVATARS = ["😎", "🦊", "🐸", "👽", "🤠", "🐼", "🦄", "🤖", "🐱", "🧚", "🦖", "👻"];
   const STEPS = 6;
   let step = 0;
-  let data = { phone: "", name: "", avatar: "😎" };
+  let data = { phone: "", name: "", avatar: "😎", g: "" };
 
   function dots() {
     return `<div class="ob-dots">${Array.from({ length: STEPS }, (_, i) => `<span class="${i <= step ? "on" : ""}"></span>`).join("")}</div>`;
@@ -48,8 +48,9 @@
       <div class="display ob-h">Как тебя зовут?</div>
       <div class="ob-ava-big emo float" data-avabig>${data.avatar}</div>
       <div class="field"><input data-name maxlength="16" placeholder="Имя" value="${Vibe.esc(data.name)}" autocomplete="off"></div>
+      <div class="ob-gender">${[["m", "Он"], ["f", "Она"]].map(([k, t]) => `<button class="chip ${data.g === k ? "on" : ""}" data-g="${k}">${t}</button>`).join("")}</div>
       <div class="ob-avas">${AVATARS.map((a) => `<button class="ob-ava ${a === data.avatar ? "on" : ""}" data-ava="${a}">${a}</button>`).join("")}</div>
-      <button class="btn black xl block" style="margin-top:18px" data-next ${data.name ? "" : "disabled"}>Дальше</button>`,
+      <button class="btn black xl block" style="margin-top:18px" data-next ${data.name && data.g ? "" : "disabled"}>Дальше</button>`,
     // 4 — соглашение
     () => `
       ${dots()}
@@ -70,7 +71,7 @@
     () => `
       ${dots()}
       <div class="display ob-h">Добро пожаловать в город</div>
-      <p class="ob-p">Ты переехал в большой город. В кармане ${Vibe.rub(15000)} от мамы, комната в коммуналке за ${Vibe.rub(18000)} в месяц (первый месяц мама оплатила). Работы пока нет.</p>
+      <p class="ob-p">Ты {переехал|переехала} в большой город. В кармане ${Vibe.rub(15000)} от мамы, комната в коммуналке за ${Vibe.rub(18000)} в месяц (первый месяц мама оплатила). Работы пока нет.</p>
       <div class="ob-map" data-map></div>
       <div class="grid3 ob-stats stagger">
         <div class="card tight c-lime"><span class="emo">💸</span><b>${Vibe.fmt(15000)} ₫</b><small>на карте</small></div>
@@ -84,7 +85,7 @@
   Vibe.screen("welcome", {
     render() {
       if (Vibe.state.get().profile) return "";
-      step = 0; data = { phone: "", name: "", avatar: "😎" };
+      step = 0; data = { phone: "", name: "", avatar: "😎", g: "" };
       return `<div class="ob" data-ob>${VIEWS[step]()}</div>`;
     },
     mount(root) {
@@ -131,7 +132,7 @@
         }
         if (step === 3) {
           const inp = box.querySelector("[data-name]");
-          inp.addEventListener("input", () => { data.name = inp.value.trim(); box.querySelector("[data-next]").disabled = !data.name; });
+          inp.addEventListener("input", () => { data.name = inp.value.trim(); box.querySelector("[data-next]").disabled = !(data.name && data.g); });
         }
         if (step === 5) {
           const p = Vibe.map.place("flat:start");
@@ -152,6 +153,13 @@
           if (step === 3) Vibe.state.set({ name: data.name });
           show(step + 1);
         }
+        const gb = e.target.closest("[data-g]");
+        if (gb) {
+          data.g = gb.dataset.g;
+          box.querySelectorAll("[data-g]").forEach((x) => x.classList.toggle("on", x === gb));
+          FX.bump(gb);
+          const nx = box.querySelector("[data-next]"); if (nx) nx.disabled = !(data.name && data.g);
+        }
         const a = e.target.closest("[data-ava]");
         if (a) {
           data.avatar = a.dataset.ava;
@@ -171,7 +179,7 @@
 
       function finish(btn) {
         const d = new Date();
-        Vibe.state.set({ profile: { avatar: data.avatar, createdAt: Date.now() }, name: data.name || "Новичок", achievements: ["first"], lastLogin: `${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`, streak: 1 });
+        Vibe.state.set({ profile: { avatar: data.avatar, g: data.g || "m", createdAt: Date.now() }, name: data.name || "Новичок", achievements: ["first"], lastLogin: `${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`, streak: 1 });
         Vibe.game.begin();
         Vibe.game.moveHome({ title: "Комната в коммуналке", rent: 18000, emoji: "🏚️", key: "start" });
         FX.confetti();
@@ -181,7 +189,7 @@
           Vibe.resetTo("home");
           Vibe.game.boot();
           setTimeout(() => Vibe.modal(`
-            <div class="m-emo float">📦</div><div class="display" style="font-size:26px">Ты переехал!</div>
+            <div class="m-emo float">📦</div><div class="display" style="font-size:26px">Ты {переехал|переехала}!</div>
             <p>Комната в коммуналке, 19:00, коробки и пустой холодильник. Сегодня — только две вещи: поесть с кайфом и выспаться. Утро вечера мудренее, работу поищем завтра.</p>
             <button class="btn black block" data-close data-go="eat">Заказать ужин 🍜</button>`, { sound: "pop" }), 600);
         }, 1200));
@@ -212,6 +220,8 @@
   .ob-code span.on { background: var(--lime); }
   .ob-zab { display: flex; gap: 12px; align-items: center; font-weight: 800; background: #fff; border: var(--line); border-radius: 22px; padding: 12px 14px; }
   .ob-ava-big { font-size: 96px; text-align: center; margin: 4px auto 14px; display: block; }
+  .ob-gender { display: flex; gap: 8px; margin-top: 12px; }
+  .ob-gender .chip { flex: 1; justify-content: center; }
   .ob-avas { display: grid; grid-template-columns: repeat(6, 1fr); gap: 8px; margin-top: 14px; }
   .ob-ava { aspect-ratio: 1; border: 2.5px solid var(--ink); border-radius: 16px; background: #fff; font-size: 26px; transition: transform .2s var(--spring), background .2s; }
   .ob-ava.on { background: var(--yellow); transform: scale(1.12) rotate(-6deg); box-shadow: 0 3px 0 var(--ink); }

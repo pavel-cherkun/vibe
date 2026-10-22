@@ -137,7 +137,7 @@
       `<div class="mr-s mr-grad">
         <small class="mr-k">Vibe · итоги месяца</small>
         <div class="mr-huge">${name}</div>
-        <p class="mr-p">Ты прожил ещё 30 дней в Vibe City. Корпорация посчитала всё. Даже то, что ты хотел бы забыть.</p>
+        <p class="mr-p">Ты {прожил|прожила} ещё 30 дней в Vibe City. Корпорация посчитала всё. Даже то, что ты {хотел|хотела} бы забыть.</p>
         <div class="mr-emo float">📊</div>
       </div>`,
       `<div class="mr-s mr-lime">
@@ -146,7 +146,7 @@
         <div class="mr-row"><span>Ушло</span><b class="mr-num" data-cnt="${Math.round(L.out)}" data-sign="−">0</b></div>
         <div class="mr-line"></div>
         <div class="mr-row big"><span>Итог</span><b class="mr-num" data-cnt="${Math.round(Math.abs(net))}" data-sign="${net >= 0 ? "+" : "−"}">0</b></div>
-        <p class="mr-p">${net >= 0 ? `Ты сохранил ${rub(net)}. Мы уже придумали, на что их потратить` : "Ты потратил больше, чем заработал. В отчёте это называется «инвестиция в себя»"}</p>
+        <p class="mr-p">${net >= 0 ? `Ты {сохранил|сохранила} ${rub(net)}. Мы уже придумали, на что их потратить` : "Ты {потратил|потратила} больше, чем заработал. В отчёте это называется «инвестиция в себя»"}</p>
       </div>`,
       `<div class="mr-s mr-pink">
         <small class="mr-k">Куда ушли деньги</small>
@@ -361,7 +361,7 @@
       el.querySelector("[data-end]").innerHTML = `
         <div class="mr-pay-k">Осталось</div>
         <div class="mr-pay-left">${rub(kept)}</div>
-        <p class="mr-p">${neg.length ? `Зарплата пожила у тебя ${secs} ${G().plural(secs, "секунду", "секунды", "секунд")}. От неё осталось ${share}%. Автоплатежи — это забота: ты даже не успел расстроиться.` : "Ни одного автоплатежа. Корпорация проверяет, всё ли с тобой в порядке."} До аванса — 15 дней.</p>`;
+        <p class="mr-p">${neg.length ? `Зарплата пожила у тебя ${secs} ${G().plural(secs, "секунду", "секунды", "секунд")}. От неё осталось ${share}%. Автоплатежи — это забота: ты даже не {успел|успела} расстроиться.` : "Ни одного автоплатежа. Корпорация проверяет, всё ли с тобой в порядке."} До аванса — 15 дней.</p>`;
       el.querySelector("[data-end]").classList.add("in");
       const d = el.querySelector("[data-done]"); d.style.opacity = 1; d.style.pointerEvents = "auto";
       if (neg.length) FX.sound.pop();
@@ -376,7 +376,7 @@
     if (!H.length) { FX.toast("Первые итоги — в конце месяца. Живи, Корпорация считает", "📊", 2600); return; }
     Vibe.ui.sheet(`
       <div class="display" style="font-size:26px">Итоги месяцев</div>
-      <p class="muted" style="font-weight:700;margin:6px 0 12px">Всё, что ты потратил, — навсегда с нами</p>
+      <p class="muted" style="font-weight:700;margin:6px 0 12px">Всё, что ты {потратил|потратила}, — навсегда с нами</p>
       <div class="stack">${H.map((L, k) => { const net = L.inc - L.out; return `<button class="card tight tap" data-h="${k}" style="display:flex;gap:12px;align-items:center;width:100%;text-align:left"><span style="font-size:30px">📊</span><div style="flex:1"><b>${NOM[L.m % 12]}</b><small class="muted" style="display:block;font-weight:700">+${rub(L.inc)} · −${rub(L.out)} · 🪙 ${Vibe.fmt(L.cb)}</small></div><b style="color:${net >= 0 ? "#12a150" : "#e0263e"}">${net >= 0 ? "+" : "−"}${rub(Math.abs(net))}</b></button>`; }).join("")}</div>`, {
       onMount(sh, closeSh) { sh.addEventListener("click", (e) => { const b = e.target.closest("[data-h]"); if (b) { closeSh(); setTimeout(() => recap(H[+b.dataset.h]), 320); } }); },
     });

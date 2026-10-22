@@ -1,6 +1,6 @@
 /* Vibe service worker: игра открывается без сети, а обновления приходят сразу.
    Сначала сеть, при неудаче — кэш. Версия кэша меняется вместе с ?v= в index.html. */
-const CACHE = "vibe-v33";
+const CACHE = "vibe-v34";
 self.addEventListener("install", (e) => { self.skipWaiting(); });
 self.addEventListener("activate", (e) => {
   e.waitUntil(caches.keys().then((ks) => Promise.all(ks.filter((k) => k !== CACHE).map((k) => caches.delete(k)))).then(() => self.clients.claim()));
