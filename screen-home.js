@@ -258,7 +258,7 @@
       ${grown ? `<div class="card c-black promo">
         <div class="badge" style="background:var(--lime)">⚡ Персонально для тебя</div>
         <div class="display" style="font-size:30px;margin:12px 0 6px;color:var(--lime)">Предодобрено<br>500&nbsp;000&nbsp;₫</div>
-        <p style="color:#bdbac8;font-size:14px">Кредит на всё, о чём ты мечтал. Даже на то, о чём не мечтал.</p>
+        <p style="color:#bdbac8;font-size:14px">Кредит на всё, о чём ты {мечтал|мечтала}. Даже на то, о чём не мечтал.</p>
         <div style="display:flex;justify-content:space-between;align-items:center;margin-top:16px">
           <button class="btn lime" data-go="pay" data-params='{"credit":"1"}'>Забрать <span class="arrow">→</span></button>
           <span class="timer-pill" style="background:var(--pink);color:var(--ink)" data-timer>02:00</span>

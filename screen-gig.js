@@ -266,7 +266,7 @@
           <div class="card stagger" style="padding:4px 14px">${g.pend.map((p) => `<div class="li"><div class="ic c-lilac">${p.e || "⏳"}</div><div class="tx"><b>${esc(p.t)}</b><small>${p.due - today() <= 0 ? "сегодня" : `через ${p.due - today()} ${plural(p.due - today(), "день", "дня", "дней")}`}${p.client ? " · " + esc(p.client) : ""}</small></div><div class="amt">+${rub(p.a)}</div></div>`).join("")}</div>` : ""}
           ${hist.length ? `<h2 class="sec">Последние выплаты <small>всего ${rub(g.total)}</small></h2>
           <div class="card stagger" style="padding:4px 14px">${hist.map((t) => `<div class="li"><div class="ic ${t.col || "c-lime"}">${t.c}</div><div class="tx"><b>${esc(t.t)}</b><small>${esc(t.d)}</small></div><div class="amt" style="color:#12a150">+${rub(t.a)}</div></div>`).join("")}</div>` : ""}
-          <div style="margin-top:18px">${zab(g.n >= 10 ? `Ты сделал ${g.n} подработок. Корпорация гордится тобой на 25% 💜` : "Вечером работаешь у нас, днём — у нас же. Это и есть экосистема!")}</div>
+          <div style="margin-top:18px">${zab(g.n >= 10 ? `Ты {сделал|сделала} ${g.n} подработок. Корпорация гордится тобой на 25% 💜` : "Вечером работаешь у нас, днём — у нас же. Это и есть экосистема!")}</div>
           <div class="fine">Vibe Gig не является работодателем. Vibe Gig является платформой, площадкой, партнёром, другом и немного семьёй. Больничные, отпуск и пенсия в стоимость не входят. *Сразу — понятие растяжимое.</div>
         </div>`);
       }
