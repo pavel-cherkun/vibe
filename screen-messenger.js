@@ -36,7 +36,7 @@
   const bots = {};
   const ZAB = {
     "Как сэкономить?": ["Отличный вопрос! Подключи «Плюс Вайб» — и экономь кэшбеком 💎", "А ещё можно не покупать. Но это не наш метод 😅"],
-    "Хочу кредит": ["Уже одобрено! Ещё до того, как ты спросил 🤑", "Перейди в Vibe Pay → Кредит. Или я сам всё сделаю?"],
+    "Хочу кредит": ["Уже одобрено! Ещё до того, как ты {спросил|спросила} 🤑", "Перейди в Vibe Pay → Кредит. Или я сам всё сделаю?"],
     "Мне грустно": ["Понимаю. Вот 3 вещи, которые помогут: рамен 🍜, новые кроссовки 👟, ещё один рамен 🍜", "Шучу. Иногда помогает просто написать маме. Она в чатах, закреплена 📌"],
     "Кто ты?": ["Я Вайбот. Я забочусь о тебе. И о показателях выручки 📈", "Но в первую очередь о тебе! Наверное."],
     "Подари вайбики": ["__reward__"],
@@ -149,7 +149,7 @@
     else got.forEach(([id, ms]) => notify(id, ms));
   }
 
-  /* ---------- Планировщик входящих (утро, «ты поел?», «ты пропал?») ---------- */
+  /* ---------- Планировщик входящих (утро, «ты {поел|поела}?», «ты {пропал|пропала}?») ---------- */
   function contacts() {
     const ids = new Set();
     if (C()) C().list().forEach((c) => { if (C().known(c.id)) ids.add(c.id); });
@@ -316,7 +316,7 @@
 
   /* ---------- Подарки ---------- */
   const SHOP = [
-    { id: "g_flowers", name: "Букет «Извини, что пропал(а)»", e: "💐", price: 1500, tags: ["flowers"] },
+    { id: "g_flowers", name: "Букет «Извини, что {пропал|пропала}»", e: "💐", price: 1500, tags: ["flowers"] },
     { id: "g_choco", name: "Шоколадный набор «Ты заслужил(а)»", e: "🍫", price: 690, tags: ["sweets"] },
     { id: "g_cola", name: "Кола «Классика вайба», 6 банок", e: "🥤", price: 390, tags: ["cola"] },
     { id: "g_lemon", name: "Крафтовый лимонад без сахара*", e: "🧃", price: 290, tags: ["drinks"] },
@@ -402,7 +402,7 @@
     }
     if (!res || !res.ok) { FX.toast((res && res.line) || "Не получилось", "🎁"); return res; }
     const em = { love: "💖", like: "😊", neutral: "😐", hate: "🤢" }[res.reaction];
-    const txt = { love: "Попал(а) в самое сердце!", like: "Подарок понравился", neutral: "Вежливо приняли", hate: "Мимо. Совсем мимо" }[res.reaction];
+    const txt = { love: "{Попал|Попала} в самое сердце!", like: "Подарок понравился", neutral: "Вежливо приняли", hate: "Мимо. Совсем мимо" }[res.reaction];
     if (from) FX.burst(from, { emojis: res.delta > 0 ? [item.e, "💗", "✨", w.e] : [item.e, "💔", "🫠"], count: res.reaction === "love" ? 22 : 12 });
     if (res.reaction === "love") { FX.confetti({ count: res.bday ? 160 : 80 }); FX.sound.success(); }
     else if (res.reaction === "hate") FX.sound.error(); else FX.sound.like();
@@ -642,7 +642,7 @@
   function preview(r) {
     if (r.typing) return `<span class="mx-typing-t">печатает…</span>`;
     const m = r.last;
-    if (!m) return esc(r.w.bot ? (r.w.sub || "") : r.w.ch ? r.w.ch.job : "Напиши первым(ой) 👋");
+    if (!m) return esc(r.w.bot ? (r.w.sub || "") : r.w.ch ? r.w.ch.job : "Напиши {первым|первой} 👋");
     if (m.k === "gift") return `${m.f === "me" ? "Вы: " : ""}🎁 ${esc(m.t)}`;
     if (m.k === "ev") return `💗 Новая сценка: ${esc(m.t)}`;
     return `${m.f === "me" ? "Вы: " : ""}${esc(m.t)}`;

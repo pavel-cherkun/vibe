@@ -654,7 +654,7 @@
         lastEvents.forEach((x) => {
           const e = Vibe.sched.get ? Vibe.sched.get(x.id) : Vibe.sched.list().find((y) => y.id === x.id);
           if (!e || x.arrival === "early") return;
-          if (x.arrival === "late") out.push(`<div class="card flat c-coral fz-workcard"><span class="emo wobble" style="font-size:34px">⏱️</span><div style="flex:1"><b style="display:block;font-size:15px">Опоздал на ${fmtD(x.late)}: ${Vibe.esc(short(e.title, 22))}</b><small style="font-weight:700;opacity:.85">${(LATE_TXT[e.kind] || (() => "Пришёл, но календарь всё запомнил. +8 🪙 вместо 20"))(e)}</small></div></div>`);
+          if (x.arrival === "late") out.push(`<div class="card flat c-coral fz-workcard"><span class="emo wobble" style="font-size:34px">⏱️</span><div style="flex:1"><b style="display:block;font-size:15px">{Опоздал|Опоздала} на ${fmtD(x.late)}: ${Vibe.esc(short(e.title, 22))}</b><small style="font-weight:700;opacity:.85">${(LATE_TXT[e.kind] || (() => "Пришёл, но календарь всё запомнил. +8 🪙 вместо 20"))(e)}</small></div></div>`);
           else out.push(`<div class="card flat c-violet fz-workcard"><span class="emo wobble" style="font-size:34px">${e.e}</span><div style="flex:1"><b style="display:block;font-size:15px">Пришёл вовремя: ${Vibe.esc(short(e.title, 26))}</b><small style="font-weight:700;opacity:.85">Отмечено в календаре ✅ +20 🪙</small></div></div>`);
         });
         // Предстоящие здесь (в ближайшие 12 часов) — зал ожидания
@@ -815,7 +815,7 @@
             const gone = Vibe.sched.list().filter((e) => e.place === arr && smin(e) + (e.dur || 0) < at && at - smin(e) - (e.dur || 0) < 720 && e.status !== "done").sort((a, b) => smin(b) - smin(a))[0];
             if (gone) missCard = `<div class="card flat c-coral fz-workcard"><span class="emo" style="font-size:34px">🥀</span><div style="flex:1"><b style="display:block;font-size:15px">Не успел: ${Vibe.esc(short(gone.title, 24))}</b><small style="font-weight:700;opacity:.8">Всё закончилось в ${hhmm(smin(gone) + (gone.dur || 0))}. Календарь всё помнит</small></div></div>`;
           }
-          const fineCard = res.fined ? `<div class="card flat c-coral fz-workcard"><span class="emo wobble" style="font-size:34px">🚔</span><div style="flex:1"><b style="display:block;font-size:15px">Штраф за парковку −${Vibe.rub(PARK_FINE)}</b><small style="font-weight:700;opacity:.8">Ты встал там, где нельзя. Нельзя — везде</small></div></div>` : "";
+          const fineCard = res.fined ? `<div class="card flat c-coral fz-workcard"><span class="emo wobble" style="font-size:34px">🚔</span><div style="flex:1"><b style="display:block;font-size:15px">Штраф за парковку −${Vibe.rub(PARK_FINE)}</b><small style="font-weight:700;opacity:.8">Ты {встал|встала} там, где нельзя. Нельзя — везде</small></div></div>` : "";
           const fellCard = res.fell ? `<div class="card flat c-coral fz-workcard"><span class="emo wobble" style="font-size:34px">🤕</span><div style="flex:1"><b style="display:block;font-size:15px">Упал с самоката · здоровье −3</b><small style="font-weight:700;opacity:.8">Лужа победила. Страховка «Вайб Здоровье» уже звонит</small></div></div>` : "";
           const W = L.weather;
           const wxLine = W && (k === "walk" || k === "scooter") && res.mood ? `<span class="badge" style="background:${res.mood > 0 ? "var(--yellow)" : "var(--sky)"};margin-top:8px">${W.e} ${W.label} · настроение ${res.mood > 0 ? "+" : ""}${res.mood}</span>` : "";

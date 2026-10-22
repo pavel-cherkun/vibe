@@ -566,14 +566,14 @@
       if (!a || appStatus(a) !== "invite") return;
       const lateP = Vibe.sched.latePenalty ? Vibe.sched.latePenalty(e) : 0;
       Vibe.state.set({ life_ivPending: a.id, life_ivLate: lateP });
-      if (lateP > 0) FX.toast(`Ты опоздал на ${e.late} мин. HR заметил: шанс −${Math.round(lateP * 100)}%`, "⏰", 3200);
+      if (lateP > 0) FX.toast(`Ты {опоздал|опоздала} на ${e.late} мин. HR заметил: шанс −${Math.round(lateP * 100)}%`, "⏰", 3200);
       setTimeout(() => { if (!(Vibe.current && Vibe.current.route && Vibe.current.route.name === "job")) Vibe.go("job"); }, 1400);
     });
     Vibe.sched.on("interview:missed", (e) => {
       const a = apps().find((x) => x.id === e.app);
       if (!a || appStatus(a) !== "invite") return;
-      Vibe.state.set({ life_apps: apps().map((x) => (x.id === a.id ? Object.assign({}, x, { stage: "reject", shown: "reject", iv: null, rej: "Ты не пришёл. HR обиделся и ушёл плакать в переговорку." }) : x)) });
-      FX.toast(`${vacById(a.vid).co}: ты не пришёл. HR обиделся`, "🥀", 3200);
+      Vibe.state.set({ life_apps: apps().map((x) => (x.id === a.id ? Object.assign({}, x, { stage: "reject", shown: "reject", iv: null, rej: "Ты не {пришёл|пришла}. HR обиделся и ушёл плакать в переговорку." }) : x)) });
+      FX.toast(`${vacById(a.vid).co}: ты не {пришёл|пришла}. HR обиделся`, "🥀", 3200);
     });
   }
   function appExtra(a, s, v) {
@@ -584,7 +584,7 @@
     if (s === "invite") return ivBlock(a, v);
     if (s === "reject") return `<div class="lf-note" style="margin-top:10px">🥀 ${esc(a.rej)}</div>${re}`;
     if (s === "failed") return `<div class="lf-note" style="margin-top:10px">🫠 «Мы вам перезвоним». Не перезвонят.</div>${re}`;
-    if (s === "declined") return `<div class="lf-note" style="margin-top:10px">🙅 Ты отказался от оффера. HR до сих пор рассказывает об этом в курилке.</div>${re}`;
+    if (s === "declined") return `<div class="lf-note" style="margin-top:10px">🙅 Ты {отказался|отказалась} от оффера. HR до сих пор рассказывает об этом в курилке.</div>${re}`;
     return `<div class="lf-note" style="margin-top:10px">💼 Оффер принят. Это была хорошая история.</div>`;
   }
   function appRow(a) {
@@ -641,7 +641,7 @@
           e.preventDefault();
           if (b.dataset.done) return;
           b.dataset.done = 1;
-          if (spam) { bad++; FX.shake(b); FX.toast("Ты открыл «СРОЧНО!!!». Теперь ты в 14 чатах", "🔥", 1400); }
+          if (spam) { bad++; FX.shake(b); FX.toast("Ты {открыл|открыла} «СРОЧНО!!!». Теперь ты в 14 чатах", "🔥", 1400); }
           else { good++; FX.burst(b, { emojis: ["✅", "📬"], count: 5, spread: 50 }); }
           gone();
           ui(good - bad);
@@ -688,7 +688,7 @@
         } else {
           fails++;
           FX.shake(mute);
-          says.textContent = "Ты перебил начальника 😬";
+          says.textContent = "Ты {перебил|перебила} начальника 😬";
         }
       });
       schedule();
@@ -1116,7 +1116,7 @@
                     <button class="btn block" data-decline>Отказаться</button>
                   </div>`;
                 $(box, "[data-accept]").addEventListener("click", accept);
-                $(box, "[data-decline]").addEventListener("click", () => { setStage(a.id, "declined"); close(); FX.toast("Ты отказал работодателю. Легенда", "😎"); if (tab === "apps") paintPanel(); });
+                $(box, "[data-decline]").addEventListener("click", () => { setStage(a.id, "declined"); close(); FX.toast("Ты {отказал|отказала} работодателю. Легенда", "😎"); if (tab === "apps") paintPanel(); });
                 const bg = $(box, "[data-bargain]");
                 if (bg) bg.addEventListener("click", () => {
                   bargained = true;
@@ -2098,7 +2098,7 @@
         if (!s.job) fail = pick(["Банк не видит у тебя дохода. Даже нейросеть удивилась.", "Справка с места работы? А, места нет. Понятно.", "Скоринг показал: «безработный, но с амбициями». Амбиции в залог не берём."]);
         else if (m.P > netOf(s.job.salary) * 0.5) fail = `Платёж ${rub(m.P)} — больше половины твоей зарплаты (${rub(netOf(s.job.salary))} на руки). Банк волнуется. За себя.`;
         else if (s.balance < downAmt) fail = `На первый взнос нужно ${rub(downAmt)}, а на карте ${rub(Math.max(0, s.balance))}. Копилка плачет.`;
-        const steps = ["Проверяем кредитную историю…", "Смотрим, что ты лайкал в 2019…", "Считаем, сколько ты тратишь на кофе ☕", "Звоним работодателю…", "Звоним маме…", "Сверяемся с гороскопом 🔮", "Почти готово…"];
+        const steps = ["Проверяем кредитную историю…", "Смотрим, что ты {лайкал|лайкала} в 2019…", "Считаем, сколько ты тратишь на кофе ☕", "Звоним работодателю…", "Звоним маме…", "Сверяемся с гороскопом 🔮", "Почти готово…"];
         Vibe.modal(`
           <div class="lf-scan">
             <div class="wobble" style="display:inline-block">${Vibe.zabotik(96, "wow")}</div>
@@ -2246,7 +2246,7 @@
             body: n > 1 ? "Грядки помнят твои руки. Пастернак взошёл. Письмо в серванте всё ещё лежит — то самое, «когда устанешь». Ферма никуда не денется. Я — может быть. Дед." : "Доехал? Город тебя быстро обратно заберёт, я знаю. Письмо с ключами от фермы я пока придержу. Скажешь, когда устанешь от всего этого. Дед." });
         } else {
           Vibe.mail.send({ from: "Vibe Travel", subject: `Как прошла поездка: ${tr.to}?`, kind: "official",
-            body: `Надеемся, ты отдохнул и готов к новым свершениям! Оцени поездку от 5 до 5 звёзд. Кстати, с «Плюс Вайб» следующий отпуск — на 0,5% дешевле. Мы скучали. Твой рабочий чат — тоже.` });
+            body: `Надеемся, ты {отдохнул|отдохнула} и готов к новым свершениям! Оцени поездку от 5 до 5 звёзд. Кстати, с «Плюс Вайб» следующий отпуск — на 0,5% дешевле. Мы скучали. Твой рабочий чат — тоже.` });
         }
       }
       Vibe.emit && Vibe.emit("travel_end", { id: tr.id, to: tr.to, early });
@@ -3217,7 +3217,7 @@
           <p style="margin:6px 0 4px">${t.d} ${t.mo} · ${Vibe.esc(t.place || "")} · ${Vibe.esc(t.sector)} · ×${t.qty}</p>
           <div class="lf-qr">${cells}</div>
           <div class="badge" style="background:${TK_LBL[tkState(t)][1]}">№${t.code} · ${TK_LBL[tkState(t)][0]}</div>
-          ${tkState(t) === "planned" ? `<div style="margin-top:14px">${mapsBtn("club", "Доехать на концерт 🚇", "btn black block")}</div>` : tkState(t) === "missed" ? `<p style="margin:10px 0 0">Ты не доехал. Билет сгорел, сервисный сбор — тоже. Охранник грустит.</p>` : ""}
+          ${tkState(t) === "planned" ? `<div style="margin-top:14px">${mapsBtn("club", "Доехать на концерт 🚇", "btn black block")}</div>` : tkState(t) === "missed" ? `<p style="margin:10px 0 0">Ты не {доехал|доехала}. Билет сгорел, сервисный сбор — тоже. Охранник грустит.</p>` : ""}
           <button class="btn ${tkState(t) === "planned" ? "" : "black "}block" data-close style="margin-top:10px">Готово</button>
           <div class="fine">Сделай яркость экрана на максимум. Охранник всё равно попросит распечатку.</div>`, { sound: "pop" });
       }

@@ -319,7 +319,7 @@
       ${partner && partner.rel >= 70 ? `<div class="card c-pink tight" style="margin-top:12px;display:flex;gap:10px;align-items:center"><span class="emo float" style="font-size:34px">💞</span><div style="font-weight:800;font-size:13px">${esc(partner.n)} рядом — настроение растёт на встречах. Отношения ${Math.round(partner.rel)}/100</div></div>` : ""}
       ${fam.map((e) => `<div class="card c-orange tight" style="margin-top:12px;display:flex;gap:10px;align-items:center"><span class="emo wobble" style="font-size:34px">${e.e}</span><div style="font-weight:800;font-size:13px">${esc(e.title)} — ${whenText(e)}. Приди в ресторан, иначе запомнят навсегда</div></div>`).join("")}
       ${groups().map((g) => `<h2 class="sec">${g.t} <small>${g.list.length}</small></h2><div class="stack stagger">${g.list.map(personCard).join("")}</div>`).join("")}
-      ${zab(Vibe.people.get("mom") && today() - (Vibe.people.get("mom").last ?? today()) >= 3 ? "Ты не звонил маме несколько дней. Я не давлю. Я просто напоминаю каждые 5 минут." : "Отношения остывают, если не общаться пару дней. Как кофе. И как мы с тобой, если ты не заходишь в Vibe.")}
+      ${zab(Vibe.people.get("mom") && today() - (Vibe.people.get("mom").last ?? today()) >= 3 ? "Ты не {звонил|звонила} маме несколько дней. Я не давлю. Я просто напоминаю каждые 5 минут." : "Отношения остывают, если не общаться пару дней. Как кофе. И как мы с тобой, если ты не заходишь в Vibe.")}
       <div class="fine">Vibe Близкие не читает ваши переписки*. *Только анализирует.</div>`;
   }
 
@@ -921,7 +921,7 @@
           FX.toast(pick(["Акции Корпорации выросли на 0,0000001%. Спасибо!", "Корпорация купила на это полскрепки для совета директоров", "Ваш вклад учтён. В графе «прочие доходы»"]), "🏢", 3400);
           FX.burst(b, { emojis: ["💸", "🏢"], count: 6 });
         } else {
-          moodUp(Math.min(12, 3 + Math.round(a / 150)), `💚 Ты сделал доброе дело. Настроение +${Math.min(12, 3 + Math.round(a / 150))}`);
+          moodUp(Math.min(12, 3 + Math.round(a / 150)), `💚 Ты {сделал|сделала} доброе дело. Настроение +${Math.min(12, 3 + Math.round(a / 150))}`);
           FX.burst(b, { emojis: [c.e, "💚", "✨"], count: 14 }); FX.sound.like();
           if (repTitle(before)[1] !== repTitle(before + gain)[1]) { FX.confetti(); FX.toast(`Новый статус: ${repTitle(before + gain)[1]}`, repTitle(before + gain)[2], 3000); }
         }
