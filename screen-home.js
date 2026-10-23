@@ -138,7 +138,7 @@
       <div class="card goal-card ${goal.done ? "c-yellow" : ""}">
         <div style="display:flex;gap:12px;align-items:center">
           <span class="emo ${goal.done ? "wobble" : "float"}" style="font-size:42px">${goal.e}</span>
-          <div style="flex:1"><small class="muted" style="font-weight:800">Цель ${goal.index} из ${goal.total}</small><div class="display" style="font-size:19px">${goal.t}</div></div>
+          <div style="flex:1"><button class="muted" data-act="goals" style="font-weight:800;font-size:12px;background:none;border:0;padding:0;color:inherit">Цель ${goal.index} из ${goal.total} · все цели ›</button><div class="display" style="font-size:19px">${goal.t}</div></div>
         </div>
         <div class="progress" style="margin:10px 0 8px"><i style="--p:${Math.round(goal.progress * 100)}%"></i></div>
         ${goal.done ? `<button class="btn black block" data-act="goal">Забрать +${goal.r} 🪙</button>` : `<button class="btn sm" data-go="${goal.go}">Как это сделать →</button>`}
@@ -352,6 +352,7 @@
       root.addEventListener("click", (e) => {
         const a = e.target.closest("[data-act]");
         if (!a) return;
+        if (a.dataset.act === "goals") { e.stopPropagation(); Vibe.game.goalsSheet(); }
         if (a.dataset.act === "goal") { e.stopPropagation(); Vibe.game.claimGoal(a); setTimeout(refreshLife, 400); }
         if (a.dataset.act === "cook" && Vibe.intercept) { e.stopPropagation(); Vibe.intercept.cook(a); setTimeout(refreshLife, 800); }
         if (a.dataset.act === "quest") { e.stopPropagation(); Vibe.game.claimQuest(a.dataset.q, a); setTimeout(refreshLife, 300); }

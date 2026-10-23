@@ -12,15 +12,12 @@
 
   function stats() {
     const s = S();
-    const b = Vibe.body ? Vibe.body.get() : null;
     const out = [
       ["🧥", "Внешность", Vibe.inv ? Vibe.inv.look() + "%" : "—", "c-violet"],
       ["💝", "Репутация", String(s.pp_rep || 0), "c-pink"],
     ];
     if (Vibe.gram && Vibe.gram.fame) out.push(["⭐", "Слава", Math.round(Vibe.gram.fame()) + "/100", "c-yellow"]);
     if (Vibe.gram && Vibe.gram.followers) out.push(["👥", "Подписчики", Vibe.fmt(Vibe.gram.followers()), "c-mint"]);
-    if (b) out.push(["⚡", "Энергия", Math.round(b.energy) + "%", "c-lime"], ["❤️", "Здоровье", Math.round(b.health) + "%", "c-coral"], ["😊", "Настроение", Math.round(b.mood) + "%", "c-sky"]);
-    out.push(["🏆", "Ачивки", String((s.achievements || []).length), "c-orange"]);
     return out;
   }
 

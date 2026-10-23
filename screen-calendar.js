@@ -264,8 +264,6 @@
   /* ============================================================
      3. Дела на сегодня — тап по делу выполняет его
      ============================================================ */
-  const QGO = { eat: "eat", taxi: "maps", work: "job", pay: "market", supermarket: "supermarket", apply: "job", market: "market" };
-  const questGo = (id) => QGO[id] || (String(id).startsWith("visit:") ? String(id).slice(6) : "home");
 
   function todos() {
     const s = S(), b = body(), I = G().info();
@@ -326,10 +324,6 @@
       list.push({ id: "sleep", e: "😴", t: "Лечь спать до 23:00", sub: ok ? "легенда режима" : missed ? "уже поздно, но поспать всё ещё можно" : `осталось ~${fmtReal(realOf(1380 - mod))}`, rw: "+энергия", act: { go: "fit", label: "Спать" }, done: ok, missed: missed && !b.sleeping });
     }
 
-    // Задания дня
-    G().quests().forEach((q) => {
-      list.push({ id: "q:" + q.id, quest: true, e: q.e, t: q.t, sub: q.claimed ? "награда получена" : `${Math.min(q.n, q.need)}/${q.need} · +${q.r} 🪙`, rw: `+${q.r} 🪙`, prog: Math.min(q.n, q.need) / q.need, done: q.claimed, claim: q.done && !q.claimed ? q.id : null, act: { go: questGo(q.id), label: "Открыть" } });
-    });
     return list;
   }
   function todoRow(x) {

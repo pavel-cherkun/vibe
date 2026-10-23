@@ -79,6 +79,7 @@
   /* ---------- Ужин руками ---------- */
   function cook(fromEl) {
     if (!live()) return;
+    if (Vibe.emit) Vibe.emit("manual", { kind: "cook" });
     const b = Vibe.body ? Vibe.body.get() : null;
     if (!b || (b.fridge || 0) <= 0) {
       FX.toast("В холодильнике пусто. Можно купить продуктов — или заказать готовое", "🧊", 3200, { go: "supermarket", label: "Продукты" });

@@ -373,6 +373,17 @@
     Vibe.modal(`<div class="m-emo float">${g0.e}</div><div class="display" style="font-size:26px">Цель выполнена!</div><p>«${g0.t}». +${g0.r} вайбиков. Следующая цель уже ждёт.</p><button class="btn black block" data-close>Дальше</button>`, { sound: "levelup" });
   }
 
+  function goalsSheet() {
+    const s = S(), done = s.goalsDone || [], cur = goal();
+    Vibe.ui.sheet(`
+      <div class="display" style="font-size:24px">Цели жизни</div>
+      <p class="muted" style="font-weight:700;margin:4px 0 12px">Выполнено ${done.length} из ${GOALS.length}. Корпорация подобрала их для тебя</p>
+      <div class="card" style="padding:4px 16px">${GOALS.map((g0) => {
+        const ok = done.includes(g0.id), now = cur && cur.id === g0.id;
+        return `<div class="li" style="${ok || now ? "" : "opacity:.5"}"><div class="ic ${ok ? "c-lime" : now ? "c-yellow" : "c-white"}">${ok ? "✓" : now ? g0.e : "🔒"}</div><div class="tx"><b>${g0.t}</b><small>${ok ? "выполнено" : now ? `сейчас · ${Math.round(cur.progress * 100)}% · +${g0.r} 🪙` : `+${g0.r} 🪙`}</small></div></div>`;
+      }).join("")}</div>`);
+  }
+
   /* ---------- Ежедневный бонус (реальные дни) ---------- */
   function dailyBonus() {
     const s = S();
@@ -452,7 +463,7 @@
     DAY_MS, info, minutes: () => minutesNow(), tick, upcoming, runway, begin, boot, on: (fn) => (listeners.add(fn), () => listeners.delete(fn)),
     setJob, quitJob, jobTitle, tasksLeft, completeTask, TASKS_PER_DAY,
     moveHome, buyHome, addLoan, tx,
-    quests, track, claimQuest, goal, claimGoal, GOALS,
+    quests, track, claimQuest, goal, claimGoal, goalsSheet, GOALS,
     realMinTo, plural, stat,
   };
 
