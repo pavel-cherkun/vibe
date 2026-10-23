@@ -2188,14 +2188,15 @@
 
   /* ---------- Достижения ---------- */
   const INV_ACH = {
-    inv_top: { e: "🏔️", t: "Купил на хаях", d: "Купил актив на 30-дневном максимуме" },
+    inv_top: { e: "🏔️", t: "{Купил|Купила} на хаях", d: "{Купил|Купила} актив на 30-дневном максимуме" },
     inv_div: { e: "💰", t: "Первые дивиденды", d: "Пассивный доход пришёл сам" },
-    inv_hodl: { e: "💎", t: "HODL 30 дней", d: "Держал актив 30 игровых дней" },
-    inv_qual: { e: "🎓", t: "Квалифицированный", d: "Сдал тест инвестора" },
-    inv_crash: { e: "🫠", t: "Пережил крах", d: "Был в рынке в чёрный вторник" },
-    inv_dep: { e: "🏦", t: "Стабильный вайб", d: "Дождался конца вклада" },
-    inv_meme: { e: "🐸", t: "Мем-магнат", d: "Купил мем-коин на пампе" },
+    inv_hodl: { e: "💎", t: "HODL 30 дней", d: "{Держал|Держала} актив 30 игровых дней" },
+    inv_qual: { e: "🎓", t: "{Квалифицированный|Квалифицированная}", d: "{Сдал|Сдала} тест инвестора" },
+    inv_crash: { e: "🫠", t: "{Пережил|Пережила} крах", d: "{Был|Была} в рынке в чёрный вторник" },
+    inv_dep: { e: "🏦", t: "Стабильный вайб", d: "{Дождался|Дождалась} конца вклада" },
+    inv_meme: { e: "🐸", t: "Мем-магнат", d: "{Купил|Купила} мем-коин на пампе" },
   };
+  if (Vibe.ACH) Object.keys(INV_ACH).forEach((id) => { if (!Vibe.ACH[id]) Vibe.ACH[id] = INV_ACH[id]; });
   function invAch(id) {
     try {
       if (Vibe.ACH && !Vibe.ACH[id]) Vibe.ACH[id] = INV_ACH[id];
@@ -2597,8 +2598,9 @@
           <div class="card flat fz-tax"><span style="font-size:26px">🏛️</span><div style="flex:1;min-width:0"><b style="display:block;font-size:13px">Налоги и вычеты</b><small style="font-weight:700;font-size:12px">Реализованная прибыль за игровой год: ${Vibe.rub(Vibe.invest.realizedYear())}. Курс коуча — это «обучение», его можно вернуть вычетом в Госвайбе. Коуч об этом не знает.</small></div></div>`;
       }
       function achHtml() {
-        return `<h2 class="sec">Достижения инвестора</h2>
-          <div class="fz-ach stagger">${Object.entries(INV_ACH).map(([id, a]) => `<div class="card ${hasAch(id) ? "c-lime" : "flat"}" style="${hasAch(id) ? "" : "opacity:.55"}"><span style="font-size:28px">${hasAch(id) ? a.e : "🔒"}</span><b>${a.t}</b><small>${a.d}</small></div>`).join("")}</div>`;
+        // Достижения живут в Vibegram; здесь — только счётчик и ссылка
+        const n = Object.keys(INV_ACH).filter(hasAch).length;
+        return `<button class="card flat tap" data-gramach style="display:flex;gap:12px;align-items:center;width:100%;text-align:left;margin:14px 0"><span style="font-size:26px">🏆</span><div style="flex:1"><b>Достижения инвестора: ${n} из ${Object.keys(INV_ACH).length}</b><small style="display:block;font-weight:700">Все достижения — в альбоме Vibegram</small></div><span>›</span></button>`;
       }
       function sparks() {
         const td = gDay();

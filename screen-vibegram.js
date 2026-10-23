@@ -1022,6 +1022,7 @@
       injectCss();
       root.classList.add("vg-shell");
       if (p.tab === "reels") setTimeout(() => (Vibe.replace || Vibe.go)("reels", {}), 0);
+      if (p.album) setTimeout(achAlbum, 380);
       const body = root.querySelector("[data-body]"), scroller = root.querySelector("[data-scroll]"), top = root.querySelector("[data-top]");
       const stg = (el) => el.querySelectorAll(".stagger").forEach((g) => [...g.children].forEach((c, i) => c.style.setProperty("--i", Math.min(i, 12))));
       const draw = () => {
@@ -1430,7 +1431,15 @@
   setInterval(tick, 7000);
 
   /* ---------- Публичный API ---------- */
+  // Единственное место достижений — альбом в профиле Vibegram. Отовсюду ведёт сюда
+  function albumFromAnywhere() {
+    if (Vibe.unlock && !Vibe.unlock.isOpen("gram")) { FX.toast("Достижения живут в Vibegram. Он откроется, когда найдёшь работу — а ачивки уже копятся", "🏆", 3200); return; }
+    Vibe.go("gram", { tab: "me", album: 1 });
+  }
+  document.addEventListener("click", (e) => { const b = e.target.closest("[data-gramach]"); if (b) { FX.bump(b); albumFromAnywhere(); } });
+
   Vibe.gram = {
+    album: albumFromAnywhere,
     post, followers, fame, canDM, tier: () => Object.assign({ i: tierIdx() }, TIERS[tierIdx()]), TIERS,
     stars: allStars, account: acc, moment: (kind, d, e) => moment(makeMoment(kind, d || {}, e)),
     open: (id) => (id === "me" ? Vibe.go("gram", { tab: "me" }) : Vibe.go("gram-profile", { id })),

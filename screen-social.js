@@ -136,6 +136,12 @@
   `);
 
   /* ================= Профиль ================= */
+  function thingsSheet() {
+    const L = Vibe.inv ? Vibe.inv.list() : [];
+    Vibe.ui.sheet(`<div class="display" style="font-size:24px">Мои вещи</div>
+      <p class="muted" style="font-weight:700;margin:4px 0 12px">${L.length ? "Всё, что ты {купил|купила} и не {вернул|вернула}" : "Пока пусто. Маркет Vibe это исправит"}</p>
+      <div class="grid3 stagger">${L.map((i) => `<div class="card tight" style="text-align:center"><div style="font-size:30px">${i.e}</div><b style="font-size:12px;display:block">${Vibe.esc(i.name)}</b><small class="muted" style="font-size:10px;font-weight:800">${Object.entries(i.bonus || {}).filter(([, v]) => v).map(([k, v]) => `+${v} ${{ sleep: "сон", mood: "настр.", look: "стиль", energy: "энерг.", health: "здор." }[k] || k}`).join(" · ")}</small></div>`).join("")}</div>`);
+  }
   Vibe.screen("profile", {
     render() {
       const s = S();
@@ -152,7 +158,7 @@
       <div class="grid3 stagger" style="margin-top:14px">
         <div class="card tight c-yellow stat"><span class="emo">🪙</span><b data-vibiki>${Vibe.fmt(s.vibiki)}</b><small>вайбиков</small></div>
         <div class="card tight c-orange stat"><span class="emo">🔥</span><b>${s.streak}</b><small>дней подряд</small></div>
-        <div class="card tight c-mint stat"><span class="emo">🏆</span><b>${s.achievements.length}</b><small>ачивок</small></div>
+        <button class="card tight c-mint stat tap" data-gramach><span class="emo">🏆</span><b>${s.achievements.length}</b><small>ачивок · в Vibegram</small></button>
       </div>
 
       <h2 class="sec">Моя жизнь <small>${Vibe.game.info().label}</small></h2>
@@ -163,28 +169,24 @@
           ["🏠", "c-yellow", "Жильё", s.home ? `${s.home.title}${s.home.own ? " · своё!" : ` · ${Vibe.rub(s.home.rent)}/мес`}` : "—"],
           ["💸", "c-lime", "Зарплат получено", String((s.stats || {}).salaries || 0)],
           ["🏦", "c-pink", "Кредитов", String((s.loans || []).length)],
-          ["🎯", "c-orange", "Целей выполнено", `${(s.goalsDone || []).length} из ${Vibe.game.GOALS.length}`],
           ["🎂", "c-white", "Возраст", `${21 + Math.floor(Vibe.game.info().day / 360)} лет`],
-          ["🧥", "c-violet", "Внешность", Vibe.inv ? `${Vibe.inv.look()}%` : "—"],
-          ["💝", "c-mint", "Репутация", String(s.pp_rep || 0)],
         ].map(([e, c, t, d]) => `<div class="li"><div class="ic ${c}">${e}</div><div class="tx"><b>${t}</b><small>${Vibe.esc(d)}</small></div></div>`).join("")}
       </div>
 
-      ${Vibe.inv && Vibe.inv.list().length ? `
-      <h2 class="sec">Мои вещи <small>${Vibe.inv.list().length}</small></h2>
-      <div class="grid3 stagger">${Vibe.inv.list().map((i) => `<div class="card tight" style="text-align:center"><div style="font-size:30px">${i.e}</div><b style="font-size:12px;display:block">${Vibe.esc(i.name)}</b><small class="muted" style="font-size:10px;font-weight:800">${Object.entries(i.bonus || {}).filter(([, v]) => v).map(([k, v]) => `+${v} ${{ sleep: "сон", mood: "настр.", look: "стиль", energy: "энерг.", health: "здор." }[k] || k}`).join(" · ")}</small></div>`).join("")}</div>` : ""}
+      <h2 class="sec">Игра</h2>
+      <div class="card" style="padding:4px 16px">
+        ${[
+          ["⭐", "c-yellow", "Персонаж и навыки", "класс, перки, внешность, репутация, слава", 'data-go="skills"'],
+          ["🎯", "c-orange", "Цели жизни", `${(s.goalsDone || []).length} из ${Vibe.game.GOALS.length}`, 'data-act="goals"'],
+          ["🏆", "c-mint", "Достижения", `${s.achievements.length} из ${Vibe.ACH_LIST().length} · альбом в Vibegram`, "data-gramach"],
+          ["🎒", "c-violet", "Мои вещи", Vibe.inv && Vibe.inv.list().length ? `${Vibe.inv.list().length} шт.` : "пока пусто", 'data-act="things"'],
+          ["🎬", "c-pink", "Финалы жизни", "как закончить эту жизнь — в письмах Корпорации", 'data-go="ending"'],
+        ].map(([e, c, t, d, a]) => `<button class="li" ${a} style="width:100%;text-align:left"><div class="ic ${c}">${e}</div><div class="tx"><b>${t}</b><small>${Vibe.esc(d)}</small></div><span>›</span></button>`).join("")}
+      </div>
 
       ${Vibe.subs && Vibe.subs.list().length ? `
       <h2 class="sec">Подписки <small>${Vibe.rub(Vibe.subs.total())}/мес</small></h2>
       <div class="card" style="padding:4px 16px">${Vibe.subs.list().map((x) => `<div class="li"><div class="ic c-lilac">${x.e}</div><div class="tx"><b>${Vibe.esc(x.name)}</b><small>${Vibe.rub(x.price)} · списание 30-го</small></div>${x.id === "plus" ? `<button class="btn sm" data-go="plus">Управлять</button>` : `<button class="btn sm" data-unsub="${x.id}">Отменить</button>`}</div>`).join("")}</div>` : ""}
-
-      <h2 class="sec">Достижения <small>${s.achievements.length} из ${Vibe.ACH_LIST().length}</small></h2>
-      <div class="grid3 stagger">
-        ${Vibe.ACH_LIST().map(([id, a]) => {
-          const got = s.achievements.includes(id);
-          return `<button class="ach ${got ? "got" : ""}" data-ach="${id}"><span class="emo ${got ? "float" : ""}">${got ? a.e : "🔒"}</span><b>${a.t}</b></button>`;
-        }).join("")}
-      </div>
 
       <h2 class="sec">Настройки</h2>
       <div class="card" style="padding:4px 16px">
@@ -217,21 +219,13 @@
           });
           return;
         }
-        const a = e.target.closest("[data-ach]");
-        if (a) {
-          const ach = Vibe.ACH[a.dataset.ach];
-          const got = S().achievements.includes(a.dataset.ach);
-          FX.bump(a);
-          if (got) FX.burst(a, { emojis: [ach.e, "✨"], count: 10 });
-          else FX.shake(a);
-          FX.toast(got ? `${ach.t}: ${ach.d}` : `Закрыто: ${ach.d}`, got ? ach.e : "🔒");
-          return;
-        }
         const sk = e.target.closest("[data-skip]");
         if (sk) { Vibe.timeSkip(+sk.dataset.skip); FX.bump(sk); return; }
         const act = (e.target.closest("[data-act]") || {}).dataset;
         if (!act) return;
         if (act.act === "save") return Vibe.save.sheet();
+        if (act.act === "goals") return Vibe.game.goalsSheet();
+        if (act.act === "things") return thingsSheet();
         if (act.act === "install") return Vibe.app.install();
         if (act.act === "gender") { const p = Object.assign({}, S().profile); p.g = p.g === "f" ? "m" : "f"; Vibe.state.set({ profile: p }); FX.toast(p.g === "f" ? "Теперь к тебе обращаются «ты пришла»" : "Теперь к тебе обращаются «ты пришёл»", "🪞"); Vibe.replace("profile"); return; }
         if (act.act === "cheats") return Vibe.cheats.sheet();

@@ -410,8 +410,32 @@
     ["hello", /^(привет|хай|ку|йо|алло|эй)([^а-я]|$)|^(здравств|добр)/, H.hello],
   ];
 
+  /* ---------- Справка Корпорации: база знаний kb.js ---------- */
+  // Карточка: { id, k: [регэкспы], s: [экраны], t: ответ (строка или массив), go, gl, v: 0 честно / 1 вуаль }
+  const WIKI_Q = /^(что такое|что за|когда|кто так|что значит|зачем|почему|для чего|откуда|где (найти|посмотреть|мои|мой|моя|мо[её])|как (работает|устроен|получить|открыть|заработать|прокачать|повысить|узнать|найти|понять|выбрать))/;
+  function kbFind(t) {
+    const cards = (Vibe.kb && Vibe.kb.cards) || [];
+    const scr = ctx().screen;
+    let best = null, bs = 0;
+    for (const c of cards) {
+      let sc = 0;
+      for (const re of c.k) if (re.test(t)) sc += 2;
+      if (!sc) continue;
+      if (scr && c.s && c.s.includes(scr)) sc += 1;
+      if (sc > bs) { bs = sc; best = c; }
+    }
+    return best ? { card: best, score: bs } : null;
+  }
+  function kbAnswer(card) {
+    const text = Array.isArray(card.t) ? pick(card.t) : card.t;
+    const actions = card.go && screenExists(card.go) ? [{ label: card.gl || "Открыть", go: card.go, params: card.gp }] : [];
+    return { text, actions, intent: "kb", kb: card.id, veil: card.v || 0 };
+  }
+
   function ask(raw) {
     const t = norm(raw);
+    const kb = kbFind(t);
+    if (kb && (WIKI_Q.test(t) || kb.score >= 4)) return kbAnswer(kb.card);
     const prevBot = lastBot();
     // «да / давай / ок» — выполнить первую кнопку прошлого ответа
     if (/^(да|давай|ок|окей|го|погнали|хочу|делай|ага|конечно)[!. ]*$/.test(t) && prevBot && prevBot.a && prevBot.a.length) {
@@ -426,6 +450,7 @@
       res = Object.assign({ actions: [] }, res, { intent: id });
       return ["remind", "help", "thanks", "joke"].includes(id) ? res : withUpsell(res);
     }
+    if (kb) return kbAnswer(kb.card);
     return Object.assign(H.fallback(t), { intent: "fallback" });
   }
 
@@ -482,11 +507,22 @@
   }
   let abRefresh = null;
   const llmReady = () => { try { return !!(Vibe.llm && Vibe.llm.enabled() && Vibe.llm.status().ready); } catch (e) { return false; } };
+  // Модель подключается к свободным вопросам и к честным карточкам справки; вуаль остаётся дословной
+  const smart = (res) => llmReady() && (res.intent === "fallback" || (res.intent === "kb" && !res.veil));
+  const kbCard = (res) => (res.intent === "kb" && Vibe.kb ? Vibe.kb.cards.find((c) => c.id === res.kb) : null);
+  // Ответ с умным пересказом: промис с итоговым текстом (для мессенджера и листа)
+  function respondSmart(text) {
+    const res = respond(text);
+    if (!smart(res)) return Promise.resolve(res);
+    return llmRewrite(kbCard(res)).then((ok) => (ok ? Object.assign({}, res, { text: lastBot().t }) : res));
+  }
   /* [LLM] только свободные вопросы (intent fallback) — кнопки и интенты остаются скриптом */
-  function llmRewrite() {
+  function llmRewrite(card) {
     const log = mem().log || [];
     const hist = log.slice(0, -1).slice(-6).map((m) => ({ role: m.r === "me" ? "user" : "assistant", content: m.t }));
-    return Vibe.llm.reply(hist, { maxTokens: 120, timeout: 25000 }).then((txt) => {
+    // Справка: модель только пересказывает карточку своим голосом, ничего не придумывая
+    const system = card ? Vibe.llm.vaibotSystem() + "\n\nСПРАВКА КОРПОРАЦИИ (ответь по ней, своими словами, 1–3 предложения; фактов сверх справки не добавляй):\n" + (Array.isArray(card.t) ? card.t[0] : card.t) : undefined;
+    return Vibe.llm.reply(hist, { maxTokens: 120, timeout: 25000, system }).then((txt) => {
       const m = mem(), l = (m.log || []).slice();
       for (let i = l.length - 1; i >= 0; i--) if (l[i].r === "bot") { l[i] = Object.assign({}, l[i], { t: txt, ai: 1 }); break; }
       set({ ab_mem: Object.assign({}, m, { log: l }) });
@@ -621,7 +657,7 @@
         FX.sound.pop && FX.sound.pop();
         tos.push(setTimeout(() => {
           const res = respond(text);
-          if (res.intent === "fallback" && llmReady()) { llmRewrite().then(() => { if (alive) { logEl.innerHTML = (mem().log || []).map(bubble).join(""); scroll(); const last = logEl.lastElementChild; if (last) FX.bump(last); } }); return; } // [LLM]
+          if (smart(res)) { llmRewrite(kbCard(res)).then(() => { if (alive) { logEl.innerHTML = (mem().log || []).map(bubble).join(""); scroll(); const last = logEl.lastElementChild; if (last) FX.bump(last); } }); return; } // [LLM]
           const t = logEl.querySelector("[data-typing]"); if (t) t.remove();
           const log = mem().log || [];
           // если память обрезалась — перерисуем целиком
@@ -659,14 +695,14 @@
   });
 
   /* ---------- Публичный API и регистрация в мессенджере ---------- */
-  Vibe.vaibot = { ask: (t) => respond(t), reply, run, intents: () => INTENTS.map((x) => x[0]), reminders: () => S().ab_rem || [], remind: (at, text, alarm) => addReminder(at, text, alarm) };
+  Vibe.vaibot = { ask: (t) => respond(t), askSmart: respondSmart, setCtx, log: () => mem().log || [], bubble, run, intents: () => INTENTS.map((x) => x[0]), reminders: () => S().ab_rem || [], remind: (at, text, alarm) => addReminder(at, text, alarm) };
 
   let tries = 0, registered = false;
   function register() {
     if (registered) return true;
     if (Vibe.msg && typeof Vibe.msg.addBot === "function") {
       try {
-        Vibe.msg.addBot("zabotik", { n: "Вайбот", e: "🤖", reply, ask: (t) => respond(t), run });
+        Vibe.msg.addBot("zabotik", { n: "Вайбот", e: "🤖", reply, ask: (t) => respondSmart(t), run });
         registered = true;
       } catch (e) { console.error(e); }
       return true;
