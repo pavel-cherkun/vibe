@@ -342,7 +342,7 @@
   const meals = (s) => ((s.body && s.body.meals) || []).length;
   const sleeps = (s) => ((s.body && s.body.sleepLog) || []).length;
   const GOALS = [
-    { id: "dinner", t: "Поужинать на новом месте", e: "🍜", r: 50, p: (s) => (meals(s) ? 1 : 0), go: "eat", how: "Закажи в Vibe Eat" },
+    { id: "dinner", t: "Поужинать на новом месте", e: "🍜", r: 50, p: (s) => (meals(s) ? 1 : 0), go: "eat", act: "cook", how: "Приготовить или заказать" },
     { id: "night", t: "Выспаться на новом месте", e: "🛏️", r: 50, p: (s) => (sleeps(s) ? 1 : 0), go: "fit", how: "Лечь спать — в Vibe Fit" },
     { id: "job", t: "Найти работу", e: "💼", r: 150, p: (s) => (s.job ? 1 : 0), go: "job" },
     { id: "salary", t: "Получить первую зарплату", e: "💸", r: 150, p: (s) => Math.min(1, (s.stats.salaries || 0)), go: "job" },
@@ -435,7 +435,7 @@
   const BORN_MIN = 19 * 60;
   function begin() {
     const shift = ((BORN_MIN - START_MIN) / 1440) * DAY_MS;
-    set({ game: { start: Date.now() - shift, processedDay: 0, bornMin: BORN_MIN, dayMs: DAY_MS, seed: (Math.random() * 4294967295) >>> 0 }, body: { energy: 42, food: 30, mood: 58 } });
+    set({ game: { start: Date.now() - shift, processedDay: 0, bornMin: BORN_MIN, dayMs: DAY_MS, seed: (Math.random() * 4294967295) >>> 0 }, body: { energy: 42, food: 30, mood: 58, fridge: 3 } });
   }
   function boot() {
     if (!S().profile) return;

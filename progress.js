@@ -199,6 +199,13 @@
     { id: "anxiety", t: "Тревога", e: "🫨", r: 0.15, re: /^$/, joke: "Начисляется в конце жизни" },
     { id: "cb", t: "Кэшбек на кэшбек", e: "♾️", r: 0.01, re: /./ },
     { id: "monday", t: "Понедельники", e: "🗓️", r: 0.09, re: /./, monday: true },
+    // Абсурдные категории из книги: среди них всегда тонет одна полезная
+    { id: "tux", t: "Химчистка смокингов", e: "🤵", r: 0.05, re: /смокинг/i, joke: "У тебя нет смокинга. Пока" },
+    { id: "python", t: "Еда для питонов", e: "🐍", r: 0.07, re: /питон/i, joke: "Питона тоже можно взять в рассрочку" },
+    { id: "lefty", t: "Товары для левшей", e: "🫲", r: 0.03, re: /левш/i },
+    { id: "heel", t: "Рентген пятки", e: "🦶", r: 0.05, re: /рентген/i, joke: "Пятка скажет спасибо" },
+    { id: "nofood", t: "Супермаркеты (кроме продуктов)", e: "🛒", r: 0.06, re: /^$/, joke: "Пакеты, например. За 25 ₫" },
+    { id: "valent", t: "Валентинки оптом", e: "💌", r: 0.10, re: /валентин/i },
   ];
   const BASE = 0.005;
   const month = () => Math.floor(Vibe.game.info().day / 30);
@@ -206,6 +213,9 @@
     CATS,
     offer() {
       const m = month();
+      // Если колоду на этот месяц собрал сам игрок (работа «Специалист по кэшбеку») — она и выпадает
+      const dn = S().deckNext;
+      if (dn && dn.m === m && dn.ids && dn.ids.length === 8) { const own = dn.ids.map((id) => CATS.find((c) => c.id === id)).filter(Boolean); if (own.length === 8) return own; }
       const gs = S().game || {};
       let h = gs.seed != null ? (gs.seed + m * 7919) >>> 0 : gs.start ? (gs.start / 1000 + m * 7919) >>> 0 : m;
       const pool = CATS.slice(); const out = [];

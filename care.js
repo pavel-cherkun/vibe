@@ -83,6 +83,7 @@
     Vibe.msg.send("mom", pick(AUTO), { from: "me", noReply: true, k: "auto", auto: true });
     const n = c.autoN + 1;
     setC({ autoN: n });
+    if (Vibe.intercept) Vibe.intercept.used("care", 15);
     if (n <= 3) setTimeout(() => FX.toast(`Vibe Забота ответила маме. Сэкономили вам ${10 + Math.floor(Math.random() * 8)} минут!`, "🤖", 2600), 900);
     // Следующая ступень лестницы — с задержкой, вперемешку с жизнью
     const step = LADDER[c.stage];

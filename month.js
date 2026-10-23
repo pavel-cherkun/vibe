@@ -166,7 +166,7 @@
           <div><b data-cnt="${L.eat}">0</b><small>${G().plural(L.eat, "заказ", "заказа", "заказов")} в Vibe Eat</small></div>
           <div><b data-cnt="${L.taxi}">0</b><small>${G().plural(L.taxi, "поездка", "поездки", "поездок")} на такси</small></div>
           <div><b>${sleepAvg ? sleepAvg.toFixed(1).replace(".", ",") : "—"}</b><small>часов сна в среднем</small></div>
-          <div><b data-cnt="${L.n}">0</b><small>${G().plural(L.n, "операция", "операции", "операций")} по карте</small></div>
+          <div><b>${Vibe.intercept ? Math.round(Vibe.intercept.savedMin(L.m) / 60) : 0}</b><small>часов сэкономлено с Vibe ✨</small></div>
         </div>
         ${L.big ? `<p class="mr-p">Самая большая трата — «${esc(L.big.t)}», ${rub(L.big.a)}. Ты помнишь, зачем? Мы — да.</p>` : ""}
       </div>`,
@@ -224,20 +224,27 @@
   /* ---------- Ира, менеджер по кэшбеку ----------
      Раз в месяц среди категорий лежит её записка. Ответить можно только
      выбрав её карту (кэшбека она не даёт). Потом Иры не станет — без объяснений. */
-  const IRA_GONE = 4;
-  function iraLine(stage, picks) {
-    if (stage === 0) return "Если вы это читаете — меня зовут Ира, я менеджер по кэшбеку";
-    if (stage === 1) return picks ? `Спасибо тем ${12 + picks * 7}, кто меня выбрал. Я не одна` : "Это снова Ира. Кофемашина сломалась";
-    if (stage === 2) return "Ира всё ещё здесь";
-    return "Ира в отпуске (нет)";
-  }
+  // По книге: декабрь → июнь — строчки, июль — тишина (сбой), с августа — «подобрано ИИ»
+  const IRA_LINES = [
+    "Если вы это читаете — меня зовут Ира, я менеджер по кэшбеку",
+    "Спасибо тем 12, кто меня выбрал",
+    "Ира всё ещё здесь",
+    "Ира в отпуске (нет)",
+    "Ира: у нас тут потеплело",
+    "Кто-нибудь ещё здесь?",
+    "Если что, я тоже не здесь",
+  ];
+  const IRA_VOTES = [0, 12, 31, 63, 214, 388, 512];
+  const IRA_SILENT = 7, IRA_GONE = 8;
+  function iraLine(stage) { return IRA_LINES[Math.min(stage, IRA_LINES.length - 1)]; }
   // Вызывается при открытии ритуала: двигает историю на месяц вперёд (один раз за месяц)
   function iraCard(m) {
     if (m < 1) return null;
     let I = Object.assign({ stage: -1, m: -1, picks: 0 }, S().ira || {});
     if (I.m !== m) { I = Object.assign({}, I, { stage: I.stage + 1, m }); set({ ira: I }); }
-    if (I.stage >= IRA_GONE) return { gone: I.stage === IRA_GONE };
-    return { id: "ira", e: "✉️", r: 0.01, t: iraLine(I.stage, I.picks), ira: true };
+    if (I.stage >= IRA_GONE) return { gone: true };
+    if (I.stage === IRA_SILENT) return null;
+    return { id: "ira", e: "✉️", r: 0.01, t: iraLine(I.stage), ira: true, votes: IRA_VOTES[Math.min(I.stage, IRA_VOTES.length - 1)] };
   }
 
   /* ---------- Ритуал выбора кэшбека ---------- */
@@ -248,6 +255,9 @@
     const offer = cb.offer();
     const ira = iraCard(m);
     if (ira && ira.id) offer.splice(5, 1, ira);
+    // Своё послание из поля на 120 символов (если колоду собирал сам игрок)
+    const dn = S().deckNext;
+    if (dn && dn.m === m && dn.note) offer.splice(2, 1, { id: "note", e: "📝", r: 0.01, t: dn.note, ira: true });
     const cur = cb.chosen();
     const lim = cb.limit();
     const last = (S().monHist || [])[0];
@@ -257,15 +267,15 @@
       <button class="mr-cc ${c.ira ? "ira" : ""} ${cur ? "turned" : ""} ${pick.has(c.id) ? "on stamped" : ""}" data-cc="${c.id}" ${cur ? "disabled" : ""}>
         <span class="mr-cc-in">
           <span class="mr-cc-back"><b>V</b><small>кэшбек</small></span>
-          <span class="mr-cc-face"><span class="emo">${c.e}</span><b>${Math.round(c.r * 100)}%</b><small>${esc(c.t)}</small><i class="mr-stamp">ЗАФИКСИРОВАНО</i></span>
+          <span class="mr-cc-face"><span class="emo">${c.e}</span><b>${Math.round(c.r * 100)}%</b><small>${esc(c.t)}</small>${c.ira && c.votes ? `<em class="mr-votes">выбрали ${c.votes}</em>` : ""}<i class="mr-stamp">ЗАФИКСИРОВАНО</i></span>
         </span>
       </button>`;
     const el = open("mr-rit", `
       <button class="mr-x" data-mr-x aria-label="Закрыть">✕</button>
       <div class="mr-rit-in">
         <small class="mr-k" style="color:var(--lime)">Раз в месяц · ${NOM[mi]}</small>
-        <div class="mr-title">Кэшбек на ${PREP[mi]}</div>
-        ${ira && ira.gone ? `<div class="mr-ai">Категории этого месяца подобраны ИИ. Мы ценим креативность наших сотрудников!</div>` : ""}
+        <div class="mr-title">Кэшбек в ${PREP[mi]}</div>
+        ${ira && ira.gone ? `<div class="mr-ai">Категории этого месяца подобраны ИИ ✨ Мы ценим креативность наших сотрудников!</div>` : ""}
         <p class="mr-p" data-sub>${cur ? `Категории зафиксированы до 30 ${GEN[mi]}. Новые — 1 ${GEN[(mi + 1) % 12]}. Мы уважаем твой выбор. Почти.` : `8 категорий, ${lim} выбора, ${NOM[mi].toLowerCase()} целиком. Передумать нельзя — это и есть кэшбек.`}</p>
         <div class="mr-cgrid">${offer.map(card).join("")}</div>
         ${cur ? `<button class="btn lime xl block" data-mr-x style="margin-top:16px">Понятно</button>` : `<button class="btn lime xl block" data-flip style="margin-top:16px">🎴 Открыть категории</button>`}
@@ -284,6 +294,11 @@
         el.querySelectorAll(".mr-cc").forEach((c, k) => timers.push(setTimeout(() => { c.classList.add("turned"); FX.haptic(5); }, 140 * k)));
         timers.push(setTimeout(() => {
           b.disabled = true; b.removeAttribute("data-flip"); b.setAttribute("data-ok", ""); b.textContent = `Выбрано 0 из ${lim}`;
+          // Перехват: «выбрать за меня» — ИИ Корпорации выбирает выгодное. Ей
+          const auto = document.createElement("button");
+          auto.className = "btn block"; auto.style.marginTop = "8px"; auto.setAttribute("data-auto", "");
+          auto.textContent = "✨ Выбрать за меня";
+          b.after(auto);
           el.querySelector("[data-sub]").textContent = `Выбери ${lim}. Смешные категории — тоже категории.`;
         }, 140 * offer.length + 300));
         return;
@@ -297,6 +312,16 @@
         if (pick.has(id) && def && def.joke) FX.toast(def.joke, def.e, 2200);
         const b = btn();
         if (b) { b.disabled = pick.size !== lim; b.textContent = pick.size === lim ? `Зафиксировать до 30 ${GEN[mi]}` : `Выбрано ${pick.size} из ${lim}`; }
+        return;
+      }
+      if (e.target.closest("[data-auto]") && flipped && !cur) {
+        // Самые «оптимальные» — с наименьшим кэшбеком. Ира в выборку не попадает
+        const ids = offer.filter((c) => !c.ira).slice().sort((a, b) => a.r - b.r).slice(0, lim).map((c) => c.id);
+        pick.clear(); ids.forEach((id) => pick.add(id));
+        el.querySelectorAll(".mr-cc").forEach((x) => x.classList.toggle("on", pick.has(x.dataset.cc)));
+        if (Vibe.intercept) Vibe.intercept.used("cashback_auto", 5);
+        FX.toast("Мы выбрали за вас. Оптимально ✨", "🤖", 2600);
+        const okb = el.querySelector("[data-ok]"); if (okb) { okb.disabled = false; okb.click(); }
         return;
       }
       if (e.target.closest("[data-ok]") && pick.size === lim) {
@@ -382,10 +407,64 @@
     });
   }
 
+  /* ---------- «По ту сторону»: специалист по кэшбеку собирает колоду ---------- */
+  function deckCard() {
+    const dn = S().deckNext, next = curM() + 1;
+    const ready = dn && dn.m === next;
+    return `<button class="card tap c-yellow" data-deck style="display:flex;gap:12px;align-items:center;width:100%;text-align:left;margin-top:12px"><span style="font-size:30px">🃏</span><div style="flex:1"><b>Колода на ${NOM[next % 12].toLowerCase()}</b><small style="display:block;font-weight:700">${ready ? `собрана · средний кэшбек ${avgRate(dn.ids)}%` : "8 категорий, которые увидит весь город. KPI — «оптимальность»"}</small></div><span>›</span></button>`;
+  }
+  const avgRate = (ids) => { const C = Vibe.cashback.CATS; const r = ids.map((id) => (C.find((c) => c.id === id) || {}).r || 0); return r.length ? (r.reduce((a, b) => a + b, 0) / r.length * 100).toFixed(1).replace(".", ",") : "0"; };
+  function deckSheet() {
+    const C = Vibe.cashback.CATS, next = curM() + 1;
+    const dn = S().deckNext && S().deckNext.m === next ? S().deckNext : null;
+    const pick = new Set(dn ? dn.ids : []);
+    Vibe.ui.sheet(`
+      <div class="display" style="font-size:24px">Колода на ${NOM[next % 12].toLowerCase()}</div>
+      <p class="muted" style="font-weight:700;margin:6px 0 10px">Выбери 8 категорий. Чем меньше средний кэшбек, тем довольнее начальство. Люди будут выбирать из того, что положишь ты.</p>
+      <div class="chips" style="flex-wrap:wrap">${C.map((c) => `<button class="chip ${pick.has(c.id) ? "on" : ""}" data-dc="${c.id}">${c.e} ${esc(c.t)} · ${Math.round(c.r * 100)}%</button>`).join("")}</div>
+      <div class="card tight" style="margin-top:12px"><b data-kpi>Выбрано ${pick.size} из 8 · средний кэшбек ${avgRate([...pick])}%</b></div>
+      <div class="field" style="margin-top:12px;height:auto;padding:10px 12px"><textarea data-note maxlength="120" rows="2" placeholder="Поле на 120 символов. Его никто не модерирует" style="width:100%;border:0;background:none;font:inherit;resize:none">${esc(dn && dn.note || "")}</textarea></div>
+      <button class="btn black xl block" style="margin-top:12px" data-save ${pick.size === 8 ? "" : "disabled"}>Отправить на согласование</button>`, {
+      onMount(sh, close) {
+        const kpi = sh.querySelector("[data-kpi]"), save = sh.querySelector("[data-save]");
+        sh.addEventListener("click", (e) => {
+          const b = e.target.closest("[data-dc]");
+          if (b) {
+            const id = b.dataset.dc;
+            if (pick.has(id)) pick.delete(id); else if (pick.size < 8) pick.add(id); else { FX.shake(b); return; }
+            b.classList.toggle("on", pick.has(id));
+            kpi.textContent = `Выбрано ${pick.size} из 8 · средний кэшбек ${avgRate([...pick])}%`;
+            save.disabled = pick.size !== 8;
+          }
+          if (e.target.closest("[data-save]") && pick.size === 8) {
+            const note = (sh.querySelector("[data-note]").value || "").trim().slice(0, 120);
+            set({ deckNext: { m: next, ids: [...pick], note, reported: false } });
+            close();
+            FX.toast(note ? "Колода согласована. Поле на 120 символов прошло незамеченным" : "Колода согласована. Город выберет из неё 1-го числа", "🃏", 3200);
+          }
+        });
+      },
+    });
+  }
+  document.addEventListener("click", (e) => { if (e.target.closest("[data-deck]")) deckSheet(); });
+  // Итог KPI приходит голосом Стаса после месяца, на который собрана колода
+  function deckReport() {
+    const dn = S().deckNext;
+    if (!dn || dn.reported || curM() <= dn.m || !S().job) return;
+    set({ deckNext: Object.assign({}, dn, { reported: true }) });
+    const avg = parseFloat(avgRate(dn.ids).replace(",", "."));
+    if (avg <= 5) {
+      if (Vibe.msg) Vibe.msg.send("stas", `KPI по колоде: средний кэшбек ${avgRate(dn.ids)}%. Наверху довольны. Премия ближе 📈`, { from: "stas", delay: 30 });
+      Vibe.state.set({ job: Object.assign({}, S().job, { perf: Math.min(100, (S().job.perf || 0) + 15) }) });
+    } else if (Vibe.msg) Vibe.msg.send("stas", `Колода получилась щедрая: ${avgRate(dn.ids)}%. Олег свою собрал на 2,1%. Подумай`, { from: "stas", delay: 30 });
+    if (dn.note && Vibe.msg) Vibe.msg.send("stas", "Там в колоде была странная карточка. Я её тоже выбрал", { from: "stas", delay: 120 });
+  }
+
   /* ---------- Когда показывать ---------- */
   setInterval(() => {
     if (!live()) return;
     ledger();
+    try { deckReport(); } catch (e) { console.error(e); }
     if (busy()) return;
     const s = S();
     if (s.monRecap != null) { const L = (s.monHist || []).find((x) => x.m === s.monRecap); if (L) return recap(L); set({ monRecap: null }); }
@@ -394,7 +473,7 @@
   // Старый лист кэшбека превращаем в ритуал
   if (Vibe.cashback) Vibe.cashback.sheet = ritual;
 
-  Vibe.month = { recap, ritual, payday, history, ledger, classify };
+  Vibe.month = { recap, ritual, payday, history, ledger, classify, deckCard, deckSheet };
 
   const css = `
   .mr-ov { position: fixed; inset: 0; z-index: 260; display: flex; flex-direction: column; animation: fade-in .25s ease both; }
@@ -457,6 +536,7 @@
   .mr-cc.ira .mr-cc-face b { font-size: 14px; }
   .mr-cc.ira .mr-cc-face small { font-size: 8.5px; line-height: 1.15; font-weight: 700; font-style: italic; }
   .mr-cc.ira.on .mr-cc-face { background: #ffe9a8; }
+  .mr-votes { font-style: normal; font-size: 8px; font-weight: 900; color: #8a7a4a; margin-top: 2px; }
   .mr-ai { margin-top: 10px; font-size: 12px; font-weight: 800; color: #a9a6b8; border: 1.5px dashed #5a566b; border-radius: 12px; padding: 8px 10px; }
   .mr-stamp { position: absolute; left: -10%; right: -10%; top: 74%; transform: rotate(-18deg) scale(2.2); opacity: 0; background: #e0263e; color: #fff; font-style: normal; font-weight: 900; font-size: 8px; letter-spacing: .5px; padding: 3px 0; transition: transform .35s cubic-bezier(.2,1.6,.4,1), opacity .2s; }
   .mr-cc.stamped .mr-stamp { opacity: 1; transform: rotate(-18deg) scale(1); }

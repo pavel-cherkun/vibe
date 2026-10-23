@@ -190,8 +190,9 @@
           Vibe.game.boot();
           setTimeout(() => Vibe.modal(`
             <div class="m-emo float">📦</div><div class="display" style="font-size:26px">Ты {переехал|переехала}!</div>
-            <p>Комната в коммуналке, 19:00, коробки и пустой холодильник. Сегодня — только две вещи: поесть с кайфом и выспаться. Утро вечера мудренее, работу поищем завтра.</p>
-            <button class="btn black block" data-close data-go="eat">Заказать ужин 🍜</button>`, { sound: "pop" }), 600);
+            <p>Комната в коммуналке, 19:00, коробки. В сумке — мамины гречка, тушёнка и четыре картофелины. Сегодня — только две вещи: поесть с кайфом и выспаться. Утро вечера мудренее, работу поищем завтра.</p>
+            <button class="btn black block" data-close data-cook>Приготовить ужин 🍳</button>
+            <button class="btn block" data-close data-go="eat" style="margin-top:8px">Заказать в Vibe Eat</button>`, { sound: "pop", onMount: (m) => { const c = m.querySelector("[data-cook]"); if (c) c.addEventListener("click", () => setTimeout(() => Vibe.intercept && Vibe.intercept.cook(), 350)); } }), 600);
         }, 1200));
       }
 

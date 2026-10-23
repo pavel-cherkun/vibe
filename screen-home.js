@@ -80,7 +80,7 @@
         <div style="flex:1;text-align:left"><b>${g0.t} ✓</b><small>${line}</small></div>
         <button class="btn black sm" data-act="goal">+${g0.r} 🪙</button>
       </div>` : `
-      <button class="card tap job-card c-lilac first-eve" data-go="${g0.go}">
+      <button class="card tap job-card c-lilac first-eve" ${g0.act ? `data-act="${g0.act}"` : `data-go="${g0.go}"`}>
         <div class="li-ic c-white"><span class="emo float">${g0.e}</span></div>
         <div style="flex:1;text-align:left"><small style="font-weight:900">Первый вечер на новом месте · ${g0.index} из 2</small><b>${g0.t}</b><small>${line}. ${g0.how}</small></div>
         <span class="sticker" style="position:static;transform:rotate(6deg)">→</span>
@@ -353,6 +353,7 @@
         const a = e.target.closest("[data-act]");
         if (!a) return;
         if (a.dataset.act === "goal") { e.stopPropagation(); Vibe.game.claimGoal(a); setTimeout(refreshLife, 400); }
+        if (a.dataset.act === "cook" && Vibe.intercept) { e.stopPropagation(); Vibe.intercept.cook(a); setTimeout(refreshLife, 800); }
         if (a.dataset.act === "quest") { e.stopPropagation(); Vibe.game.claimQuest(a.dataset.q, a); setTimeout(refreshLife, 300); }
       });
       const qv = setInterval(refreshLife, 15000);
