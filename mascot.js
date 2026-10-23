@@ -11,10 +11,9 @@
     }[mood] || "";
     return `
     <svg class="zabotik" viewBox="0 0 100 100" width="${size}" height="${size}" aria-hidden="true">
-      <defs><linearGradient id="zg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#c6ff4d"/><stop offset="1" stop-color="#7cf5c8"/></linearGradient></defs>
       <line x1="50" y1="14" x2="50" y2="4" stroke="#0e0e12" stroke-width="4"/>
       <circle cx="50" cy="5" r="5" fill="#ff6bcb" stroke="#0e0e12" stroke-width="3"/>
-      <path d="M18 46 C18 22 32 14 50 14 C68 14 82 22 82 46 C82 74 70 88 50 88 C30 88 18 74 18 46 Z" fill="url(#zg)" stroke="#0e0e12" stroke-width="4"/>
+      <path d="M18 46 C18 22 32 14 50 14 C68 14 82 22 82 46 C82 74 70 88 50 88 C30 88 18 74 18 46 Z" fill="#c6ff4d" stroke="#0e0e12" stroke-width="4"/>
       <ellipse cx="28" cy="62" rx="6" ry="4" fill="#ff6bcb" opacity=".6"/><ellipse cx="72" cy="62" rx="6" ry="4" fill="#ff6bcb" opacity=".6"/>
       <g><circle cx="37" cy="44" r="11" fill="#fff" stroke="#0e0e12" stroke-width="3.5"/><circle class="eye" cx="37" cy="44" r="5" fill="#0e0e12"/></g>
       <g><circle cx="63" cy="44" r="11" fill="#fff" stroke="#0e0e12" stroke-width="3.5"/><circle class="eye" cx="63" cy="44" r="5" fill="#0e0e12"/></g>
