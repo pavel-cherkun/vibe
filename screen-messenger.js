@@ -177,7 +177,8 @@
         }
         const key = `${id}:${k}`;
         if (pg.every && meta[key] != null && d - meta[key] < pg.every) return;
-        if (Math.random() > pg.p) return;
+        // День теперь 24 минуты: пинги реже, иначе чаты тонут (люди — вдвое, боты-рассылки — втрое)
+        if (Math.random() > pg.p * (isBot ? 0.33 : 0.5)) return;
         const at = d * 1440 + pg.h * 60 + rnd(0, 25);
         if (at < now - 5) return;
         meta[key] = d;

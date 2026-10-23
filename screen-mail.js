@@ -33,10 +33,12 @@
     official: { t: "Официальное", c: "c-sky", e: "🏛️" },
     promo: { t: "Акции", c: "c-yellow", e: "🎁" },
     spam: { t: "Спам", c: "c-coral", e: "🗑️" },
+    money: { t: "Деньги", c: "c-lime", e: "💳" },
   };
+  // Входящие — только люди и важное. Квитанции, выписки и штрафы живут во вкладке «Деньги»
   const TABS = [
-    { id: "inbox", t: "Входящие", e: "📥", f: (l) => l.kind !== "spam" },
-    { id: "official", t: "Официальные", e: "🏛️", f: (l) => l.kind === "official" },
+    { id: "inbox", t: "Входящие", e: "📥", f: (l) => l.kind === "personal" || l.kind === "official" },
+    { id: "money", t: "Деньги", e: "💳", f: (l) => l.kind === "money" },
     { id: "promo", t: "Акции", e: "🎁", f: (l) => l.kind === "promo" },
     { id: "spam", t: "Спам", e: "🗑️", f: (l) => l.kind === "spam" },
   ];
@@ -59,20 +61,21 @@
       from: String(l.from || "Vibe"), fe: l.fe || l.e || KINDS[kind].e,
       subject: String(l.subject || "Без темы"), body: String(l.body || ""), kind,
       action: acts, day, time: l.time || (live() && day === nowDay() ? Vibe.game.info().time : ""),
-      read: !!l.read, pinned: !!l.pinned, sealed: !!l.sealed, due: l.due, meta: l.meta || null, done: false, ts: Date.now(),
+      // Квитанции без срока оплаты не копят непрочитанное
+      read: !!l.read || (kind === "money" && !l.due), pinned: !!l.pinned, sealed: !!l.sealed, due: l.due, meta: l.meta || null, done: false, ts: Date.now(),
     };
     const pinned = m.list.filter((x) => x.pinned);
     const rest = [letter, ...m.list.filter((x) => !x.pinned)].slice(0, 120);
     saveM({ list: letter.pinned ? [letter, ...pinned, ...rest.slice(1)] : [...pinned, ...rest], seq: m.seq + 1 });
     Vibe.emit("mail", letter);
-    if (!l.quiet) notify(letter);
+    if (!l.quiet && !(kind === "money" && !l.due)) notify(letter);
     return letter;
   }
   const get = (id) => M().list.find((x) => x.id === id);
   function patch(id, p) { saveM({ list: M().list.map((x) => (x.id === id ? Object.assign({}, x, p) : x)) }); Vibe.emit("mail", { id }); }
   function remove(id) { saveM({ list: M().list.filter((x) => x.id !== id || x.pinned) }); Vibe.emit("mail", { id }); }
   const list = (tab = "inbox") => { const t = TABS.find((x) => x.id === tab) || TABS[0]; return M().list.filter(t.f); };
-  const unread = (tab) => (tab ? list(tab) : M().list.filter((l) => l.kind !== "spam")).filter((l) => !l.read).length;
+  const unread = (tab) => (tab ? list(tab) : M().list.filter((l) => l.kind === "personal" || l.kind === "official" || (l.kind === "money" && l.due))).filter((l) => !l.read).length;
 
   // Тосты о новых письмах: пачкой, без звука (письма приходят из таймеров)
   let nq = [], nt = null;
@@ -285,26 +288,20 @@
       const j = s.job;
       const gross = j ? j.salary : 0;
       const isAdv = /Аванс/.test(ev.title);
-      send({ id: `slip${d}`, day: d, kind: "official", from: `HR · ${j ? j.company : "работодатель"}`, fe: "🧾", subject: `Расчётный листок: ${isAdv ? "аванс" : "зарплата"} ${rub(ev.a)}`,
+      send({ id: `slip${d}`, day: d, kind: "money", from: `HR · ${j ? j.company : "работодатель"}`, fe: "🧾", subject: `Расчётный листок: ${isAdv ? "аванс" : "зарплата"} ${rub(ev.a)}`,
         body: `Добрый день!\n\nНачислено: ${isAdv ? "40%" : "60%"} от оклада ${rub(gross)}\nНДФЛ 13%: удержан с любовью\nВзнос в фонд пиццы на пятницу: 0 ₫ (пиццы не будет)\nК выплате: ${rub(ev.a)}\n\nСпасибо, что вы с нами. Мы — тоже с вами. До следующего листка.`, action: { label: "💼 В Vibe Job", go: "job" }, quiet: true });
     } else if (ev.kind === "bonus") {
-      send({ id: `bonus${d}`, day: d, kind: "official", from: "HR · отдел мотивации", fe: "🏆", subject: `Премия ${rub(ev.a)} начислена!`, body: "Поздравляем! Ваши задачи замечены, оценены и монетизированы.\n\nПродолжайте закрывать задачи — премия растёт. Ответственность тоже, но об этом в следующем письме.", quiet: true });
-    } else if (ev.kind === "loan") {
-      const l = (s.loans || []).find((x) => x.id === ev.loan);
-      send({ id: `loan${d}_${ev.loan}`, day: d, kind: "official", from: "Vibe Банк", fe: "🏦", subject: l ? `Платёж по «${l.name}» списан` : "Кредит закрыт! 🕊️",
-        body: l ? `Списано ${rub(Math.abs(ev.a))}. Осталось платежей: ${l.left}.\n\nСпасибо за своевременность. Кстати, вам предодобрен ещё один кредит. Просто чтобы вы знали.` : "Поздравляем! Вы закрыли кредит.\n\nМы очень рады. И немного грустим. Возвращайтесь — ставка для вас уже персональная.", action: { label: "💳 В Vibe Pay", go: "pay" }, quiet: !!l });
-    } else if (ev.kind === "rent") {
-      send({ id: `rentok${d}`, day: d, kind: "personal", from: "Тимофей Нуков", fe: "🦝", subject: "Аренда получена, спасибо!",
-        body: `Дорогой жилец!\n\nПолучил ${rub(Math.abs(ev.a))}. ${S().balance < 0 ? "Вижу, ушли в минус ради меня. Это трогательно. Я записал в тетрадку." : "Вовремя! Записал в тетрадку."}\n\nНапоминаю: у меня есть домики в ипотеку. Всего 360 платежей — и вы почти свободны!\n\nВаш Тимофей Нуков 🦝\n«Нуков и племянники»`, quiet: true });
-    } else if (ev.kind === "bill" && /^Подписка · /.test(ev.title)) {
-      const name = ev.title.replace(/^Подписка · /, "");
-      const sub = Vibe.subs ? Vibe.subs.list().find((x) => x.name === name) : null;
-      send({ id: `sub${d}_${name}`, day: d, kind: "promo", from: name, fe: ev.e || "💳", subject: `Ваша подписка продлена! 🎉`,
-        body: `Отличные новости! Подписка «${name}» продлена ещё на месяц. Списано ${rub(Math.abs(ev.a))}.\n\nВы ведь пользуетесь ей? Мы уверены, что да. Мы видим.`, action: sub ? { label: "✂️ Отменить подписку", unsub: sub.id, name } : null, quiet: true });
-    } else if (ev.kind === "bill" && /ЖКХ/.test(ev.title)) {
-      send({ id: `zhkh${d}`, day: d, kind: "official", from: "Госвайб · ЖКХ", fe: "💡", subject: `Квитанция ЖКХ: ${rub(Math.abs(ev.a))}`,
-        body: "Оплата прошла автоматически.\n\nТариф вырос на 9%, потому что вырос. Отопление включат, когда станет тепло.", quiet: true });
+      send({ id: `bonus${d}`, day: d, kind: "money", from: "HR · отдел мотивации", fe: "🏆", subject: `Премия ${rub(ev.a)} начислена!`, body: "Поздравляем! Ваши задачи замечены, оценены и монетизированы.\n\nПродолжайте закрывать задачи — премия растёт. Ответственность тоже, но об этом в следующем письме.", quiet: true });
     }
+  }
+  // Одно письмо на день зарплаты: все автоплатежи списком
+  function autopayDigest(d, evs) {
+    const out = evs.filter((e) => e.a < 0 && ["rent", "bill", "loan"].includes(e.kind));
+    if (!out.length) return;
+    const total = out.reduce((s, e) => s + e.a, 0);
+    send({ id: `auto${d}`, day: d, kind: "money", from: "Vibe Банк", fe: "🧾", subject: `Автоплатежи: −${rub(Math.abs(total))}`,
+      body: `Добрый день!\n\nВ день зарплаты мы позаботились о ваших платежах:\n\n${out.map((e) => `• ${e.title} — ${rub(Math.abs(e.a))}`).join("\n")}\n\nИтого: ${rub(Math.abs(total))}. Вам даже не пришлось расстраиваться.`,
+      action: { label: "💳 Открыть Vibe Pay", go: "pay" } });
   }
 
   function daily(d, recent) {
@@ -313,27 +310,24 @@
     if (dom === 30) {
       const loans = s.loans || [];
       const subsN = Vibe.subs ? Vibe.subs.list().length : 0;
-      send({ id: `stmt${d}`, day: d, kind: "official", from: "Vibe Банк", fe: "🏦", subject: `Выписка за месяц · баланс ${rub(s.balance)}`,
+      send({ id: `stmt${d}`, day: d, kind: "money", from: "Vibe Банк", fe: "🏦", subject: `Выписка за месяц · баланс ${rub(s.balance)}`,
         body: `Ваша выписка готова!\n\nБаланс: ${rub(s.balance)}\nВайбики: ${Vibe.fmt(s.vibiki || 0)}\nКредитов: ${loans.length}${loans.length ? ` (платёж ${rub(loans.reduce((a, l) => a + l.monthly, 0))}/мес)` : ""}\nПодписок: ${subsN}${subsN && Vibe.subs ? ` на ${rub(Vibe.subs.total())}/мес` : ""}\nПотрачено за всё время: ${rub(s.spent || 0)}\n\n${s.balance < 0 ? "Мы заметили минус. Не переживайте: мы переживаем за вас. За процент." : "Вы молодец! Деньги не должны лежать без дела. Потратьте их."}`,
         action: { label: "💳 Открыть Vibe Pay", go: "pay" } });
     }
     if (dom === 28) nukov(d);
-    if (d % 7 === 1) { const c = CORP[Math.floor(d / 7) % CORP.length]; send({ id: `news${d}`, day: d, kind: "promo", from: "Корпорация Vibe", fe: "💜", subject: c.s, body: c.b, action: c.a }); }
-    if (d % 5 === 3) {
-      if (d % 10 === 3) {
+    if (d % 10 === 1) { const c = CORP[Math.floor(d / 7) % CORP.length]; send({ id: `news${d}`, day: d, kind: "promo", from: "Корпорация Vibe", fe: "💜", subject: c.s, body: c.b, action: c.a }); }
+    if (d % 8 === 3) {
+      if (d % 16 === 3) {
         const f = FINES[Math.floor(d / 10) % FINES.length];
-        send({ id: `fine${d}`, day: d, kind: "official", from: "Госвайб", fe: "🚔", subject: `Штраф ${rub(f.a)} за ${f.t}`, due: d + 5, meta: { fine: f.a },
+        send({ id: `fine${d}`, day: d, kind: "money", from: "Госвайб", fe: "🚔", subject: `Штраф ${rub(f.a)} за ${f.t}`, due: d + 5, meta: { fine: f.a },
           body: `${f.b}\n\nОплатите в течение 5 дней. Иначе спишем сами — с пенями 50%. Мы не злые, мы автоматические.`,
           action: { label: `🧾 Оплатить ${rub(f.a)}`, pay: { amount: f.a, title: `Госвайб · штраф за ${f.t}`, emoji: "🏛️" } } });
       } else { const g = GOV[Math.floor(d / 10) % GOV.length]; send({ id: `gov${d}`, day: d, kind: "official", from: "Госвайб", fe: "🏛️", subject: g.s, body: g.b, action: g.a }); }
     }
-    if (s.job && d % 7 === 4) { const h = HR[Math.floor(d / 7) % HR.length]; send({ id: `hr${d}`, day: d, kind: "official", from: `HR · ${s.job.company}`, fe: "👩‍💼", subject: h.s, body: h.b, action: { label: "💼 На работу", go: "job" } }); }
-    if (d % 6 === 2) { const mm = MOM[Math.floor(d / 6) % MOM.length]; send({ id: `mom${d}`, day: d, kind: "personal", from: "Мама", fe: "👩", subject: mm.s, body: mm.b, meta: { mom: 1 }, action: { label: "🫂 К близким", go: "people" } }); }
-    if (s.balance < 0 && d % 4 === 0) send({ id: `minus${d}`, day: d, kind: "official", from: "Vibe Банк", fe: "🫠", subject: "Ваш минус — наш плюс", body: `На карте ${rub(s.balance)}. Каждый день начисляем 1%.\n\nМы не давим. Мы просто напоминаем, что кредит предодобрен. Всегда. Для вас.`, action: { label: "💳 В Vibe Pay", go: "pay" } });
-    if (recent) {
-      const n = 1 + (Math.random() < 0.45 ? 1 : 0);
-      for (let i = 0; i < n; i++) spam(d, i);
-    }
+    if (s.job && d % 10 === 4) { const h = HR[Math.floor(d / 7) % HR.length]; send({ id: `hr${d}`, day: d, kind: "official", from: `HR · ${s.job.company}`, fe: "👩‍💼", subject: h.s, body: h.b, action: { label: "💼 На работу", go: "job" } }); }
+    if (d % 9 === 2) { const mm = MOM[Math.floor(d / 6) % MOM.length]; send({ id: `mom${d}`, day: d, kind: "personal", from: "Мама", fe: "👩", subject: mm.s, body: mm.b, meta: { mom: 1 }, action: { label: "🫂 К близким", go: "people" } }); }
+    if (s.balance < 0 && d % 7 === 0) send({ id: `minus${d}`, day: d, kind: "money", from: "Vibe Банк", fe: "🫠", subject: "Ваш минус — наш плюс", body: `На карте ${rub(s.balance)}. Каждый день начисляем 1%.\n\nМы не давим. Мы просто напоминаем, что кредит предодобрен. Всегда. Для вас.`, action: { label: "💳 В Vibe Pay", go: "pay" } });
+    if (recent && Math.random() < 0.4) spam(d, 0);
   }
   function spam(d, i) {
     const sp = pick(SPAM);
@@ -361,7 +355,7 @@
       const pen = Math.round(l.meta.fine * 1.5);
       Vibe.game.tx(`Госвайб · принудительное списание`, -pen, "🚔", "c-coral");
       patch(l.id, { done: true });
-      send({ id: `forced_${l.id}`, kind: "official", from: "Госвайб · взыскания", fe: "⚖️", subject: `Списано принудительно: ${rub(pen)}`, body: `Штраф «${l.subject}» не был оплачен вовремя. Списали сами, с пенями 50%.\n\nСпасибо, что выбираете Госвайб. Выбора, впрочем, нет.` });
+      send({ id: `forced_${l.id}`, kind: "money", from: "Госвайб · взыскания", fe: "⚖️", subject: `Списано принудительно: ${rub(pen)}`, body: `Штраф «${l.subject}» не был оплачен вовремя. Списали сами, с пенями 50%.\n\nСпасибо, что выбираете Госвайб. Выбора, впрочем, нет.` });
       Vibe.refreshCounters();
     });
   }
@@ -371,6 +365,7 @@
     const days = [...new Set(events.map((e) => e.day))].sort((a, b) => a - b).slice(-30);
     const recent = new Set(days.slice(-2));
     events.forEach((ev) => { if (days.includes(ev.day)) { try { byEvent(ev); } catch (e) { console.error(e); } } });
+    days.forEach((d) => { try { autopayDigest(d, events.filter((e) => e.day === d)); } catch (e) { console.error(e); } });
     days.forEach((d) => { try { daily(d, recent.has(d)); } catch (e) { console.error(e); } });
     try { checkDue(); } catch (e) { console.error(e); }
     setTimeout(() => endings.check(), 1500);
@@ -431,7 +426,8 @@
     top: (s) => !!s.job && (s.job.level || 0) >= 6,
     celeb: () => !!(Vibe.gram && Vibe.gram.fame && Vibe.gram.fame() >= 100),
     rich: (s) => s.balance >= 10000000,
-    soul: () => !!(Vibe.chars && Vibe.chars.list && Vibe.chars.hearts && Vibe.chars.list().filter((c) => Vibe.chars.hearts(c.id) >= 7).length >= 5),
+    // Пять человек на 7+ сердечках; пёс Бублик тоже считается
+    soul: () => !!(Vibe.chars && Vibe.chars.list && Vibe.chars.hearts && (Vibe.chars.list().filter((c) => Vibe.chars.hearts(c.id) >= 7).length + (Vibe.intercept && Vibe.intercept.bublikHearts() >= 7 ? 1 : 0)) >= 5),
   };
   const E = () => S().endings || {};
   const setE = (p) => set({ endings: Object.assign({}, E(), p) });

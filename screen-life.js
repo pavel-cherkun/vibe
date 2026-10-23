@@ -418,6 +418,12 @@
     { id: "v11", co: "ООО «Синергия Плюс»", e: "💻", title: "Junior-разработчик", sal: 125000, req: 56, needCourse: "code", col: "c-sky", perks: ["🩺 ДМС*", "⏰ Гибкий график (до 23:00)"], reqs: ["Опыт 5 лет в технологии, которой 2 года", "Чинить принтер"] },
     { id: "v12", co: "Банк «Вайб Капитал»", e: "📊", title: "Аналитик данных", sal: 155000, req: 66, col: "c-mint", perks: ["🏠 Удалёнка (в офисе)", "🏋️ Спортзал на −2 этаже"], reqs: ["Высшее, лучше три", "Возраст до 25, опыт от 10 лет"] },
     { id: "v13", co: "Маркетплейс «Всё»", e: "🚀", title: "Продакт-менеджер", sal: 185000, req: 76, needCourse: "prod", col: "c-lime", perks: ["🎤 Митапы", "💈 Барбершоп"], reqs: ["Быть на созвонах 9 часов в день", "Любить таск-трекер как семью"] },
+    // Пять работ из книги «Год вручную» — у каждой есть «по ту сторону»
+    { id: "v15", co: "Корпорация Vibe · отдел лояльности", e: "🪙", title: "Специалист по кэшбеку", sal: 62000, req: 8, branch: "loyalty", col: "c-yellow", perks: ["🪙 Сам решаешь, кому кэшбек", "📊 KPI: «оптимальность»"], reqs: ["Любить проценты", "Не любить выплаты"] },
+    { id: "v16", co: "Vibe Eat", e: "🛵", title: "Курьер (сдельно)", sal: 70000, req: 0, branch: "courier", col: "c-pink", perks: ["💸 До 90 000 ₫*", "⭐ Рейтинг решает всё"], reqs: ["Ноги или самокат", "1 ⭐ клиента = −300 ₫ тебе"] },
+    { id: "v17", co: "Корпорация Vibe · голос бренда", e: "📣", title: "Копирайтер пушей", sal: 58000, req: 12, branch: "voice", col: "c-lilac", perks: ["✍️ Твои слова в каждом телефоне", "🎉 «Поздравляем с новым этапом!»"], reqs: ["Позитив без перерыва", "Восклицательные знаки"] },
+    { id: "v18", co: "Агентство Нукова · Vibe Rent", e: "🦝", title: "Агент по аренде", sal: 40000, req: 4, branch: "rent", col: "c-mint", perks: ["🏠 Процент со сделки", "🦝 Наставник — Тимофей"], reqs: ["Улыбка при показе", "Не задавать вопросов о плесени"] },
+    { id: "v19", co: "Vibe Go", e: "🚕", title: "Ночной диспетчер такси", sal: 55000, req: 3, branch: "dispatch", col: "c-sky", perks: ["🌙 Ночные смены", "🔘 Кнопка «повышенный спрос»"], reqs: ["Не спать", "Нажимать кнопку"] },
     { id: "v14", co: "Корпорация Vibe", e: "💜", title: "Директор по вайбу", sal: 220000, req: 90, col: "c-grad", perks: ["💎 «Плюс Вайб» бесплатно", "🚁 Вертолётная площадка (не для тебя)"], reqs: ["Вайб", "Ещё больше вайба"] },
   ];
   const vacById = (id) => VAC.find((v) => v.id === id) || VAC[0];
@@ -1132,7 +1138,7 @@
             }
             function accept() {
               const sal = +$(box, "[data-sal]").textContent.replace(/\D/g, "");
-              Vibe.game.setJob({ company: v.co, title: v.title, salary: sal, emoji: v.e, color: v.col });
+              Vibe.game.setJob({ company: v.co, title: v.title, salary: sal, emoji: v.e, color: v.col, branch: v.branch || null });
               setStage(a.id, "hired");
               close();
               searching = false;
@@ -1204,6 +1210,7 @@
           }).join("")}
           ${left ? "" : `<div class="card c-lilac" style="text-align:center"><div class="emo float" style="font-size:48px">🌙</div><b style="display:block;margin-top:4px">Задачи на сегодня закончились</b><div style="font-size:13px;font-weight:700;margin-top:4px">Новые — завтра (через ~<span data-nextday>${hm(Vibe.game.realMinTo(Vibe.game.info().day + 1))}</span>)</div></div>`}
           </div>
+          ${j.branch === "loyalty" && Vibe.month && Vibe.month.deckCard ? Vibe.month.deckCard() : ""}
           <h2 class="sec">Дорога на работу <small>${dec(Vibe.map.km(p))} км</small></h2>
           <div style="position:relative"><div data-jmap data-go="maps" class="tap" style="height:200px;cursor:pointer"></div><span class="badge" style="position:absolute;right:12px;bottom:12px;z-index:3;pointer-events:none;background:#fff">🗺️ Открыть карту</span></div>
           <div class="chips" style="margin-top:12px">${[["work", "💼 В офис"], ["home", "🏠 Домой"], ["supermarket", "🛒 Супермаркет"], ["park", "🌳 Парк"], ["clinic", "🏥 Клиника"]].map(([to, t]) => `<button class="chip" data-go="maps" data-params='${JSON.stringify({ to })}'>${t}</button>`).join("")}</div>

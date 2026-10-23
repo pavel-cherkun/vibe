@@ -449,7 +449,50 @@
       Vibe.go("eat-place", { id: r.id });
       if (p.checkout) setTimeout(() => { const b = document.querySelector('[data-checkout="eat"]'); if (b) b.click(); }, 900);
     },
+    /* [LLM] умный Вайбот: согласие, включение, выключение (llm.js) */
+    llmAsk() { llmCard(); },
+    llmOn() {
+      if (!Vibe.llm) return;
+      const p = Vibe.llm.enable().then((ok) => {
+        const s = Vibe.llm.status();
+        remember("bot", ok ? "🧠 Готово! Теперь я думаю сам, прямо на твоём устройстве. Кнопки и заказы — как раньше, а поболтать можно о чём угодно (в рамках экосистемы) 💜" : `${s.text || "Не получилось."}\nНичего страшного: я и без нейросети заботливый 💜`, { intent: "llm" });
+        if (abRefresh) abRefresh();
+      });
+      if (abRefresh) abRefresh();
+      return p;
+    },
+    llmOff(p) {
+      if (!Vibe.llm) return;
+      Vibe.llm.disable({ purge: !!(p && p.purge) }).then(() => {
+        remember("bot", p && p.purge ? "Модель удалена с устройства. Место освободил, обиду оставил себе 💜" : "Выключил умный режим. Отвечаю по скрипту — как в старые добрые 💜", { intent: "llm" });
+        if (abRefresh) abRefresh();
+      });
+    },
   };
+  /* [LLM] карточка согласия: размер и что произойдёт — до любой загрузки */
+  function llmCard() {
+    const L = Vibe.llm; if (!L) return;
+    const s = L.status();
+    let t, a;
+    if (s.phase === "loading") { t = `🧠 Уже гружусь: ${Math.round(s.progress * 100)}%. Можно пользоваться игрой, я догоню.`; a = []; }
+    else if (L.enabled() && (s.ready || (S().llm || {}).ready)) { t = "🧠 Умный Вайбот включён: нейросеть работает прямо на устройстве, без серверов. Выключить можно в любой момент."; a = [{ label: "Выключить", run: "llmOff" }, { label: "Удалить модель 🗑️", run: "llmOff", params: { purge: 1 } }]; }
+    else { t = `🧠 Умный Вайбот (ИИ на устройстве)\nСкачаю нейросеть ~${s.sizeMB} МБ один раз — лучше по Wi‑Fi. Работает прямо в браузере (нужен WebGPU), без серверов. Если устройство не потянет — останусь обычным Вайботом.`; a = [{ label: `Включить · ~${s.sizeMB} МБ`, run: "llmOn" }, { label: "Не сейчас", run: "say", params: { t: "нет" } }]; }
+    remember("bot", t, { a, intent: "llm" });
+    if (abRefresh) abRefresh(); else Vibe.go("vaibot");
+  }
+  let abRefresh = null;
+  const llmReady = () => { try { return !!(Vibe.llm && Vibe.llm.enabled() && Vibe.llm.status().ready); } catch (e) { return false; } };
+  /* [LLM] только свободные вопросы (intent fallback) — кнопки и интенты остаются скриптом */
+  function llmRewrite() {
+    const log = mem().log || [];
+    const hist = log.slice(0, -1).slice(-6).map((m) => ({ role: m.r === "me" ? "user" : "assistant", content: m.t }));
+    return Vibe.llm.reply(hist, { maxTokens: 120, timeout: 25000 }).then((txt) => {
+      const m = mem(), l = (m.log || []).slice();
+      for (let i = l.length - 1; i >= 0; i--) if (l[i].r === "bot") { l[i] = Object.assign({}, l[i], { t: txt, ai: 1 }); break; }
+      set({ ab_mem: Object.assign({}, m, { log: l }) });
+      return true;
+    }).catch((e) => { console.warn("[vaibot llm]", e && e.message); return false; });
+  }
   function run(a) {
     if (!a) return;
     if (a.go) {
@@ -553,7 +596,7 @@
       <div class="ab-hero">${Vibe.zabotik(64, "smile")}<div><b class="display" style="font-size:20px">Вайбот 🤖</b><small>Делает дела за тебя. С любовью и кэшбеком.</small></div></div>
       <div class="ab-wrap" data-ablog>${log.length ? log.map(bubble).join("") : bubble({ r: "bot", t: H.help().text, a: H.help().actions }, -1)}</div>
       <div class="ab-input">
-        <div class="ab-sugg">${SUGG.map((s) => `<button class="chip" data-sg="${esc(s)}">${esc(s)}</button>`).join("")}</div>
+        <div class="ab-sugg">${Vibe.llm && Vibe.llm.available() ? `<button class="chip" data-llmchip>${esc(Vibe.llm.label())}</button>` : "" /* [LLM] */}${SUGG.map((s) => `<button class="chip" data-sg="${esc(s)}">${esc(s)}</button>`).join("")}</div>
         <form class="ab-form" data-abf><input data-abin placeholder="Напиши Вайботу…" autocomplete="off" maxlength="200"><button type="submit" aria-label="Отправить">➤</button></form>
       </div>`;
     },
@@ -578,6 +621,7 @@
         FX.sound.pop && FX.sound.pop();
         tos.push(setTimeout(() => {
           const res = respond(text);
+          if (res.intent === "fallback" && llmReady()) { llmRewrite().then(() => { if (alive) { logEl.innerHTML = (mem().log || []).map(bubble).join(""); scroll(); const last = logEl.lastElementChild; if (last) FX.bump(last); } }); return; } // [LLM]
           const t = logEl.querySelector("[data-typing]"); if (t) t.remove();
           const log = mem().log || [];
           // если память обрезалась — перерисуем целиком
@@ -588,15 +632,29 @@
         }, 650 + Math.random() * 500));
       }
       talkHook = send;
+      /* [LLM] прогресс загрузки и подпись чипа; тихий подъём модели из кэша */
+      let alive = true;
+      const chip = root.querySelector("[data-llmchip]");
+      const drawProg = (s) => {
+        if (chip) chip.textContent = Vibe.llm.label();
+        let el = logEl.querySelector("[data-llmprog]");
+        if (s.phase !== "loading") { if (el) el.remove(); return; }
+        if (!el) { logEl.insertAdjacentHTML("beforeend", `<div class="ab-row" data-llmprog><div class="ab-ava">${Vibe.zabotik(34, "wow")}</div><div class="msg in"></div></div>`); el = logEl.lastElementChild; scroll(); }
+        el.querySelector(".msg").textContent = `🧠 ${s.text || "Загружаю…"}`;
+      };
+      abRefresh = () => { if (!alive) return; logEl.innerHTML = (mem().log || []).map(bubble).join(""); if (Vibe.llm) drawProg(Vibe.llm.status()); scroll(); };
+      const offLlm = Vibe.llm ? Vibe.llm.on(drawProg) : null;
+      if (Vibe.llm) { drawProg(Vibe.llm.status()); Vibe.llm.warm(); }
       root.querySelector("[data-abf]").addEventListener("submit", (e) => { e.preventDefault(); const v = inp.value; inp.value = ""; send(v); });
       root.addEventListener("click", (e) => {
         const sg = e.target.closest("[data-sg]");
         if (sg) { FX.bump(sg); send(sg.dataset.sg); return; }
+        if (e.target.closest("[data-llmchip]")) { FX.bump(e.target.closest("[data-llmchip]")); llmCard(); return; } // [LLM]
         const b = e.target.closest("[data-ab]");
         if (b) { FX.bump(b); FX.burst(b, { emojis: ["💜", "✨"], count: 6, spread: 50 }); run(actsFor(b.dataset.ab)); }
       });
       if (params && params.q) tos.push(setTimeout(() => send(params.q), 350));
-      return () => { tos.forEach(clearTimeout); if (talkHook === send) talkHook = null; };
+      return () => { tos.forEach(clearTimeout); if (talkHook === send) talkHook = null; alive = false; if (offLlm) offLlm(); abRefresh = null; /* [LLM] */ };
     },
   });
 
