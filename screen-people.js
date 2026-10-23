@@ -619,7 +619,11 @@
 
   Vibe.ACH.kitchen = Vibe.ACH.kitchen || { e: "🎸", t: "Концерт на кухне", d: "5 уровень любого хобби" };
 
+  // Хобби — это путь к навыку: опыт хобби идёт и в навык персонажа
+  const HOB_SKILL = { guitar: "creative", draw: "creative", run: "health", yoga: "health", cook: "cooking", gaming: "creative" };
+  const SKILL_N = { creative: "Творчество", health: "Здоровье", cooking: "Кулинария" };
   function addHobXp(id, xp) {
+    if (Vibe.skills && HOB_SKILL[id]) Vibe.skills.xp(HOB_SKILL[id], Math.max(4, Math.round(xp / 3)));
     const h = hob(id);
     let { lvl } = h; let x = h.xp + xp; let up = false;
     while (x >= needXp(lvl)) { x -= needXp(lvl); lvl++; up = true; }
@@ -756,7 +760,7 @@
         ${h.on ? `<div class="lv"><small>УР.</small><b>${h.lvl}</b></div>` : ""}
       </div>
       ${h.on ? `
-        <div class="pp-relrow"><div class="progress"><i style="--p:${Math.round((h.xp / needXp(h.lvl)) * 100)}%;background:var(--violet)"></i></div><b>${h.xp}/${needXp(h.lvl)} · ${def.eff}</b></div>
+        <div class="pp-relrow"><div class="progress"><i style="--p:${Math.round((h.xp / needXp(h.lvl)) * 100)}%;background:var(--violet)"></i></div><b>${h.xp}/${needXp(h.lvl)} · ${def.eff}${HOB_SKILL[def.id] ? ` · ⭐ ${SKILL_N[HOB_SKILL[def.id]]}` : ""}</b></div>
         ${pend ? `<div class="pp-meet">📅 ${esc(pend.title)} — ${whenText(pend)}</div>` : ""}
         <div class="acts2">
           <button class="btn lime" data-play ${cd ? "disabled" : ""}>${cd ? `Отдых ${String(Math.ceil((cd / 60) * 10) / 10).replace(".", ",")} ч` : "▶ Сессия"}</button>

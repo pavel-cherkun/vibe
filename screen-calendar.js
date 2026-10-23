@@ -45,11 +45,9 @@
     const h = Math.floor(t / 3600), m = Math.floor((t % 3600) / 60), s = t % 60;
     return h ? `${h}:${pad(m)}:${pad(s)}` : `${pad(m)}:${pad(s)}`;
   }
-  function period(minOfDay) {
-    if (minOfDay < 360 || minOfDay >= 1320) return "night";
-    if (minOfDay < 540) return "morning";
-    if (minOfDay < 1080) return "day";
-    return "evening";
+  const realOf = (gameMin) => (gameMin * (G().DAY_MS / 60000)) / 1440;
+  function dateLine(I) {
+    return `${I.dom} ${MONTHS[I.month]} · ${WD[wd(I.day)]} · ${I.time}`;
   }
 
   /* ---------- Состояние календаря: отметки дел и записи к врачу ---------- */
@@ -127,84 +125,6 @@
     if (ev.some((e) => e.concert || e.e === "🏦") || doctorsOn(day).length) k.push("vi");
     if (ev.some((e) => e.a < 0 && e.e !== "🏦")) k.push("bill");
     return k;
-  }
-
-  /* ============================================================
-     1. Часы-герой (компактный)
-     ============================================================ */
-  function orbEmoji(minOfDay) {
-    return minOfDay >= 360 && minOfDay < 1320 ? (minOfDay < 1080 ? "☀️" : "🌆") : "🌙";
-  }
-  function dateLine(I) {
-    return `${I.dom} ${MONTHS[I.month]} · ${WD[wd(I.day)]}`;
-  }
-  // Игровые минуты → реальные (день длится DAY_MS)
-  const realOf = (gameMin) => (gameMin * (G().DAY_MS / 60000)) / 1440;
-  function heroNote(I, minOfDay) {
-    const toMid = realOf(1440 - minOfDay);
-    let extra = "";
-    if (S().job && isWorkday(I.day) && minOfDay >= 540 && minOfDay < 1140) extra = ` · до конца работы ~${fmtReal(realOf(1140 - minOfDay))}`;
-    else if (minOfDay < 540 && S().job && isWorkday(I.day)) extra = ` · до работы ~${fmtReal(realOf(540 - minOfDay))}`;
-    return `День жизни №${I.day + 1} · до полуночи ~${fmtReal(toMid)}${extra}`;
-  }
-  function heroHtml(I) {
-    const mod = Math.floor(G().minutes() % 1440);
-    const t = I.time;
-    const wk = isWorkday(I.day);
-    return `
-      <div class="cal-hero p-${period(mod)}" data-hero>
-        <div class="cal-hrow">
-          <div class="cal-clock" aria-label="Игровое время ${t}">
-            <span class="cal-d" data-dg>${t[0]}</span><span class="cal-d" data-dg>${t[1]}</span><span class="cal-colon">:</span><span class="cal-d" data-dg>${t[3]}</span><span class="cal-d" data-dg>${t[4]}</span>
-          </div>
-          <div class="cal-hside">
-            <span class="cal-orb emo float" data-orb>${orbEmoji(mod)}</span>
-            <span class="cal-tag ${wk ? "k" : "y"}" data-dtype>${wk ? "💼 Будний" : "🎉 Выходной"}</span>
-          </div>
-        </div>
-        <div class="cal-bleed cal-b2" data-date>${dateLine(I)}</div>
-        <div class="cal-barwrap">
-          <div class="cal-bar">
-            <i style="width:29.17%;background:#2a0a55"></i><i style="width:8.33%;background:var(--caly)"></i><i style="width:41.67%;background:${S().job ? "#fff" : "var(--lime)"}"></i><i style="width:16.67%;background:var(--calv)"></i><i style="width:4.16%;background:#2a0a55;border:0"></i>
-          </div>
-          <div class="cal-pin" data-pin style="left:${(mod / 1440) * 100}%"></div>
-          <div class="cal-ticks"><span style="left:0">00</span><span style="left:25%">06</span><span style="left:50%">12</span><span style="left:75%">18</span><span style="left:100%">24</span></div>
-        </div>
-        <div class="cal-note" data-note>${heroNote(I, mod)}</div>
-      </div>`;
-  }
-
-  /* ============================================================
-     1б. Обратный отсчёт до большого денежного события
-     ============================================================ */
-  const BIG = ["Зарплата", "Аванс", "Аренда"];
-  function bigEvent(list) {
-    return list.find((u) => BIG.includes(u.t)) || list.find((u) => u.a) || list[0] || null;
-  }
-  function bigCd(u) {
-    return fmtCountdown(G().realMinTo(u.day) * 60000 + (u.concert ? (20 / 24) * G().DAY_MS : 0));
-  }
-  function bigHtml(u) {
-    if (!u) return `
-      <button class="cal-big empty" data-go="job">
-        <div class="cal-big-row"><div class="cal-big-l">Ничего не&nbsp;грядёт</div><div class="cal-big-r"><b>∞</b><span>дней свободы</span></div></div>
-        <div class="cal-big-cd">Найди работу&nbsp;— и&nbsp;тут появится зарплата <i>→</i></div>
-      </button>`;
-    const plus = u.a > 0, rent = u.t === "Аренда";
-    const head = u.concert ? "Уже скоро!" : plus ? "Скоро деньги!" : rent ? "Готовь деньги!" : "Скоро платить";
-    return `
-      <button class="cal-big" data-cal="day" data-d="${u.day}">
-        <div class="cal-big-tags">
-          <span class="cal-tag k">${u.e} ${esc(u.t)}</span>
-          ${u.a ? `<span class="cal-tag ${plus ? "y" : "p"}">${plus ? "+" : "−"}${Vibe.rub(Math.abs(u.a))}</span>` : ""}
-          <b class="cal-big-corner">${domOf(u.day)}.${pad(((monOf(u.day) + 10) % 12) + 1)}</b>
-        </div>
-        <div class="cal-big-row">
-          <div class="cal-big-l">${head}</div>
-          <div class="cal-big-r"><b>${u.in}</b><span>${plural(u.in, "день", "дня", "дней")}</span></div>
-        </div>
-        <div class="cal-big-cd"><span class="emo">⏳</span><span data-bigcd>${bigCd(u)}</span><small>реального времени</small></div>
-      </button>`;
   }
 
   /* ============================================================
@@ -324,8 +244,14 @@
       list.push({ id: "sleep", e: "😴", t: "Лечь спать до 23:00", sub: ok ? "легенда режима" : missed ? "уже поздно, но поспать всё ещё можно" : `осталось ~${fmtReal(realOf(1380 - mod))}`, rw: "+энергия", act: { go: "fit", label: "Спать" }, done: ok, missed: missed && !b.sleeping });
     }
 
+    // Задания дня — живут здесь
+    G().quests().forEach((q) => {
+      list.push({ id: "q:" + q.id, quest: true, e: q.e, t: q.t, sub: q.claimed ? "награда получена" : `${Math.min(q.n, q.need)}/${q.need} · +${q.r} 🪙`, rw: `+${q.r} 🪙`, prog: Math.min(q.n, q.need) / q.need, done: q.claimed, claim: q.done && !q.claimed ? q.id : null, act: { go: questGo(q.id), label: "Открыть" } });
+    });
     return list;
   }
+  const QGO = { eat: "eat", taxi: "maps", work: "job", pay: "market", supermarket: "supermarket", apply: "job", market: "market" };
+  const questGo = (id) => QGO[id] || (String(id).startsWith("visit:") ? String(id).slice(6) : "home");
   function todoRow(x) {
     const cls = x.done ? "done" : x.claim ? "ready" : x.urgent ? "urgent" : x.missed ? "missed" : "";
     let tail = "";
@@ -334,7 +260,7 @@
     else if (x.act) tail = `<span class="cal-pill ${x.act.inline ? "v" : "o"}">${x.act.label}<i>→</i></span>`;
     return `
       <div class="cal-todo ${cls}" data-cal="todo" data-id="${x.id}" data-todo="${x.id}" role="button" tabindex="0">
-        <span class="cal-chk" aria-hidden="true">${x.done ? "✓" : ""}</span>
+        <span class="cal-chk ${!x.done && x.prog > 0 ? "wip" : ""}" aria-hidden="true">${x.done ? "✓" : !x.claim && x.prog > 0 ? "…" : ""}</span>
         <span class="cal-te emo">${x.e}</span>
         <div class="cal-tt">
           <b>${x.t}</b>
@@ -348,74 +274,26 @@
     const life = list.filter((x) => !x.quest), q = list.filter((x) => x.quest);
     const total = list.length, n = list.filter((x) => x.done).length;
     return `
-      <div class="cal-thead">
-        <div class="cal-tcount"><b>${n}</b><small>/${total}</small></div>
-        <div style="flex:1;min-width:0">
-          <div class="cal-tlbl">${n === total ? "Всё сделано. Подозрительно продуктивно 🗿" : "Тапни по делу — и сразу к нему"}</div>
-          <div class="cal-pbar big"><i style="width:${total ? Math.round((n / total) * 100) : 0}%"></i></div>
-        </div>
-      </div>
+      <div class="cal-thead"><b>${n}/${total}</b><span>${n === total ? "Всё сделано. Подозрительно продуктивно" : "Тапни по делу — и сразу к нему"}</span></div>
       <div class="cal-tlist">${life.map(todoRow).join("")}</div>
-      ${q.length ? `<div class="cal-qhead"><span>🎯 Задания дня</span><small>обновятся завтра</small></div>
+      ${q.length ? `<div class="cal-qhead"><span>Задания дня</span><small>обновятся завтра</small></div>
       <div class="cal-tlist">${q.map(todoRow).join("")}</div>` : ""}`;
-  }
-
-  /* ============================================================
-     4. Продуктивность
-     ============================================================ */
-  function prodData(list) {
-    const b = body();
-    const I = G().info();
-    const p = b ? Vibe.body.productivity().value : 50;
-    const total = list.length, n = list.filter((x) => x.done).length;
-    const steps = b && b.stepsDay === I.day ? b.steps : 0;
-    const last = b && (b.sleepLog || []).slice(-1)[0];
-    const sl = last ? clamp((last.hours / 8) * last.q, 0, 1) : 0.5;
-    const score = Math.round(p * 0.45 + (total ? n / total : 0) * 25 + clamp(steps / 8000, 0, 1) * 15 + sl * 15);
-    return { b, p, n, total, steps, last, score };
-  }
-  function tips(d) {
-    const s = S(), b = d.b, I = G().info();
-    const mod = G().minutes() % 1440;
-    const out = [];
-    if (b) {
-      if (b.sleeping) out.push(["😴", "Ты спишь. Самое продуктивное за день", "fit"]);
-      if (b.sick) out.push(["🤒", "Заболел — продуктивность ×0,5. Запишись к врачу", "health"]);
-      if (b.energy < 35 && !b.sleeping) out.push(["⚡", `Энергия ${Math.round(b.energy)}%. Поспи: кофе — это кредит`, "fit"]);
-      if (b.food < 40) out.push(["🍽️", `Сытость ${Math.round(b.food)}%. Голодный мозг работает на 60%`, "eat"]);
-      if (b.mood < 45) out.push(["🌧️", `Настроение ${Math.round(b.mood)}%. Включи музыку`, "music"]);
-      if (d.steps < 4000 && mod > 720) out.push(["👟", `Всего ${Vibe.fmt(d.steps)} шагов. Прогуляйся`, "maps"]);
-    }
-    if (s.job && G().tasksLeft() > 0 && isWorkday(I.day)) out.push(["💼", `Осталось ${G().tasksLeft()} ${plural(G().tasksLeft(), "задача", "задачи", "задач")}`, "job"]);
-    if (!s.job) out.push(["📨", "Без работы продуктивность — понятие философское", "job"]);
-    if (!out.length) out.push(["🧘", "Всё под контролем. Отдых — тоже задача", "fit"]);
-    return out.slice(0, 3);
-  }
-  function prodHtml(list) {
-    const d = prodData(list);
-    const col = d.score < 40 ? "var(--calp)" : d.score < 70 ? "var(--caly)" : "var(--lime)";
-    const grade = d.score < 25 ? "Овощ 🥔" : d.score < 50 ? "Разгоняюсь 🐢" : d.score < 70 ? "Норм 🙂" : d.score < 85 ? "Машина 🚀" : "Сигма 🗿";
-    return `
-      <div class="cal-prod">
-        <div class="cal-big-tags"><span class="cal-tag y">${grade}</span><b class="cal-big-corner">/100</b></div>
-        <div class="cal-prod-row">
-          <b class="cal-prod-n" style="color:${col}">${d.score}</b>
-          <div class="cal-prod-u">вайб-<br>индекс<br>дня</div>
-        </div>
-        <div class="cal-pmeter"><i style="width:${clamp(d.score, 0, 100)}%;background:${col}"></i></div>
-        <div class="cal-pstats">
-          <div class="s1"><span>⚡ Тело</span><b>${d.p}%</b></div>
-          <div class="s2"><span>✅ Дела</span><b>${d.n}/${d.total}</b></div>
-          <div class="s3"><span>👟 Шаги</span><b>${Vibe.fmt(d.steps)}</b></div>
-          <div class="s4"><span>😴 Сон</span><b>${d.last ? d.last.hours + " ч" : "—"}</b></div>
-        </div>
-      </div>
-      <div class="cal-tips">${tips(d).map(([e, t, go], i) => `<button class="cal-tip t${i}" data-go="${go}"><span class="emo">${e}</span><span>${t}</span><i>→</i></button>`).join("")}</div>`;
   }
 
   /* ============================================================
      5. Месяц
      ============================================================ */
+  // Пилюли дня: короткая подпись и цвет по смыслу (деньги / счета / планы)
+  function pillsOf(d) {
+    const ev = eventsOn(d).filter((e) => !e.quiet), out = [];
+    ev.filter((e) => e.a > 0).forEach((e) => out.push({ t: e.t === "Аванс" ? "аванс" : "зп", k: "in" }));
+    if (ev.some((e) => e.a < 0 && e.e !== "🏦")) out.push({ t: "счета", k: "bill" });
+    if (ev.some((e) => e.e === "🏦")) out.push({ t: "кредит", k: "bill" });
+    if (ev.some((e) => e.concert)) out.push({ t: "шоу", k: "vi" });
+    if (doctorsOn(d).length) out.push({ t: "врач", k: "vi" });
+    ev.filter((e) => !e.a && !e.concert).forEach(() => out.push({ t: "план", k: "vi" }));
+    return out;
+  }
   function monthHtml(I) {
     const start = I.day - (I.dom - 1);
     const off = wd(start);
@@ -423,22 +301,23 @@
     for (let i = 0; i < off; i++) cells += `<div class="cal-day empty"></div>`;
     for (let i = 0; i < 30; i++) {
       const d = start + i;
-      const k = dayKinds(d);
-      const mk = eventsOn(d).filter((e) => !e.quiet).map((e) => e.t);
+      const pl = pillsOf(d);
       const cls = d === I.day ? "today" : d < I.day ? "past" : "";
-      const we = wd(d) >= 5 ? "we" : "";
-      cells += `<button class="cal-day ${cls} ${we} ${k.length ? "ev k-" + k[0] : ""}" data-cal="day" data-d="${d}" aria-label="${i + 1}${mk.length ? ": " + esc(mk.join(", ")) : ""}"><b>${i + 1}</b>${k.length > 1 ? `<i class="more k-${k[1]}"></i>` : ""}</button>`;
+      const shown = pl.slice(0, 2);
+      cells += `<button class="cal-day ${cls}" data-cal="day" data-d="${d}" aria-label="${i + 1}${pl.length ? ": " + pl.map((x) => x.t).join(", ") : ""}"><b>${pad(i + 1)}</b>${shown.map((x) => `<i class="cal-ev k-${x.k}">${x.t}</i>`).join("")}${pl.length > 2 ? `<i class="cal-ev more">+${pl.length - 2}</i>` : ""}</button>`;
     }
+    const tail = (7 - ((off + 30) % 7)) % 7;
+    for (let i = 0; i < tail; i++) cells += `<div class="cal-day empty"></div>`;
     return `
       <div class="cal-month">
-        <div class="cal-mtitle"><span class="cal-mt">${MONTHS_NOM[I.month]}</span><span class="cal-mnote">30 дней = 30 часов</span></div>
-        <div class="cal-mhead">${["Пн", "Вт", "Ср", "Чт", "Пт", "Сб", "Вс"].map((w, i) => `<span class="${i >= 5 ? "we" : ""}">${w}</span>`).join("")}</div>
+        <div class="cal-mhead">${["Пн", "Вт", "Ср", "Чт", "Пт", "Сб", "Вс"].map((w) => `<span>${w}</span>`).join("")}</div>
         <div class="cal-grid">${cells}</div>
-        <div class="cal-mlegend">
-          <span><i class="k-in"></i>${S().job ? "зарплата" : "деньги"}</span>
-          <span><i class="k-bill"></i>счета</span>
-          <span><i class="k-vi"></i>планы</span>
-        </div>
+      </div>
+      <div class="cal-mlegend">
+        <span class="cal-ev k-in">${S().job ? "зарплата" : "деньги"}</span>
+        <span class="cal-ev k-bill">счета</span>
+        <span class="cal-ev k-vi">планы</span>
+        <span class="cal-lg-today">сегодня</span>
       </div>`;
   }
   function daySheet(d) {
@@ -466,6 +345,7 @@
         ${rows.map((r) => `<div class="li"><div class="ic ${r.col || "c-white"}">${r.e}</div><div class="tx"><b>${esc(r.t)}</b>${r.sub ? `<small>${esc(r.sub)}</small>` : ""}</div>${r.a ? `<div class="amt ${r.a > 0 ? "plus" : ""}">${r.a > 0 ? "+" : "−"}${Vibe.rub(Math.abs(r.a))}</div>` : ""}</div>`).join("")}
       </div>
       ${ev.length ? "" : `<div class="muted" style="text-align:center;font-weight:800;margin:12px 0 0">📭 Ничего особенного. Подозрительно спокойно</div>`}
+      ${d === I.day ? `<div class="cal-tlcard" style="margin-top:14px">${timelineHtml(I)}</div>` : ""}
       <button class="cal-pill v lg block" style="margin-top:16px" data-close>Понятно</button>`);
   }
 
@@ -502,46 +382,28 @@
   /* ============================================================
      Экран
      ============================================================ */
-  const curTab = () => (S().cal_tab === "month" ? "month" : "today");
-
   Vibe.screen("calendar", {
     render() {
       syncDocs();
       const I = G().info();
       const list = todos();
-      const tab = curTab();
       return `
       <div class="cal-top">
-        <div class="cal-tabs" role="tablist" data-tab="${tab}">
-          <i class="cal-tab-ink" aria-hidden="true"></i>
-          <button class="cal-tab ${tab === "today" ? "on" : ""}" role="tab" aria-selected="${tab === "today"}" data-cal="tab" data-t="today">Сегодня</button>
-          <button class="cal-tab ${tab === "month" ? "on" : ""}" role="tab" aria-selected="${tab === "month"}" data-cal="tab" data-t="month">Месяц</button>
-        </div>
+        <div class="cal-ttl"><h1 class="cal-mt">${MONTHS_NOM[I.month]}</h1><i class="cal-live" aria-hidden="true"></i></div>
         ${Vibe.ui.vibikiPill()}
       </div>
+      <div class="cal-date" data-date>${dateLine(I)}</div>
 
-      <div class="cal-pane stagger" data-pane="today" ${tab === "today" ? "" : "hidden"}>
-        <div data-hero-slot>${heroHtml(I)}</div>
-        <div data-big>${bigHtml(bigEvent(upcomingList()))}</div>
-
-        <h2 class="cal-h">Дела на&nbsp;сегодня</h2>
-        <div class="cal-todos" data-todos>${todosHtml(list)}</div>
-
-        <h2 class="cal-h p">Таймлайн дня</h2>
-        <div class="cal-tlcard" data-tlslot>${timelineHtml(I)}</div>
-      </div>
-
-      <div class="cal-pane stagger" data-pane="month" ${tab === "month" ? "" : "hidden"}>
+      <div class="stagger">
         <div data-month>${monthHtml(I)}</div>
 
-        <h2 class="cal-h p">Ближайшее</h2>
-        <div class="cal-hsub">тикает в&nbsp;реальном времени</div>
+        <h2 class="cal-h">Сегодня</h2>
+        <div class="cal-todos" data-todos>${todosHtml(list)}</div>
+
+        <h2 class="cal-h">Ближайшее</h2>
         <div data-up>${upHtml()}</div>
 
-        <h2 class="cal-h v">Продуктивность</h2>
-        <div data-prod>${prodHtml(list)}</div>
-
-        <div class="fine">1&nbsp;игровой день длится 24&nbsp;реальные минуты, поэтому зарплата приходит быстрее, чем в&nbsp;жизни. Это единственное место, где так бывает.</div>
+        <div class="fine">1&nbsp;игровой день длится 24&nbsp;реальные минуты, поэтому зарплата приходит быстрее, чем в&nbsp;жизни. Тап по&nbsp;дню — что в&nbsp;нём будет.</div>
       </div>`;
     },
 
@@ -557,45 +419,13 @@
         ? new Set(seen0.ids)
         : new Set(todos().filter((x) => x.done).map((x) => x.id));
       let upList = upcomingList();
-      let big = bigEvent(upList);
       let lastSec = -1;
       const disposers = [];
       const later = (fn, ms) => { const t = setTimeout(fn, ms); disposers.push(() => clearTimeout(t)); };
 
-      // ---- Вкладки ----
-      function setTab(t, user) {
-        const tabs = $(".cal-tabs");
-        if (!tabs) return;
-        tabs.dataset.tab = t;
-        root.querySelectorAll(".cal-tab").forEach((b) => { const on = b.dataset.t === t; b.classList.toggle("on", on); b.setAttribute("aria-selected", on); });
-        root.querySelectorAll("[data-pane]").forEach((p) => {
-          const show = p.dataset.pane === t;
-          p.hidden = !show;
-          if (show && user) {
-            [...p.children].forEach((c, i) => c.style.setProperty("--i", i));
-            p.classList.remove("stagger"); void p.offsetWidth; p.classList.add("stagger");
-          }
-        });
-        if (S().cal_tab !== t) Vibe.state.set({ cal_tab: t });
-      }
-
-      // ---- Часы ----
-      function updateHero(I, flip = true) {
-        const mod = G().minutes() % 1440;
-        const t = I.time;
-        const ds = [t[0], t[1], t[3], t[4]];
-        root.querySelectorAll("[data-dg]").forEach((el, i) => {
-          if (Vibe.sameText(el, ds[i])) return;
-          el.textContent = ds[i];
-          if (flip) { el.classList.remove("flip"); void el.offsetWidth; el.classList.add("flip"); }
-        });
-        const hero = $("[data-hero]");
-        if (hero) {
-          const p = "p-" + period(mod);
-          if (!hero.classList.contains(p)) { hero.classList.remove("p-night", "p-morning", "p-day", "p-evening"); hero.classList.add(p); }
-        }
-        const orb = $("[data-orb]"); if (orb) { const e = orbEmoji(mod); if (orb.textContent !== e) orb.textContent = e; }
-        const note = $("[data-note]"); if (note) note.textContent = heroNote(I, mod);
+      // ---- Дата и время в шапке ----
+      function updateHero(I) {
+        const d = $("[data-date]"); if (d) { const t = dateLine(I); if (!Vibe.sameText(d, t)) d.textContent = t; }
       }
       function updateSmooth() {
         const mod = G().minutes() % 1440;
@@ -632,10 +462,7 @@
           const prev = S().cal_seen;
           if (!prev || prev.day !== day || (prev.ids || []).join("|") !== ids.join("|")) Vibe.state.set({ cal_seen: { day, ids } });
         }
-        const pr = $("[data-prod]");
-        if (pr) { const ph = prodHtml(list); if (pr.dataset.h !== ph) { pr.dataset.h = ph; pr.innerHTML = ph; } }
       }
-      const pr0 = $("[data-prod]"); if (pr0) pr0.dataset.h = pr0.innerHTML;
       // первый проход: то, что игрок сделал в других приложениях, ставит галочку само
       later(() => refreshTodos(true), 380);
 
@@ -643,9 +470,7 @@
       function refreshDayParts() {
         const I = G().info();
         syncDocs();
-        const d = $("[data-date]"); if (d) d.textContent = dateLine(I);
-        const dt = $("[data-dtype]");
-        if (dt) { const wk = isWorkday(I.day); dt.textContent = wk ? "💼 Будний" : "🎉 Выходной"; dt.classList.toggle("k", wk); dt.classList.toggle("y", !wk); }
+        updateHero(I);
         refreshTimeline();
         const m = $("[data-month]"); if (m) m.innerHTML = monthHtml(I);
         refreshUp();
@@ -656,12 +481,9 @@
       function refreshUp() {
         upList = upcomingList();
         const u = $("[data-up]"); if (u) u.innerHTML = upHtml();
-        big = bigEvent(upList);
-        const b = $("[data-big]"); if (b) b.innerHTML = bigHtml(big);
       }
       function updateCountdowns() {
         root.querySelectorAll("[data-cd]").forEach((el) => { const u = upList[+el.dataset.cd]; if (u) el.textContent = cdText(u); });
-        const bc = $("[data-bigcd]"); if (bc && big) bc.textContent = bigCd(big);
       }
 
       // ---- Главный цикл: 500 мс, тяжёлое — раз в игровую минуту (1 с) ----
@@ -721,6 +543,7 @@
         refreshTodos(true);
       }
       function cook(from) {
+        if (Vibe.intercept) { Vibe.intercept.cook(from); later(() => refreshTodos(true), 900); return; }
         const b = body();
         if (!b || b.fridge <= 0) { Vibe.go("supermarket"); return; }
         Vibe.body.effect("cook");
@@ -746,12 +569,6 @@
         if (!a) return;
         e.stopPropagation();
         const act = a.dataset.cal;
-        if (act === "tab") {
-          if (a.classList.contains("on")) return;
-          FX.bump(a); FX.sound.pop();
-          setTab(a.dataset.t, true);
-          return;
-        }
         if (act === "day") { FX.bump(a); daySheet(+a.dataset.d); return; }
         if (act === "claim") { claim(a.dataset.q, a); return; }
         if (act === "todo") { doTodo(a.dataset.id, a); return; }
@@ -779,77 +596,56 @@
   /* ---------- Стили ---------- */
   const css = `
   :root { --calp:#ff2fb9; --calv:#8a17e8; --caly:#ffe600; --calk:#1b1a21; --calf:"Oswald", "Dela Gothic One", system-ui, sans-serif; }
-  .cal-top { display:flex; justify-content:space-between; align-items:center; gap:10px; margin-bottom:12px; position:relative; }
+  .cal-top { display:flex; justify-content:space-between; align-items:center; gap:10px; position:relative; }
+  :root { --cal-in:#ff8ccf; --cal-bill:#ffa66b; --cal-vi:#c3a6ff; --cal-now:#ff6f61; --cal-ok:#6fdc6a; }
 
-  /* Вкладки */
-  .cal-tabs { position:relative; flex:1; min-width:0; display:grid; grid-template-columns:1fr 1fr; height:46px; padding:4px; border-radius:999px; background:#fff; box-shadow:0 0 0 2.5px var(--calk), 0 4px 0 var(--calk); }
-  .cal-tab-ink { position:absolute; top:4px; bottom:4px; left:4px; width:calc(50% - 4px); border-radius:999px; background:var(--calp); transition:transform .35s var(--spring), background .35s; }
-  .cal-tabs[data-tab="month"] .cal-tab-ink { transform:translateX(100%); background:var(--calv); }
-  .cal-tab { position:relative; z-index:1; font-family:var(--calf); font-weight:700; font-size:16px; text-transform:uppercase; letter-spacing:.4px; color:var(--calk); border-radius:999px; transition:color .25s; }
-  .cal-tab.on { color:#fff; }
-  .cal-pane[hidden] { display:none; }
+  /* Шапка: месяц плакатом и живая точка «сейчас» */
+  .cal-ttl { display:flex; align-items:flex-start; gap:6px; min-width:0; }
+  .cal-mt { margin:0; font-family:var(--calf); font-weight:700; font-size:clamp(44px, 14vw, 58px); line-height:.86; letter-spacing:-.02em; text-transform:uppercase; color:var(--calk); white-space:nowrap; }
+  .cal-live { width:14px; height:14px; flex:0 0 14px; margin-top:4px; border-radius:50%; background:#ff2a2a; animation:cal-live 1.6s ease-in-out infinite; }
+  @keyframes cal-live { 0%, 100% { transform:scale(1); } 50% { transform:scale(.7); opacity:.75; } }
+  .cal-date { margin:8px 0 14px; font-weight:800; font-size:13px; color:var(--calk); font-variant-numeric:tabular-nums; }
+
+  /* Месяц: сетка толстыми линиями */
+  .cal-month { border-radius:20px; overflow:hidden; box-shadow:0 0 0 2.5px var(--calk), 0 5px 0 var(--calk); background:var(--calk); }
+  .cal-mhead, .cal-grid { display:grid; grid-template-columns:repeat(7, minmax(0, 1fr)); gap:2.5px; }
+  .cal-mhead { background:var(--calk); margin-bottom:2.5px; }
+  .cal-mhead span { background:#fff; text-align:center; padding:7px 0 6px; font-size:10px; font-weight:900; letter-spacing:.06em; text-transform:uppercase; color:var(--calk); }
+  .cal-day { min-height:62px; min-width:0; background:#fff; color:var(--calk); display:flex; flex-direction:column; align-items:stretch; gap:3px; padding:5px 4px 6px; text-align:left; position:relative; transition:background .2s; }
+  .cal-day b { font-size:11px; font-weight:900; font-variant-numeric:tabular-nums; padding-left:2px; }
+  .cal-day.empty { background:#f4f1ec; }
+  .cal-day.past b { color:#a9a4b4; }
+  .cal-day.past .cal-ev { opacity:.45; }
+  .cal-day.today { background:var(--cal-now); }
+  .cal-day.today b { color:var(--calk); }
+  .cal-day:active { background:#f1ebff; }
+  .cal-day.today:active { background:#ff8a7f; }
+  .cal-ev { display:block; font-style:normal; height:15px; line-height:12px; padding:0 4px; border-radius:999px; border:1.5px solid var(--calk); font-size:8.5px; font-weight:900; text-transform:uppercase; text-align:center; white-space:nowrap; overflow:hidden; text-overflow:clip; color:var(--calk); background:#fff; }
+  .cal-ev.k-in { background:var(--cal-in); } .cal-ev.k-bill { background:var(--cal-bill); } .cal-ev.k-vi { background:var(--cal-vi); }
+  .cal-ev.more { background:none; border-style:dashed; }
+  .cal-mlegend { display:flex; flex-wrap:wrap; gap:6px; margin:12px 0 0; }
+  .cal-mlegend .cal-ev { height:24px; line-height:21px; padding:0 10px; font-size:10.5px; border-width:2px; }
+  .cal-lg-today { height:24px; line-height:20px; padding:0 10px; border-radius:6px; border:2px solid var(--calk); background:var(--cal-now); font-size:10.5px; font-weight:900; text-transform:uppercase; }
+  .cal-sh-date .k-in { background:var(--cal-in); color:var(--calk); } .cal-sh-date .k-bill { background:var(--cal-bill); color:var(--calk); } .cal-sh-date .k-vi { background:var(--cal-vi); color:var(--calk); }
+  .cal-up-d .k-in { background:var(--cal-in); color:var(--calk); } .cal-up-d .k-bill { background:var(--cal-bill); color:var(--calk); } .cal-up-d .k-vi { background:var(--cal-vi); color:var(--calk); }
 
   /* Общие пилюли и теги */
   .cal-tag { display:inline-flex; align-items:center; gap:4px; height:26px; padding:0 11px; border-radius:999px; font-size:12px; font-weight:800; white-space:nowrap; background:#fff; color:var(--calk); }
   .cal-tag.k { background:var(--calk); color:#fff; } .cal-tag.y { background:var(--caly); color:var(--calk); }
-  .cal-tag.p { background:var(--calp); color:#fff; } .cal-tag.v { background:var(--calv); color:#fff; }
+  .cal-tag.p { background:var(--cal-in); color:var(--calk); } .cal-tag.v { background:var(--cal-vi); color:var(--calk); }
   .cal-tag.w { background:#fff; color:var(--calk); }
   .cal-pill { display:inline-flex; align-items:center; justify-content:center; gap:4px; height:36px; padding:0 14px; border-radius:999px; font-family:var(--calf); font-weight:600; font-size:14px; text-transform:uppercase; letter-spacing:.4px; white-space:nowrap; flex:0 0 auto; border:2px solid transparent; transition:transform .18s var(--spring); }
   .cal-pill i { font-style:normal; }
   .cal-pill:active { transform:scale(.92); }
-  .cal-pill.v { background:var(--calv); color:#fff; border-color:var(--calv); }
-  .cal-pill.o { background:#fff; color:var(--calv); border-color:var(--calp); }
+  .cal-pill.v { background:var(--calk); color:#fff; border-color:var(--calk); }
+  .cal-pill.o { background:#fff; color:var(--calk); border-color:var(--calk); }
   .cal-pill.y { background:var(--caly); color:var(--calk); border-color:var(--caly); animation:pulse 1.2s ease-in-out infinite; }
   .cal-pill.lg { height:50px; font-size:17px; padding:0 18px; }
   .cal-pill.block { width:100%; }
 
   /* Заголовки секций */
-  .cal-h { margin:26px 0 10px; font-family:var(--calf); font-weight:700; font-size:34px; line-height:.95; text-transform:uppercase; letter-spacing:-.3px; color:var(--calk); }
-  .cal-h.p { color:var(--calp); } .cal-h.v { color:var(--calv); }
-  .cal-hsub { font-size:12px; font-weight:800; color:var(--muted); margin:-4px 0 12px; }
+  .cal-h { margin:28px 0 10px; font-family:var(--calf); font-weight:700; font-size:30px; line-height:.95; text-transform:uppercase; letter-spacing:-.01em; color:var(--calk); }
 
-  /* Герой — компактный */
-  .cal-hero { margin:0 -16px; padding:10px 0 14px; position:relative; overflow:hidden; color:#fff; background:var(--calp); border-radius:0 0 30px 30px; transition:background .8s; }
-  .cal-hero.p-night { background:#3b0a7a; }
-  .cal-hero.p-evening { background:linear-gradient(170deg, var(--calp) 30%, var(--calv)); }
-  .cal-hrow { display:flex; align-items:center; justify-content:space-between; gap:8px; padding:0 16px 0 12px; }
-  .cal-hside { display:flex; flex-direction:column; align-items:flex-end; gap:8px; flex:0 0 auto; }
-  .cal-orb { font-size:40px; line-height:1; filter:drop-shadow(0 3px 0 rgba(42,10,85,.45)); }
-  .cal-clock { display:flex; align-items:center; perspective:500px; }
-  .cal-d { font-family:var(--calf); font-weight:700; font-size:92px; line-height:.86; width:.52em; text-align:center; display:inline-block; color:#fff; text-shadow:4px 4px 0 var(--calv); font-variant-numeric:tabular-nums; }
-  .cal-hero.p-night .cal-d { text-shadow:4px 4px 0 var(--calp); }
-  .cal-d.flip { animation:cal-flip .55s var(--spring); }
-  @keyframes cal-flip { 0% { transform:rotateX(90deg); color:var(--caly); } 60% { transform:rotateX(-18deg); color:var(--caly); } 100% { transform:none; } }
-  .cal-colon { font-family:var(--calf); font-weight:700; font-size:70px; line-height:.86; width:20px; text-align:center; color:var(--caly); animation:cal-blink 2.5s steps(2) infinite; }
-  @keyframes cal-blink { 50% { opacity:.25; } }
-  .cal-bleed { white-space:nowrap; font-family:var(--calf); font-weight:700; text-transform:uppercase; line-height:.9; letter-spacing:-.5px; }
-  .cal-b2 { font-size:clamp(20px, 7.4vw, 34px); margin:8px 12px 0 12px; overflow:hidden; text-overflow:clip; color:var(--calv); }
-  .cal-hero.p-morning .cal-b2, .cal-hero.p-evening .cal-b2 { color:var(--caly); }
-  .cal-hero.p-night .cal-b2 { color:var(--calp); }
-  .cal-barwrap { position:relative; margin:12px 16px 0; padding-bottom:15px; }
-  .cal-bar { display:flex; height:14px; border-radius:999px; overflow:hidden; background:#fff; box-shadow:0 0 0 2.5px var(--calk); }
-  .cal-bar i { display:block; height:100%; border-right:2px solid var(--calk); flex:0 0 auto; }
-  .cal-pin { position:absolute; top:-6px; width:6px; height:26px; background:var(--caly); border-radius:3px; box-shadow:0 0 0 2px var(--calk); transform:translateX(-50%); transition:left .5s linear; }
-  .cal-ticks { position:absolute; left:0; right:0; bottom:0; height:13px; }
-  .cal-ticks span { position:absolute; transform:translateX(-50%); font-family:var(--calf); font-size:10px; font-weight:600; opacity:.9; }
-  .cal-ticks span:first-child { transform:none; } .cal-ticks span:last-child { transform:translateX(-100%); }
-  .cal-note { font-weight:800; font-size:12px; margin:6px 16px 0; line-height:1.3; opacity:.92; }
-
-  /* Обратный отсчёт */
-  .cal-big { display:block; width:100%; text-align:left; margin-top:16px; padding:22px 18px 16px; background:var(--calv); color:#fff; border-radius:24px; clip-path:polygon(0 6%, 100% 0, 100% 100%, 3% 97%); transform:rotate(-1deg); transition:transform .2s var(--spring); position:relative; }
-  .cal-big:active { transform:rotate(-1deg) scale(.97); }
-  .cal-big.empty { background:var(--calk); }
-  .cal-big-tags { display:flex; align-items:center; gap:6px; flex-wrap:wrap; }
-  .cal-big-corner { margin-left:auto; font-family:var(--calf); font-weight:700; font-style:italic; font-size:26px; line-height:1; color:#fff; transform:rotate(-6deg); }
-  .cal-big-row { display:flex; justify-content:space-between; align-items:flex-end; gap:10px; margin-top:14px; }
-  .cal-big-l { font-family:var(--calf); font-weight:700; font-size:32px; line-height:.92; text-transform:uppercase; letter-spacing:-.3px; max-width:60%; }
-  .cal-big-r { text-align:right; display:flex; flex-direction:column; align-items:flex-end; }
-  .cal-big-r b { font-family:var(--calf); font-weight:700; font-size:78px; line-height:.8; color:var(--caly); letter-spacing:-2px; }
-  .cal-big-r span { font-family:var(--calf); font-weight:700; font-size:17px; line-height:1; text-transform:uppercase; margin-top:6px; }
-  .cal-big-cd { display:flex; align-items:center; gap:8px; margin-top:14px; padding:7px 14px; border-radius:999px; background:rgba(255,255,255,.14); font-weight:800; font-size:12px; }
-  .cal-big-cd i { margin-left:auto; font-style:normal; }
-  .cal-big-cd [data-bigcd] { font-family:var(--calf); font-weight:700; font-size:20px; line-height:1; font-variant-numeric:tabular-nums; color:var(--caly); }
-  .cal-big-cd small { font-size:11px; font-weight:800; opacity:.8; margin-left:auto; }
 
   /* Таймлайн */
   .cal-tlcard { background:#fff; border-radius:28px; padding:18px 12px 18px 10px; box-shadow:0 0 0 2.5px var(--calk), 0 6px 0 var(--calp); }
@@ -879,93 +675,51 @@
   .cal-now b { position:absolute; right:0; top:-12px; background:var(--calp); color:#fff; border-radius:999px; font-family:var(--calf); font-size:12px; font-weight:600; padding:2px 9px; font-variant-numeric:tabular-nums; white-space:nowrap; text-transform:uppercase; }
 
   /* Дела */
-  .cal-todos { background:#fff; border-radius:28px; padding:14px; box-shadow:0 0 0 2.5px var(--calk), 0 6px 0 var(--calv); }
-  .cal-thead { display:flex; align-items:center; gap:12px; margin:-2px 0 10px; padding:10px 14px; border-radius:20px; background:var(--calp); color:#fff; }
-  .cal-tcount { display:flex; align-items:baseline; font-family:var(--calf); font-weight:700; line-height:.85; }
-  .cal-tcount b { font-size:44px; } .cal-tcount small { font-size:20px; opacity:.85; }
-  .cal-tlbl { font-weight:800; font-size:12px; line-height:1.25; margin-bottom:6px; }
-  .cal-pbar { height:6px; border-radius:999px; background:#f1e8ff; overflow:hidden; margin-top:5px; }
-  .cal-pbar i { display:block; height:100%; border-radius:999px; background:linear-gradient(90deg, var(--calv), var(--calp)); transition:width .9s var(--spring); }
-  .cal-pbar.big { height:10px; background:rgba(255,255,255,.3); margin:0; }
-  .cal-pbar.big i { background:var(--caly); }
+  .cal-todos { background:#fff; border-radius:24px; padding:12px; box-shadow:0 0 0 2.5px var(--calk), 0 5px 0 var(--calk); }
+  .cal-thead { display:flex; align-items:baseline; gap:10px; margin:0 2px 10px; }
+  .cal-thead b { font-family:var(--calf); font-weight:700; font-size:28px; line-height:1; color:var(--calk); font-variant-numeric:tabular-nums; }
+  .cal-thead span { font-weight:800; font-size:12px; color:var(--muted); }
+
+
+  .cal-pbar { height:6px; border-radius:999px; background:#efeae3; overflow:hidden; margin-top:5px; }
+  .cal-pbar i { display:block; height:100%; border-radius:999px; background:var(--calk); transition:width .9s var(--spring); }
+
+
   .cal-qhead { margin:16px 0 6px; display:flex; justify-content:space-between; align-items:baseline; gap:8px; }
-  .cal-qhead span { font-family:var(--calf); font-weight:700; font-size:20px; text-transform:uppercase; color:var(--calv); line-height:1; white-space:nowrap; }
+  .cal-qhead span { font-family:var(--calf); font-weight:700; font-size:20px; text-transform:uppercase; color:var(--calk); line-height:1; white-space:nowrap; }
   .cal-qhead small { font-size:11px; font-weight:800; color:var(--muted); text-align:right; }
   .cal-tlist { display:grid; gap:6px; }
-  .cal-todo { display:flex; align-items:center; gap:9px; padding:9px 10px; border-radius:18px; background:#faf5ff; cursor:pointer; -webkit-tap-highlight-color:transparent; transition:transform .18s var(--spring), background .2s; }
-  .cal-todo:active { transform:scale(.97); background:#f1e4ff; }
+  .cal-todo { display:flex; align-items:center; gap:9px; padding:9px 10px; border-radius:18px; background:#fff; box-shadow:inset 0 0 0 2px var(--calk); cursor:pointer; -webkit-tap-highlight-color:transparent; transition:transform .18s var(--spring), background .2s; }
+  .cal-todo:active { transform:scale(.97); background:#f6f1ea; }
   .cal-todo:focus-visible { outline:3px solid var(--calp); outline-offset:2px; }
-  .cal-chk { width:28px; height:28px; border-radius:50%; border:2.5px solid var(--calp); background:#fff; flex:0 0 auto; display:grid; place-items:center; font-weight:900; font-size:15px; color:#fff; transition:transform .2s var(--spring), background .2s; }
+  .cal-chk { width:28px; height:28px; border-radius:50%; border:2.5px solid var(--calk); background:#fff; flex:0 0 auto; display:grid; place-items:center; font-weight:900; font-size:15px; color:#fff; transition:transform .2s var(--spring), background .2s; }
   .cal-te { font-size:22px; flex:0 0 auto; }
   .cal-tt { flex:1; min-width:0; }
   .cal-tt b { display:inline; font-size:14px; font-weight:800; line-height:1.2; background:linear-gradient(var(--calp), var(--calp)) no-repeat 0 55% / 0 3px; transition:background-size .45s var(--out); }
   .cal-tt small { display:block; font-size:11px; font-weight:700; color:var(--muted); line-height:1.25; margin-top:1px; }
-  .cal-rw { font-size:11px; font-weight:900; padding:4px 9px; border-radius:999px; background:#fff; color:var(--calv); white-space:nowrap; flex:0 0 auto; }
+  .cal-rw { font-size:11px; font-weight:900; padding:4px 9px; border-radius:999px; background:#fff; color:var(--calk); white-space:nowrap; flex:0 0 auto; }
   .cal-todo .cal-pill { height:32px; padding:0 10px; font-size:12px; }
-  .cal-todo.done { background:#f4f4f6; }
-  .cal-todo.done .cal-chk { background:var(--calv); border-color:var(--calv); }
+  .cal-todo.done { background:#f4f1ec; box-shadow:none; }
+  .cal-todo.done .cal-chk { background:var(--cal-ok); border-color:var(--calk); color:var(--calk); }
+  .cal-chk.wip { background:var(--caly); border-color:var(--calk); color:var(--calk); font-size:13px; line-height:0; }
   .cal-todo.done .cal-tt b { background-size:100% 3px; }
   .cal-todo.done .cal-te, .cal-todo.done .cal-tt { opacity:.6; }
-  .cal-todo.done .cal-rw { background:var(--calv); color:#fff; }
+  .cal-todo.done .cal-rw { background:var(--cal-ok); color:var(--calk); }
   .cal-todo.missed .cal-tt { opacity:.7; }
-  .cal-todo.urgent { background:#fff0fa; box-shadow:inset 0 0 0 2px var(--calp); }
+  .cal-todo.urgent { background:#fff; box-shadow:inset 0 0 0 2.5px var(--cal-now); }
   .cal-todo.urgent .cal-chk { animation:pulse 1.2s ease-in-out infinite; }
-  .cal-todo.ready { background:#fffbd1; }
+  .cal-todo.ready { background:var(--caly); }
   .cal-todo.ready .cal-chk { background:var(--caly); border-color:var(--calk); animation:pulse 1.2s ease-in-out infinite; }
   .cal-todo.just .cal-chk { animation:cal-check .7s var(--spring); }
   .cal-todo.just .cal-te { animation:jelly .6s var(--spring); }
   .cal-todo.just .cal-tt b { transition-delay:.15s; }
   @keyframes cal-check { 0% { transform:scale(.4) rotate(-30deg); } 60% { transform:scale(1.35) rotate(8deg); } 100% { transform:none; } }
 
-  /* Продуктивность */
-  .cal-prod { padding:24px 18px 22px; background:var(--calv); color:#fff; border-radius:26px; clip-path:polygon(0 0, 100% 5%, 97% 100%, 0 96%); transform:rotate(1deg); }
-  .cal-prod-row { display:flex; align-items:flex-end; gap:12px; margin-top:6px; }
-  .cal-prod-n { font-family:var(--calf); font-weight:700; font-size:110px; line-height:.8; letter-spacing:-3px; }
-  .cal-prod-u { font-family:var(--calf); font-weight:700; font-size:22px; line-height:.95; text-transform:uppercase; padding-bottom:4px; }
-  .cal-pmeter { height:12px; border-radius:999px; background:rgba(255,255,255,.2); overflow:hidden; margin-top:14px; }
-  .cal-pmeter i { display:block; height:100%; border-radius:999px; transition:width .9s var(--spring); }
-  .cal-pstats { display:grid; grid-template-columns:1fr 1fr; gap:6px; margin-top:12px; }
-  .cal-pstats div { display:flex; justify-content:space-between; align-items:center; gap:6px; padding:8px 12px; border-radius:16px; font-size:12px; font-weight:800; }
-  .cal-pstats b { font-family:var(--calf); font-weight:700; font-size:20px; line-height:1; font-variant-numeric:tabular-nums; }
-  .cal-pstats .s1 { background:var(--calp); } .cal-pstats .s2 { background:var(--caly); color:var(--calk); }
-  .cal-pstats .s3 { background:#fff; color:var(--calk); } .cal-pstats .s4 { background:var(--calk); }
-  .cal-tips { display:grid; gap:8px; margin-top:16px; }
-  .cal-tip { display:flex; gap:10px; align-items:center; width:100%; text-align:left; font-size:13px; font-weight:800; line-height:1.25; padding:11px 14px; border-radius:999px; background:#fff; border:2px solid var(--calp); transition:transform .18s var(--spring); }
-  .cal-tip:active { transform:scale(.97); }
-  .cal-tip.t1 { border-color:var(--calv); } .cal-tip.t2 { border-color:var(--calk); }
-  .cal-tip .emo { font-size:22px; flex:0 0 auto; }
-  .cal-tip i { margin-left:auto; font-style:normal; font-family:var(--calf); font-weight:700; color:var(--calp); }
-
-  /* Месяц */
-  .cal-month { background:#fff; border-radius:30px; padding:16px 14px; box-shadow:0 0 0 2.5px var(--calk), 0 6px 0 var(--calk); }
-  .cal-mtitle { display:flex; justify-content:space-between; align-items:baseline; margin-bottom:14px; gap:8px; }
-  .cal-mt { font-family:var(--calf); font-weight:700; font-size:34px; line-height:.9; text-transform:uppercase; letter-spacing:-.3px; white-space:nowrap; color:var(--calp); }
-  .cal-mnote { font-size:11px; font-weight:800; color:var(--muted); white-space:nowrap; }
-  .cal-mhead, .cal-grid { display:grid; grid-template-columns:repeat(7, minmax(0, 1fr)); gap:5px; }
-  .cal-mhead { font-size:12px; font-weight:700; color:var(--calk); text-align:center; margin-bottom:8px; }
-  .cal-mhead .we { color:var(--calp); }
-  .cal-day { aspect-ratio:1; border-radius:11px; background:var(--calk); color:#fff; display:grid; place-items:center; min-width:0; position:relative; transition:transform .2s var(--spring); }
-  .cal-day b { font-family:var(--calf); font-size:15px; font-weight:500; }
-  .cal-day.empty { background:none; }
-  .cal-day.we { background:#36303f; }
-  .cal-day.ev { border-radius:50%; }
-  .cal-day.k-in, .cal-day .more.k-in, .cal-mlegend .k-in, .cal-up-d .k-in, .cal-sh-date .k-in { background:var(--calp); color:#fff; }
-  .cal-day.k-bill, .cal-day .more.k-bill, .cal-mlegend .k-bill, .cal-up-d .k-bill, .cal-sh-date .k-bill { background:var(--caly); color:var(--calk); }
-  .cal-day.k-vi, .cal-day .more.k-vi, .cal-mlegend .k-vi, .cal-up-d .k-vi, .cal-sh-date .k-vi { background:var(--calv); color:#fff; }
-  .cal-day .more { position:absolute; right:1px; top:1px; width:11px; height:11px; border-radius:50%; box-shadow:0 0 0 2px #fff; }
-  .cal-day.past { opacity:.32; }
-  .cal-day.today { box-shadow:0 0 0 2.5px #fff, 0 0 0 5px var(--calp); z-index:1; animation:cal-today 2.4s var(--spring) infinite; }
-  @keyframes cal-today { 0%, 80%, 100% { transform:scale(1.04); } 88% { transform:scale(1.18) rotate(-6deg); } }
-  .cal-day:active { transform:scale(.88); }
-  .cal-mlegend { display:flex; flex-wrap:wrap; gap:12px; margin-top:14px; font-size:11px; font-weight:800; }
-  .cal-mlegend span { display:inline-flex; align-items:center; gap:6px; }
-  .cal-mlegend i { width:12px; height:12px; border-radius:50%; display:block; }
-
   /* Ближайшее */
   .cal-uplist { display:grid; gap:8px; }
   .cal-up { display:flex; align-items:center; gap:12px; width:100%; text-align:left; padding:9px 12px 9px 9px; background:#fff; border-radius:22px; box-shadow:0 0 0 2px var(--calk); transition:transform .18s var(--spring); }
   .cal-up:active { transform:scale(.97); }
-  .cal-up:first-child { box-shadow:0 0 0 2.5px var(--calk), 0 5px 0 var(--calp); }
+  .cal-up:first-child { box-shadow:0 0 0 2.5px var(--calk), 0 5px 0 var(--calk); }
   .cal-up-d { width:48px; height:48px; border-radius:14px; background:var(--calk); display:grid; place-items:center; flex:0 0 auto; }
   .cal-up-d b { width:36px; height:36px; border-radius:50%; display:grid; place-items:center; font-family:var(--calf); font-weight:700; font-size:17px; }
   .cal-up .tx { flex:1; min-width:0; display:flex; flex-direction:column; }

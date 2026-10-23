@@ -79,11 +79,15 @@
   }
   const lock = (key, need, inner, big) => T >= need ? inner
     : `<div class="fit-lock ${big ? "big" : ""}"><div class="fit-lock-body" aria-hidden="true" inert>${inner}</div>${paywall(key, need, big)}</div>`;
-  const stressOf = (bpm) => clamp(Math.round((bpm - 58) * 2.2));
+  // Стресс и выгорание — те же цифры, что в body.js (одна модель на всю игру)
   function burnout(b) {
-    const risk = clamp(Math.round(100 - (b.energy * 0.4 + b.mood * 0.35 + b.health * 0.25)));
-    const days = Math.max(1, Math.round((100 - risk) / 9));
-    return risk >= 60 ? `через ${days} дн. Уже пора в отпуск 🔥` : risk >= 35 ? `через ~${days} дн. Держись 🫠` : `не скоро. Подозрительно 😎`;
+    const si = V.body.stress();
+    if (si.burnedOut) return "уже. Больничный, работа на паузе 🛌";
+    const log = b.stressLog || [];
+    const trend = log.length >= 2 ? (log[log.length - 1].v - log[0].v) / (log.length - 1) : 0;
+    if (trend <= 0.5) return si.value >= 65 ? "стресс высокий, но не растёт. Пока 🫠" : "не скоро. Подозрительно 😎";
+    const days = Math.max(1, Math.ceil((90 - si.value) / trend));
+    return days <= 3 ? `через ${days} дн. Уже пора в отпуск 🔥` : `через ~${days} дн. Держись 🫠`;
   }
 
   /* ---------- Тонкие иконки ---------- */
@@ -591,7 +595,7 @@
         txt("prodemo", P.value >= 80 ? "🚀" : P.value >= 60 ? "💼" : P.value >= 40 ? "🐢" : b.sleeping ? "😴" : "🪫");
         [["e", P.parts.energy], ["f", P.parts.food], ["m", P.parts.mood], ["h", P.parts.health]].forEach(([k, v]) => { bar("p-" + k, v); txt("pv-" + k, r0(v) + "%"); });
         txt("verdict", verdict(P.value, b));
-        if (T >= 2) { const st = stressOf(V.body.heartRate(b)); txt("stress", st + "%"); }
+        if (T >= 2) txt("stress", V.body.stress().value + "%");
         if (T === 3) txt("burn", burnout(b));
 
         // Сон

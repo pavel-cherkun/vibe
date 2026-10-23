@@ -153,13 +153,7 @@
         return `<button class="card tight tap plan ${live ? "c-yellow" : ""}" data-go="maps"><span class="emo">${e.e}</span><div style="flex:1;text-align:left;min-width:0"><b>${Vibe.esc(e.title)}</b><small>${when}${live ? " · сейчас! Доберись на место" : ""}</small></div><span>🗺️</span></button>`;
       }).join("")}</div>` : ""}
 
-      <h2 class="sec">Задания дня <small>обновятся завтра</small></h2>
-      <div class="stack">${qs.map((q) => `
-        <div class="card tight quest ${q.claimed ? "claimed" : q.done ? "c-lime" : ""}">
-          <span class="emo">${q.e}</span>
-          <div style="flex:1;min-width:0"><b>${q.t}</b><div class="progress" style="height:8px;margin-top:5px"><i style="--p:${Math.round((Math.min(q.n, q.need) / q.need) * 100)}%"></i></div></div>
-          ${q.claimed ? `<span class="badge" style="background:#fff">✓</span>` : q.done ? `<button class="btn black sm" data-act="quest" data-q="${q.id}">+${q.r} 🪙</button>` : `<small class="muted" style="font-weight:900">${q.n}/${q.need}</small>`}
-        </div>`).join("")}</div>`;
+      ${(() => { const n = qs.filter((q) => q.claimed).length, ready = qs.filter((q) => q.done && !q.claimed).length; return `<button class="card tight tap quest-link ${ready ? "c-lime" : ""}" data-go="calendar" style="display:flex;gap:12px;align-items:center;width:100%;text-align:left;margin-top:16px"><span class="emo">🎯</span><div style="flex:1;min-width:0"><b>Задания дня · ${n}/${qs.length}</b><small style="display:block;font-weight:700">${ready ? `награда ждёт: ${ready}` : "живут в календаре"}</small></div><span>→</span></button>`; })()}`;
   }
 
   Vibe.screen("home", {
@@ -355,7 +349,6 @@
         if (a.dataset.act === "goals") { e.stopPropagation(); Vibe.game.goalsSheet(); }
         if (a.dataset.act === "goal") { e.stopPropagation(); Vibe.game.claimGoal(a); setTimeout(refreshLife, 400); }
         if (a.dataset.act === "cook" && Vibe.intercept) { e.stopPropagation(); Vibe.intercept.cook(a); setTimeout(refreshLife, 800); }
-        if (a.dataset.act === "quest") { e.stopPropagation(); Vibe.game.claimQuest(a.dataset.q, a); setTimeout(refreshLife, 300); }
       });
       const qv = setInterval(refreshLife, 15000);
 
