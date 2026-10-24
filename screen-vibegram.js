@@ -32,7 +32,7 @@
   const app = () => document.getElementById("app") || document.body;
 
   /* ---------- Состояние ---------- */
-  const DEF = { base: 0, posts: [], drafts: [], follow: { coach: true, meme: true, vibe: true }, liked: {}, saved: {}, myCm: {}, seenSt: {}, relDay: {}, tierMax: 0, decayDay: -1, dealDay: -1, reelsSeen: 0, reelLiked: {}, lastPostDay: -1, placeDay: {}, bio: null };
+  const DEF = { base: 0, posts: [], drafts: [], follow: { coach: true, meme: true, vibe: true }, liked: {}, saved: {}, myCm: {}, seenSt: {}, relDay: {}, tierMax: 0, decayDay: -1, dealDay: -1, reelsSeen: 0, reelLiked: {}, lastPostDay: -1, placeDay: {}, bio: null, achPosted: {} };
   const G = () => Object.assign({}, DEF, S().gram || {});
   const setG = (patch) => Vibe.state.set({ gram: Object.assign(G(), typeof patch === "function" ? patch(G()) : patch) });
 
@@ -129,10 +129,10 @@
     date: [["🌹", "✨🕯️🍷", "Иногда просто хорошо", "вечер"], ["📚", "☕🌧️🍂", "Дождь, книжка, кофе", "осень"], ["🧘", "🌿✨🕊️", "Ищу баланс. Нашла только скидку на йогу", "йога"]],
     partner: [["💞", "🌅🫶✨", "С тобой даже понедельник ничего", "любовь"], ["🍝", "🕯️🍷💕", "Ужин на двоих", "вечер любовь"]],
   };
-  const CHAR_CM = { mom: ["А шапка где?", "Красиво! Ты {поел|поела}?", "Горжусь 💐💐💐", "Позвони маме"], dad: ["👍", "Нормально.", "Масло в машине проверил?"], lyoha: ["Красавчик 🔥", "Без меня?!", "Скинь в чат", "Ахахах"], katya: ["Вайб 💜", "Ахаха это ты?", "Пойдём туда в выходные!", "Красота ✨"] };
+  const CHAR_CM = { mom: ["А шапка где?", "Красиво! Ты {поел|поела}?", "Горжусь 💐💐💐", "Позвони маме"], dad: ["👍", "Нормально.", "Масло в машине {проверил|проверила}?"], lyoha: ["{Красавчик|Красотка} 🔥", "Без меня?!", "Скинь в чат", "Ахахах"], katya: ["Вайб 💜", "Ахаха это ты?", "Пойдём туда в выходные!", "Красота ✨"] };
   const RAND_USERS = [["@sonya_vibe", "👧"], ["@max.nevyspalsya", "😪"], ["@kotik_ipoteka", "🐱"], ["@tanya_v_moment", "🌸"], ["@pasha_dedlain", "⏰"], ["@vibe_fan_2026", "💜"], ["@igor_na_udalenke", "💻"], ["@ksyu_kofe", "☕"], ["@grisha_bez_vyhodnyh", "🫠"], ["@lera_vse_sama", "💅"], ["@bot_ne_bot", "🤖"], ["@denis_kredit", "💳"]];
   const CM_GEN = ["Это я 😭", "Отправил маме", "Корпорация, верните мой вайб", "Почему это так жизненно", "Где купить?", "Ссылка в описании не работает", "Ахахах я плачу", "Мой начальник это смотрит", "Сохранил на «потом» (никогда)", "А можно в рассрочку?", "Вайбот, это про меня?", "Лучшее, что я видел сегодня. Сегодня я видел 400 рилсов", "Первый!", "Не первый", "Это реклама?", "Подписался, отписался, подписался", "Мне это показали 7 раз. Спасибо, алгоритм", "А курс где?", "Ставлю 🔥 не глядя", "Лайкнул с рабочего аккаунта", "Кто от Корпорации — ставьте 💜", "Записал в цели на год", "Смешно, но больно", "У меня так же, только без денег", "Пересматриваю 5-й раз", "Где звук?"];
-  const CM_ME = ["Огонь 🔥", "Вау!", "Красиво живёшь", "Это где?", "Завидую белой завистью", "Скинь геолокацию", "Ну ты даёшь", "Лайк не глядя", "Кто это такой красивый?", "Ты на работе вообще бываешь?", "Классика", "Можно с тобой?", "Вайб 💜", "Взаимная подписка?", "Продвигаю свой канал, загляни 👉"];
+  const CM_ME = ["Огонь 🔥", "Вау!", "Красиво живёшь", "Это где?", "Завидую белой завистью", "Скинь геолокацию", "Ну ты даёшь", "Лайк не глядя", "{Кто это такой красивый|Кто это такая красивая}?", "Ты на работе вообще бываешь?", "Классика", "Можно с тобой?", "Вайб 💜", "Взаимная подписка?", "Продвигаю свой канал, загляни 👉"];
   const QUICK_CM = ["🔥🔥🔥", "Лайк не глядя", "Красота!", "Где это?", "Скучаю 💜", "Ахахах", "Это я"];
 
   const charList = () => { let l = null; try { l = Vibe.chars && Vibe.chars.list && Vibe.chars.list(); } catch (e) {} return l && l.length ? l : FALLBACK; };
@@ -224,25 +224,272 @@
     return { L: Math.round(q * (6 + f * 0.045 + friends * 2)), F: Math.round(q * (5 + 4.5 * Math.sqrt(f))) };
   }
 
-  /* ---------- Публикация ---------- */
-  function genComments(L, kind) {
-    const r = Math.random;
-    const n = Math.min(14, 1 + Math.floor(Math.sqrt(L) * 0.8));
-    const cl = chars();
+  /* ---------- Комментарии к своим постам: по подписи, месту и типу момента ---------- */
+  // Спам-боты Корпорации — всегда «по теме»
+  const BOTS = [["@vibe_kredit_bot", "💳"], ["@corp_bonus_bot", "🤖"], ["@kursy_uspeha_bot", "🏆"], ["@vibe_care_bot", "💜"]];
+  // Темы → реплики по голосам: mom, dad, lyoha, katya, fan (подписчики), bot (Корпорация).
+  // {p} — место, {t} — название (ачивки, покупки, события). Реплика с пустым плейсхолдером не берётся
+  const TOP = {
+    promo: {
+      mom: ["Поздравляю! Удачи на новом месте 💐💐💐", "Горжусь! Только не задерживайся допоздна. Ты {поел|поела}?", "Я всем соседкам рассказала 🌷"],
+      dad: ["Молодец. Не расслабляйся.", "👍 Зарплату {обсудил|обсудила}?"],
+      lyoha: ["Проставляешься в пятницу 🍻", "Теперь ты начальник? Возьми меня курьером 😏", "Корпорация купила ещё одну душу. Поздравляю, бро"],
+      katya: ["Ура!! Удачи на новой должности ✨", "Это надо отметить 🥂"],
+      fan: ["Удачи на новом месте работы!", "Поздравляю! А вакансии у вас есть?", "Скоро будешь вести марафон «Как я вырос»", "Растёшь! А зарплата?", "Новая должность — новые переработки 💼"],
+      bot: ["Поздравляем с повышением! Кредит под новую зарплату уже одобрен 💜", "Новая должность — новый уровень! Курс «Как не выгореть за 30 дней» со скидкой 3%", "Корпорация гордится вами. Переработки теперь засчитываются как благодарность 💜"],
+    },
+    work: {
+      mom: ["Работаешь много. Отдыхай хоть иногда 💐", "Это у тебя такой офис? Красиво. Не сутулься"],
+      lyoha: ["Опять пашешь? Пятница же скоро", "Мем дня — это ты 🐸"],
+      katya: ["Офисная эстетика 💜 узнаю этот кулер"],
+      fan: ["Узнал свой опенспейс 😭", "Дедлайн тоже эстетика, согласен", "Мой начальник это лайкнул. Боюсь", "Работа мечты (чужой мечты)"],
+      bot: ["Устали? Подписка «Выходной+» всего 990 ₫ в месяц 💜", "Вы так продуктивны! Корпорация увеличила ваш KPI на 12% 📈"],
+    },
+    place: {
+      mom: ["Гуляешь? Шапку надень 🧣", "Красиво там, {p}. Будь {осторожен|осторожна}"],
+      lyoha: ["{p}? Я рядом, жди 🔥", "Без меня в {p}?!", "Знаю там шаурмичную неподалёку 🌯"],
+      katya: ["Обожаю это место! Пойдём вместе в выходные ✨"],
+      fan: ["Это где? {p}?", "Тоже люблю {p}!", "Скинь геолокацию", "Часто там бываю, ни разу тебя не видел 👀", "{p} — топ"],
+      bot: ["Вы рядом с партнёрами Vibe! Кэшбек 0,3% в радиусе 50 метров 💜", "Ваша геолокация сохранена. Из заботы 💜"],
+    },
+    food: {
+      mom: ["Ешь нормально, а не вот это всё 🥧", "Приезжай, я пирогов напекла 💐", "Это полезно хоть?"],
+      lyoha: ["Где это? Я голодный 🌯", "А мне?", "Шаурма вкуснее, без обид"],
+      katya: ["Выглядит вкусно! Адрес? ✨"],
+      fan: ["Выглядит дорого", "Это из доставки, признавайся", "Хочу так же, но без цены", "Рецепт в студию!"],
+      bot: ["Закажите то же самое в Vibe Eat! Доставка 0 ₫*. *Сбор за ноль — 199 ₫", "Кофе за 490 ₫ — это инвестиция в себя. Рассрочка доступна 💜"],
+    },
+    cat: {
+      mom: ["Котик! Кормишь его? 🐈", "Наш Барсик передаёт привет 💐"],
+      lyoha: ["Кот красивее тебя, без обид 😂"],
+      katya: ["КОТИК 😍😍😍"],
+      fan: ["Кота — в профиль!", "Лайк коту, не тебе", "Как зовут?", "Это лучший пост в ленте"],
+      bot: ["Корм для кота в рассрочку на 12 месяцев 🐾", "Застрахуйте кота в Vibe Страховании! Вдруг он заскучает 💜"],
+    },
+    travel: {
+      mom: ["Береги себя! Позвони, как доедешь 💐", "Крем от солнца взяли? 🧴"],
+      dad: ["Масло в машине {проверил|проверила}?", "Нормально."],
+      lyoha: ["Привези мне что-нибудь 🙏", "А работать кто будет?", "Завидую. Молча"],
+      katya: ["Ааа красота! Я тоже хочу ✨"],
+      fan: ["Завидую белой завистью", "Это где? Хочу туда", "Почту хоть не проверяешь?", "Отпуск в кредит — тоже отпуск"],
+      bot: ["Тур в рассрочку под 49% годовых! Следующий отпуск уже ждёт 🏝️", "Пока вы отдыхаете, Корпорация работает за вас. Шутка. Работа ждёт 💜"],
+    },
+    sport: {
+      mom: ["Не перетрудись! Спину береги 💐", "Молодец! Покушай потом"],
+      lyoha: ["Бицуха растёт 💪", "А я на диване, как обычно"],
+      katya: ["Мотивируешь! Завтра тоже пойду (нет) 😅"],
+      fan: ["Мотивация 🔥", "А программа есть?", "Я тоже собирался… с понедельника", "Форма огонь"],
+      bot: ["Протеин со скидкой 5% по промокоду VIBE 💪", "Марафон «Попа как орех» — осталось 2 места! 🍑"],
+    },
+    family: {
+      mom: ["Приезжай почаще 💐💐💐", "Как хорошо посидели! Я ещё с собой положила", "Спасибо, что {заехал|заехала}! Огурцы не забудь"],
+      dad: ["Нормально посидели.", "👍"],
+      lyoha: ["Передавай маме привет! Пироги — легенда"],
+      katya: ["Как уютно 💜"],
+      fan: ["Семья — это главное", "Тоже скучаю по родителям", "Банки с огурцами — это сила", "Так тепло 🥹"],
+      bot: ["Семейная подписка Vibe — до 5 близких под одним кредитом 💜", "Порадуйте родителей! Микрозайм «На подарок маме» за 2 минуты"],
+    },
+    party: {
+      mom: ["Не допоздна! И шапку 🧣", "Это что за место? Будь {осторожен|осторожна}"],
+      lyoha: ["Без меня?!", "Я уже еду 🕺", "Лучшая тусовка года (до следующей)"],
+      katya: ["Ахаха это ты на фото?", "Было огненно 🔥"],
+      fan: ["Где это? Хочу туда", "Вайб 💜", "Голос {сорвал|сорвала}?", "Пятница удалась"],
+      bot: ["Билеты на следующую тусовку в рассрочку! Осталось 2 🎤", "Похмелье? Vibe Health доставит рассол за 15 минут 💜"],
+    },
+    date: {
+      mom: ["Это кто?! Познакомишь? 💐", "Ой, как хорошо. Я ничего не спрашиваю. Кто это?"],
+      lyoha: ["Ого, а подробности? 😏", "Ну ты даёшь"],
+      katya: ["Ммм, вайб 💜 расскажешь потом!"],
+      fan: ["Иногда везёт ✨", "Красиво живёшь", "Мне бы так"],
+      bot: ["Ужин на двоих в рассрочку на 6 месяцев 💘", "Vibe Match нашёл ещё 47 совпадений! Не останавливайтесь 💜"],
+    },
+    buy: {
+      mom: ["Опять деньги тратишь! Ну хоть красивое 💐", "Сколько стоило? Я не ругаюсь"],
+      dad: ["Чек сохранил?"],
+      lyoha: ["Дай погонять", "{Богач|Богачка} 💸"],
+      katya: ["Ооо, где {брал|брала}? ✨"],
+      fan: ["«{t}» — уважаю", "Сколько стоит «{t}»?", "А можно в рассрочку?", "{Заслужил|Заслужила}!"],
+      bot: ["Отличная покупка! «{t}» доступно в рассрочке на 24 месяца 💜", "Кэшбек 0,5% за «{t}» зачислится через 90 дней 💜"],
+    },
+    gift: {
+      mom: ["{Какой ты заботливый|Какая ты заботливая} 💐", "Мне тоже можно иногда 😉"],
+      lyoha: ["А мне подарки?", "Красиво"],
+      katya: ["Ой как мило 💝"],
+      fan: ["Повезло кому-то", "Дарить — тоже искусство", "Хочу такого друга"],
+      bot: ["Подарочная карта Vibe — лучший подарок! Сгорает через 30 дней 🎁"],
+    },
+    ach: {
+      mom: ["Горжусь! «{t}» — это что? Но горжусь 💐", "Умница! Я всем покажу"],
+      dad: ["Неплохо.", "👍"],
+      lyoha: ["«{t}»? Я так ещё в школе мог 😏", "Читер 😂"],
+      katya: ["«{t}» — легенда ✨"],
+      fan: ["«{t}» — это сильно", "Как получить «{t}»?", "Уровень!", "Левел ап 🔥"],
+      bot: ["Достижение «{t}» открыто! Следующее — за 4 990 ₫ 🏆", "Поздравляем! «{t}» добавлено в ваш профиль для кредитного скоринга 💜"],
+    },
+    doctor: {
+      mom: ["Что случилось?! Позвони срочно!", "Береги здоровье 💐 Пей чай с малиной"],
+      lyoha: ["Ты там {жив|жива}? 😅"],
+      fan: ["Здоровья!", "Сколько стоил приём?", "{Взрослый|Взрослая} 👏"],
+      bot: ["Страховка Vibe Health «Почти всё включено» — от 2 990 ₫ в месяц 🩺"],
+    },
+    look: {
+      mom: ["{Красавец какой|Красавица какая}! Только оденься теплее 💐", "{Похудел|Похудела}? Кушай!"],
+      lyoha: ["{Кто это такой красивый|Кто это такая красивая}?", "Фильтров три, признавайся"],
+      katya: ["Образ огонь 🔥", "Где кофта? Хочу!"],
+      fan: ["Красиво живёшь", "Выглядишь дорого 💅", "Ставлю 🔥 не глядя", "Это без фильтров? Верю"],
+      bot: ["Ваш образ на 87% совпадает с коллекцией Vibe Style! Заказать в рассрочку 💜"],
+    },
+    mood: {
+      mom: ["Красиво! Не гуляй допоздна 💐", "Ты там не грусти"],
+      lyoha: ["Философ 😂", "Мысли о вечном = мысли о пятнице"],
+      katya: ["Эстетика 💜", "Обожаю такое небо"],
+      fan: ["Атмосферно", "Сохранил на «потом»", "Вот бы сейчас туда", "Мысли о зарплате — самые вечные"],
+      bot: ["Закат бесплатный. Пока. Подписка «Закат+» скоро 💜"],
+    },
+    ad: {
+      mom: ["Это реклама? Ну ладно, раз платят 💐"],
+      lyoha: ["Продался 😒", "Мне тоже скидку дай"],
+      katya: ["Ахаха, интеграция 💜"],
+      fan: ["Продался 😒", "Это реклама?", "Отписка (нет)", "Промокод работает?"],
+      bot: ["Спасибо за партнёрство! Гонорар зачислен за вычетом комиссии 99% 💜"],
+    },
+    any: {
+      mom: ["Красиво! Ты {поел|поела}? 💐", "Горжусь 💐💐💐", "Позвони маме"],
+      dad: ["👍", "Нормально."],
+      lyoha: ["{Красавчик|Красотка} 🔥", "Скинь в чат", "Ахахах"],
+      katya: ["Вайб 💜", "Красота ✨"],
+      fan: CM_ME,
+      bot: ["Вам одобрен кредит! Даже если вы не просили 💜", "Пост засчитан в KPI счастья. Так держать 💜"],
+    },
+  };
+  const SCN_NAME = { home: "дома", office: "офис", cafe: "кофейня", park: "парк", river: "набережная", metro: "метро", club: "клуб", gym: "зал", beach: "пляж", parents: "у родителей", night: "ночной город", shop: "ТЦ" };
+  function topicOf(p) {
+    const k = p.kind, sc = p.scene, txt = ((p.text || "") + " " + (p.tags || []).join(" ")).toLowerCase();
+    if (k === "promo" || /повыс|нов(ая|ое|ую|ой) (работ|мест|должност)|оффер|устроил|первый рабочий/.test(txt)) return "promo";
+    if (k === "ach" || k === "ad" || k === "buy" || k === "gift" || k === "date" || k === "doctor") return k;
+    if (k === "travel" || sc === "beach") return "travel";
+    if (k === "sport" || k === "gym" || sc === "gym") return "sport";
+    if (k === "family" || sc === "parents") return "family";
+    if (k === "concert" || k === "friend" || sc === "club") return "party";
+    if (k === "cat" || /(^|\s)кот/.test(txt)) return "cat";
+    if (k === "coffee" || k === "food" || sc === "cafe") return "food";
+    if (k === "office" || sc === "office") return "work";
+    if (k === "place") return "place";
+    if (k === "sunset" || k === "night" || sc === "river" || sc === "night") return "mood";
+    if (k === "selfie" || k === "look") return "look";
+    return "any";
+  }
+  // Контекст для плейсхолдеров: место и «название» (из метаданных или из «кавычек» в подписи)
+  function cmCtx(p) {
+    const m = p.meta || {};
+    const q = /«([^»]{2,40})»/.exec(p.text || "");
+    return { p: m.p || (p.kind === "place" && SCN_NAME[p.scene]) || "", t: m.t || (q && q[1]) || "" };
+  }
+  const fillCm = (t, ctx) => (/\{p\}/.test(t) && !ctx.p) || (/\{t\}/.test(t) && !ctx.t) ? null : t.replace(/\{p\}/g, ctx.p).replace(/\{t\}/g, ctx.t);
+  function lineFor(topic, who, ctx, used) {
+    const pools = [(TOP[topic] || {})[who], who === "fan" || who === "bot" ? null : CHAR_CM[who], TOP.any[who]].filter(Boolean);
+    for (const pool of pools) {
+      const opts = pool.map((t) => fillCm(t, ctx)).filter((t) => t && !used.has(t));
+      if (opts.length) { const t = pick(opts); used.add(t); return t; }
+    }
+    return null;
+  }
+  // Сценарий комментариев: близкие первыми, потом бот Корпорации, потом подписчики. d — через сколько игровых минут появится
+  function genComments(p) {
+    const r = Math.random, topic = topicOf(p), ctx = cmCtx(p), used = new Set();
+    const n = Math.min(14, Math.max(3, 1 + Math.floor(Math.sqrt(p.L) * 0.8)));
+    const cl = chars(), byId = (id) => cl.find((c) => c.id === id);
     const out = [];
-    for (let i = 0; i < n; i++) {
-      if (cl.length && r() < 0.35) {
-        const c = pick(cl);
-        out.push({ a: c.handle, e: c.e, t: pick(CHAR_CM[c.id] || ["🔥", "Класс!", "❤️", "Вау"]), id: c.id });
-      } else { const u = pick(RAND_USERS); out.push({ a: u[0], e: u[1], t: pick(CM_ME) }); }
+    const add = (o) => { if (o && o.t) out.push(o); };
+    const close = [];
+    const mom = byId("mom"); if (mom && (r() < 0.85 || ["promo", "family", "travel", "doctor"].includes(topic))) close.push(mom);
+    const fr = cl.filter((c) => c.kind === "friend" || c.id === "lyoha" || c.id === "katya");
+    fr.sort(() => r() - 0.5).slice(0, r() < 0.5 ? 2 : 1).forEach((c) => close.push(c));
+    const dad = byId("dad"); if (dad && r() < 0.3) close.push(dad);
+    close.forEach((c) => add({ a: c.handle, e: c.e, id: c.id, t: lineFor(topic, TOP[topic] && TOP[topic][c.id] ? c.id : CHAR_CM[c.id] ? c.id : "fan", ctx, used) }));
+    if (r() < (["promo", "buy", "travel", "ach", "ad", "food"].includes(topic) ? 0.9 : 0.55)) { const b = pick(BOTS); add({ a: b[0], e: b[1], bot: true, t: lineFor(topic, "bot", ctx, used) }); }
+    while (out.length < n) {
+      const u = pick(RAND_USERS);
+      const t = r() < 0.65 ? lineFor(topic, "fan", ctx, used) : pick(CM_ME.filter((x) => !used.has(x)).concat(["🔥"]));
+      if (!t) break;
+      used.add(t); add({ a: u[0], e: u[1], t });
     }
     if (tierIdx() >= 3 && r() < 0.6) { const s = pick(STARS.filter((x) => !x.official)); out.splice(1, 0, { a: s.handle, e: s.e, t: pick(["Вау, коллега 💫", "Коллаб? 🔥", "Подписалась ✨", "Это уровень!"]), star: true }); }
-    if (kind === "ad") out.unshift({ a: "@lera_vse_sama", e: "💅", t: "Продался 😒" });
+    // Задержки: первый — через 5–14 мин, дальше всё реже (≈ как живые люди)
+    let d = 5 + Math.floor(r() * 10);
+    out.forEach((c, i) => { c.d = Math.round(d); d += 4 + r() * 10 + i * 6; });
     return out;
   }
+  // Умные комментарии: если модель на устройстве готова — 2–3 реплики разными голосами по подписи и метаданным
+  const AI_WHO = {
+    mom: ["МАМА", "мама героя: заботливая, много цветочков 💐, волнуется, спрашивает, поел ли"],
+    dad: ["ПАПА", "папа героя: немногословен, сухо одобряет, спрашивает про масло в машине"],
+    lyoha: ["ЛЁХА", "лучший друг Лёха: геймер, курьер-предприниматель, подкалывает, зовёт тусить"],
+    katya: ["КАТЯ", "подруга Катя: SMM в Корпорации, восторженная, ✨"],
+    fan: ["ПОДПИСЧИК", "случайный подписчик: завидует, шутит, задаёт вопрос по теме"],
+    bot: ["БОТ", "спам-бот Корпорации: предлагает кредит, рассрочку, курс или подписку строго по теме поста, слащаво, с 💜"],
+  };
+  const KIND_RU = { promo: "повышение на работе", place: "чекин в месте", ach: "новое достижение", buy: "покупка", gift: "подарок близкому", concert: "концерт", date: "свидание", travel: "отпуск", sport: "тренировка", gym: "спортзал", family: "в гостях у семьи", friend: "встреча с друзьями", doctor: "поход к врачу", event: "событие", ad: "рекламная интеграция", coffee: "кофе", food: "еда", cat: "кот", selfie: "селфи", sunset: "закат", night: "ночной город", look: "образ дня", office: "офис" };
+  function aiComments(pid) {
+    let ok = false;
+    try { ok = !!(Vibe.llm && Vibe.llm.enabled && Vibe.llm.enabled() && Vibe.llm.status().ready && Vibe.llm.reply); } catch (e) {}
+    if (!ok) return;
+    const p = G().posts.find((x) => x.id === pid); if (!p) return;
+    const cl = chars(), have = (id) => cl.some((c) => c.id === id);
+    const who = [];
+    if (have("mom")) who.push("mom");
+    const fr = ["lyoha", "katya"].filter(have); if (fr.length) who.push(pick(fr));
+    who.push(Math.random() < 0.6 ? "bot" : "fan");
+    while (who.length < 3) who.push(who.includes("fan") ? "bot" : "fan");
+    const keys = who.slice(0, 3);
+    const fem = ((S().profile || {}).g === "f");
+    const ctx = cmCtx(p);
+    const meta = [KIND_RU[p.kind] && "Момент: " + KIND_RU[p.kind], p.scene && "Место на фото: " + (ctx.p || SCN_NAME[p.scene]), ctx.t && "Название: «" + ctx.t + "»"].filter(Boolean).join(". ");
+    const system = `Ты пишешь комментарии под постом в соцсети Vibegram — сатирической игре про жизнь в Корпорации. Пиши по-русски, с буквой «ё», коротко (до 12 слов), живо, по теме подписи и места. Автор поста — ${fem ? "девушка" : "парень"}, обращайся в правильном роде. Каждый комментарий — с новой строки в формате КЛЮЧ: текст. Без кавычек и пояснений. Голоса:\n${keys.map((k) => `${AI_WHO[k][0]} — ${AI_WHO[k][1]}`).join("\n")}`;
+    const user = `Подпись к посту: «${String(p.text).slice(0, 200)}». ${meta}. Хештеги: ${(p.tags || []).map((t) => "#" + t).join(" ") || "нет"}.\nНапиши ровно ${keys.length} строки: ${keys.map((k) => AI_WHO[k][0]).join(", ")}.`;
+    Vibe.llm.reply([{ role: "user", content: user }], { system, maxTokens: 160, timeout: 30000 }).then((txt) => {
+      const got = [];
+      String(txt || "").split(/\n+/).forEach((line) => {
+        const m = /^\s*[-*•]?\s*([А-ЯЁA-Z]+)\s*[:：—-]\s*(.{2,140})$/.exec(line.trim());
+        if (!m) return;
+        const k = keys.find((x) => AI_WHO[x][0] === m[1].toUpperCase()); if (!k || got.some((g) => g.k === k)) return;
+        const t = m[2].replace(/^["«]|["»]$/g, "").trim(); if (t.length < 2) return;
+        got.push({ k, t });
+      });
+      if (!got.length) return;
+      setG((g) => ({
+        posts: g.posts.map((x) => {
+          if (x.id !== pid) return x;
+          const since = Math.max(0, nowMin() - x.at);
+          const ai = got.map((o, i) => {
+            const d = Math.round(since + 3 + i * (4 + Math.random() * 6));
+            if (o.k === "bot") { const b = pick(BOTS); return { a: b[0], e: b[1], t: o.t, bot: true, ai: true, d }; }
+            if (o.k === "fan") { const u = pick(RAND_USERS); return { a: u[0], e: u[1], t: o.t, ai: true, d }; }
+            const c = chars().find((z) => z.id === o.k);
+            return c ? { a: c.handle, e: c.e, id: c.id, t: o.t, ai: true, d } : null;
+          }).filter(Boolean);
+          // Скриптовые реплики тех же голосов, которые ещё не появились, убираем — ИИ их заменяет
+          const aiIds = new Set(ai.map((c) => c.id).filter(Boolean)), hasBot = ai.some((c) => c.bot);
+          const rest = (x.cm || []).filter((c) => (c.d != null && c.d <= since) || !((c.id && aiIds.has(c.id)) || (hasBot && c.bot)));
+          return Object.assign({}, x, { cm: rest.concat(ai).sort((a, b) => (a.d || 0) - (b.d || 0)) });
+        }),
+      }));
+    }).catch(() => {});
+  }
 
-  function post({ e = "📸", text = "", kind = "moment", from = null, tags = [], s = null, bg = null, deal = null } = {}) {
+  /* ---------- Публикация ---------- */
+  // Ачивку можно запостить один раз: отметка в achPosted + старые посты без отметки (по «названию» в подписи)
+  function achPosted(id) {
+    const g = G();
+    if (!id) return false;
+    if ((g.achPosted || {})[id]) return true;
+    const a = (Vibe.ACH || {})[id];
+    return g.posts.some((p) => p.kind === "ach" && (p.achId === id || (!p.achId && a && String(p.text || "").includes("«" + a.t + "»"))));
+  }
+
+  function post({ e = "📸", text = "", kind = "moment", from = null, tags = [], s = null, bg = null, deal = null, scene = null, flt = 0, meta = null, achId = null } = {}) {
     if (!S().profile) return null;
+    if (achId && achPosted(achId)) { FX.toast("Эту ачивку ты уже {запостил|запостила}. Второй раз алгоритм не поверит", "🏆", 2400); return null; }
     tags = (tags || []).map((t) => String(t).replace(/^#/, "").trim()).filter(Boolean).slice(0, 12);
     const { q } = quality({ kind, tags });
     const fc = forecast(q);
@@ -251,9 +498,19 @@
       id: "p" + Date.now().toString(36) + Math.floor(Math.random() * 99), at: nowMin(), e, s: s || pick(SIDES), bg: bg == null ? Math.floor(Math.random() * BG.length) : bg,
       text: String(text).slice(0, 300), tags, kind, q: Math.round(q * 100) / 100, L: Math.max(1, Math.round(fc.L * r)), F: Math.max(0, Math.round(fc.F * r)),
     };
-    p.cm = genComments(p.L, kind);
+    if (scene) p.scene = scene;
+    if (flt) p.flt = flt;
+    if (meta) p.meta = meta;
+    if (achId) p.achId = achId;
+    if (!p.scene) { const sc = sceneFor(p); if (sc) p.scene = sc; }
+    p.cm = genComments(p);
     if (deal) p.F = -Math.round(followers() * 0.003);
-    setG((g) => ({ posts: [p, ...g.posts].slice(0, 120), lastPostDay: today() }));
+    setG((g) => ({
+      posts: [p, ...g.posts].slice(0, 120), lastPostDay: today(),
+      achPosted: achId ? Object.assign({}, g.achPosted, { [achId]: p.id }) : g.achPosted,
+      drafts: achId ? g.drafts.filter((d) => d.achId !== achId) : g.drafts,
+    }));
+    setTimeout(() => aiComments(p.id), 1200);
     Vibe.achieve && Vibe.achieve("gram_first");
     Vibe.emit && Vibe.emit("post", p);
     FX.sound.success();
@@ -268,13 +525,58 @@
   const SIDES = ["✨💫⭐", "🎉🎈✨", "💜✨🔥", "🌸🌿✨", "⭐🌙✨", "🔥💥⚡", "💖✨🫧"];
   const SEG = typeof Intl !== "undefined" && Intl.Segmenter ? new Intl.Segmenter("ru", { granularity: "grapheme" }) : null;
   const emojis = (str) => (SEG ? [...SEG.segment(str || "")].map((x) => x.segment) : Array.from(str || "")).filter((c) => c.trim() && !/^[\u200d\ufe0f]$/.test(c));
+  /* ---------- Сцены: фон-локация из ill-scenes.js + главный объект поверх ---------- */
+  const hasScenes = () => !!(Vibe.scenes && Vibe.scenes.svg);
+  const SCENE_KEYS = ["home", "office", "cafe", "park", "river", "metro", "club", "gym", "beach", "parents", "night", "shop"];
+  const SCENE_KIND = { promo: "office", office: "office", coffee: "cafe", food: "cafe", cat: "home", look: "home", sunset: "river", night: "night", travel: "beach", sport: "gym", gym: "gym", family: "parents", friend: "club", concert: "club", date: "river", doctor: "home", buy: "shop", gift: "home", ad: "home", ach: "office", metro: "metro" };
+  const SCENE_KW = [
+    [/пляж|отпуск|остров|путешеств|тревел|аэропорт|европ|море|удалённо с/i, "beach"], [/метро|подкаст/i, "metro"],
+    [/спорт|фитнес|трениров|(^|\s)бег|йога|присед|протеин|смузи|бёрпи|растяжк|10 км/i, "gym"], [/клуб|концерт|пятниц|туса|вечерин|музык|репетиц|катк/i, "club"],
+    [/мама|пирог|бабушк|семья|родител|воскресенье|шарф|вязан|дача|огород|урожай|огурц/i, "parents"],
+    [/кофе|кофейн|ресторан|завтрак|ужин|бранч|пицц|шаурм|рамен|рецепт|пельмен|салат|доставк/i, "cafe"],
+    [/набережн|закат|река|рыбалк|свидан|любов|на двоих/i, "river"], [/ночь|ночн|луна|крипт|кит|холд|мемкоин|коин/i, "night"],
+    [/парк|прогулк|природ|ролик|кемпинг|горы|утро/i, "park"], [/покупк|шопинг|шопог|распродаж|скидк|купил|магазин|маникюр|−90/i, "shop"],
+    [/офис|работ|дедлайн|созвон|kpi|карьер|повыс|корпорац|начальник|понедельник|отдел|лестниц|успешн/i, "office"],
+    [/кот|дом|уют|футбол|матч|селфкэр|ванна|диван|фильм|книж|ребён|папа|макияж|уход|кровать|сплю/i, "home"],
+  ];
+  const SCENE_PLACE = { club: "club", park: "park", park2: "park", wheel: "park", clinic: "home", hq: "office", supermarket: "shop", restaurant: "cafe", metro1: "metro", metro2: "metro", office: "office", flat: "home", lake: "river", cafe: "cafe", mall: "shop", cinema: "night", beach: "beach", gym: "gym" };
+  const FILTERS = [["Оригинал", "none"], ["Сочно", "saturate(1.45) contrast(1.06)"], ["Винтаж", "sepia(.45) saturate(1.15) contrast(.95)"], ["Закат", "hue-rotate(-28deg) saturate(1.25)"], ["Нуар", "grayscale(.9) contrast(1.15)"], ["Пастель", "brightness(1.08) saturate(.75)"], ["Неон", "hue-rotate(60deg) saturate(1.5)"]];
+  function sceneFor(p) {
+    if (!hasScenes()) return null;
+    if (p.scene && Vibe.scenes.has(p.scene)) return p.scene;
+    const txt = p.kind === "ach" ? String((p.meta && p.meta.t) || (/«([^»]+)»/.exec(p.text || "") || [])[1] || "") : [p.text, p.st, (p.tags || []).join(" ")].filter(Boolean).join(" ");
+    // Ачивки и события: сначала смысл названия («Шопоголик» → ТЦ), иначе — офис
+    if (SCENE_KIND[p.kind] && p.kind !== "ach") return SCENE_KIND[p.kind];
+    for (const [re, k] of SCENE_KW) if (re.test(txt)) return k;
+    if (SCENE_KIND[p.kind]) return SCENE_KIND[p.kind];
+    return SCENE_KEYS[hash(String(p.id || p.e || "x") + (p.text || "")) % SCENE_KEYS.length];
+  }
   function photo(p, cls = "") {
+    const sc = sceneFor(p);
+    const flt = p.flt ? FILTERS[p.flt % FILTERS.length][1] : "";
+    if (sc) {
+      const sides = emojis(p.s || "✨✨").slice(0, 2);
+      return `<div class="vg-ph vg-ph-sc ${cls}" data-scene="${sc}"${flt && flt !== "none" ? ` style="filter:${flt}"` : ""}>
+        ${Vibe.scenes.svg(sc)}<span class="vg-ph-shadow"></span>
+        <span class="vg-ph-main">${p.e}</span>
+        ${sides.map((x, i) => `<span class="vg-ph-s s${i}">${x}</span>`).join("")}
+        ${p.st ? `<span class="vg-ph-st">${esc(p.st)}</span>` : ""}
+      </div>`;
+    }
     const sides = emojis(p.s || "✨✨✨").slice(0, 3);
-    return `<div class="vg-ph ${cls}" style="background:${BG[(p.bg || 0) % BG.length]}">
+    return `<div class="vg-ph ${cls}" style="background:${BG[(p.bg || 0) % BG.length]}${flt && flt !== "none" ? ";filter:" + flt : ""}">
       <span class="vg-ph-main">${p.e}</span>
       ${sides.map((x, i) => `<span class="vg-ph-s s${i}">${x}</span>`).join("")}
       ${p.st ? `<span class="vg-ph-st">${esc(p.st)}</span>` : ""}
     </div>`;
+  }
+  // Библиотека сцен живёт в ill-scenes.js. Если тег ещё не добавлен в index.html — подгружаем сами
+  function ensureScenes() {
+    if (hasScenes() || document.querySelector("script[data-vg-scenes]")) return;
+    const sc = document.createElement("script");
+    sc.src = "ill-scenes.js?v=37"; sc.dataset.vgScenes = "1";
+    sc.onload = () => { try { refresh(); } catch (e) {} };
+    document.head.appendChild(sc);
   }
   const splitTags = (t) => String(t || "").split(/\s+/).filter(Boolean);
 
@@ -319,7 +621,12 @@
 
   function commentsOf(p) {
     const extra = (G().myCm[p.id] || []).map((t) => ({ a: me().handle, e: me().e, t, mine: true }));
-    if (p.me) { const c = p.cm || []; return c.slice(0, Math.ceil(c.length * prog(p))).concat(extra); }
+    if (p.me) {
+      const c = p.cm || [], age = nowMin() - p.at;
+      // Новые посты: у каждого комментария своя задержка d; старые — по старой кривой
+      const vis = c.some((x) => x.d != null) ? c.filter((x) => x.d == null || x.d <= age) : c.slice(0, Math.ceil(c.length * prog(p)));
+      return vis.concat(extra);
+    }
     const r = rng(hash("cm" + p.id));
     const n = p.star ? 5 + Math.floor(r() * 6) : 1 + Math.floor(r() * 4);
     const cl = chars().filter((c) => c.id !== p.a);
@@ -358,8 +665,14 @@
       </div>
       <div class="vg-likes"><b data-likes="${p.id}">${fmt(likesOf(p))}</b> отметок «Нравится»</div>
       <div class="vg-cap"><b>${esc(a.handle)}</b> ${capHtml(p)}</div>
-      ${cms.length ? `<button class="vg-cmlink" data-vg="cm" data-pid="${p.id}">Посмотреть все комментарии (${cms.length})</button>` : ""}
+      <div data-cmbox="${p.id}">${cmBox(p, cms)}</div>
     </article>`;
+  }
+  // Последний комментарий под подписью + счётчик (обновляется, пока экран открыт)
+  function cmBox(p, cms = commentsOf(p)) {
+    if (!cms.length) return "";
+    const last = p.me ? cms.filter((c) => !c.mine).slice(-1)[0] : null;
+    return `${last ? `<div class="vg-cmprev"><b>${esc(last.a)}</b> ${esc(last.t)}</div>` : ""}<button class="vg-cmlink" data-vg="cm" data-pid="${p.id}">Посмотреть все комментарии (${cms.length})</button>`;
   }
 
   function storiesRow() {
@@ -436,25 +749,32 @@
     event: { e: "📅", s: "✨🎉📸", caps: ["{t}. Галочка в календаре ✅", "{Был|Была} на «{t}». Рекомендую", "{t} — сделано!"], tags: ["жизнь", "мойдень"] },
   };
   const SHOTS = [
-    { e: "🤳", s: "✨😎💫", t: "Селфи без фильтров (с тремя фильтрами)", k: "selfie", tags: ["селфи", "япросто"] },
-    { e: "☕", s: "🥐📖🌧️", t: "Кофе и немного продуктивности", k: "coffee", tags: ["кофе", "утро"] },
-    { e: "🌅", s: "🌇☁️🕊️", t: "Закат, который не продаётся. Пока", k: "sunset", tags: ["закат", "эстетика"] },
-    { e: "🍝", s: "🍷🕯️🧀", t: "Ужин как в ресторане. Потому что из ресторана", k: "food", tags: ["еда", "ужин"] },
-    { e: "🐈", s: "🧶💤🪴", t: "Кот. Просто кот. Лайков больше, чем у меня", k: "cat", tags: ["кот", "котики"] },
-    { e: "💼", s: "💻☕📊", t: "Офисная эстетика. Дедлайн — тоже эстетика", k: "office", tags: ["офис", "работа"] },
-    { e: "🌃", s: "🌙🚕✨", t: "Ночной город и мысли о вечном (о зарплате)", k: "night", tags: ["ночь", "мысли"] },
-    { e: "🪞", s: "👟🧥✨", t: "Образ дня. Оценивайте", k: "look", tags: ["образ", "стиль"] },
+    { e: "🤳", s: "✨😎💫", t: "Селфи без фильтров (с тремя фильтрами)", k: "selfie", tags: ["селфи", "япросто"], sc: "home" },
+    { e: "☕", s: "🥐📖🌧️", t: "Кофе и немного продуктивности", k: "coffee", tags: ["кофе", "утро"], sc: "cafe" },
+    { e: "🌅", s: "🕊️☁️", t: "Закат, который не продаётся. Пока", k: "sunset", tags: ["закат", "эстетика"], sc: "river" },
+    { e: "🍝", s: "🍷🕯️🧀", t: "Ужин как в ресторане. Потому что из ресторана", k: "food", tags: ["еда", "ужин"], sc: "cafe" },
+    { e: "🐈", s: "🧶💤🪴", t: "Кот. Просто кот. Лайков больше, чем у меня", k: "cat", tags: ["кот", "котики"], sc: "home" },
+    { e: "💼", s: "📊☕", t: "Офисная эстетика. Дедлайн — тоже эстетика", k: "office", tags: ["офис", "работа"], sc: "office" },
+    { e: "🎧", s: "🎶✨", t: "Еду в метро. Слушаю подкаст про успех. Успеха нет, метро есть", k: "metro", tags: ["метро", "подкаст"], sc: "metro" },
+    { e: "💪", s: "💦🔥", t: "Зал. Зеркало. Контент", k: "sport", tags: ["спорт", "зож"], sc: "gym" },
+    { e: "🌃", s: "🌙✨", t: "Ночной город и мысли о вечном (о зарплате)", k: "night", tags: ["ночь", "мысли"], sc: "night" },
+    { e: "🪞", s: "👟🧥✨", t: "Образ дня. Оценивайте", k: "look", tags: ["образ", "стиль"], sc: "shop" },
   ];
   const ATT_KIND = { concert: "concert", date: "date", travel: "travel", sport: "sport", workout: "sport", family: "family", friend: "friend", doctor: "doctor" };
 
-  function fill(t, d) { return t.replace(/\{(\w)\}/g, (_, k) => (d[k] != null ? d[k] : "")); }
-  function makeMoment(kind, d = {}, e = null) {
+  // Значение плейсхолдера — всегда строка: объект (место, событие) превращаем в его подпись, а не в «[object Object]»
+  const strVal = (v) => (v == null ? "" : typeof v === "object" ? String(v.label || v.name || v.title || v.t || v.n || "") : String(v));
+  function fill(t, d) { return t.replace(/\{(\w)\}/g, (_, k) => strVal(d[k])); }
+  function makeMoment(kind, d = {}, e = null, extra = null) {
     const m = MOM[kind] || MOM.event;
-    return { id: "m" + Date.now().toString(36) + Math.floor(Math.random() * 99), kind, e: e || m.e, s: m.s, bg: Math.floor(Math.random() * BG.length), text: fill(pick(m.caps), d), tags: m.tags.slice(0, 2), sug: m.tags, at: nowMin() };
+    const meta = {}; ["p", "t", "n", "a"].forEach((k) => { const v = strVal(d[k]); if (v) meta[k] = v.slice(0, 60); });
+    const caps = m.caps.filter((c) => !/\{(\w)\}/.test(c) || [...c.matchAll(/\{(\w)\}/g)].every((x) => meta[x[1]]));
+    return Object.assign({ id: "m" + Date.now().toString(36) + Math.floor(Math.random() * 99), kind, e: e || m.e, s: m.s, bg: Math.floor(Math.random() * BG.length), text: fill(pick(caps.length ? caps : m.caps), d), tags: m.tags.slice(0, 2), sug: m.tags, at: nowMin(), meta }, extra || {});
   }
   let lastPrompt = 0;
   function moment(m) {
     if (!S().profile) return;
+    if (m.achId && (achPosted(m.achId) || G().drafts.some((x) => x.achId === m.achId))) return;
     setG((g) => ({ drafts: [m, ...g.drafts].slice(0, 6) }));
     const busy = document.querySelector(".modal, .sheet, .vg-story") || (Vibe.current && ["welcome", "reels"].includes(Vibe.current.route.name));
     if (busy || Date.now() - lastPrompt < 40000) return;
@@ -479,15 +799,22 @@
 
   // Подписки на события игры
   Vibe.on("attend", (e) => { if (!e) return; const k = ATT_KIND[e.kind] || "event"; moment(makeMoment(k, { t: e.title || "Событие" }, e.e)); });
+  // world.js шлёт { to: "club" | "restaurant:3" | "office:Компания" | "flat:Мама", mode, kind, … }.
+  // Раньше ключ брался из d.place/d.key/d.id, их нет — и в подпись уходил сам объект: «Чекин: [object Object]»
   Vibe.on("arrive", (d) => {
-    const key = String((d && (d.place || d.key || d.id)) || d || "");
+    const raw = typeof d === "string" ? d : d && (d.to || d.place || d.key || d.id);
+    const key = typeof raw === "string" ? raw : strVal(raw);
     if (!key) return;
     const base = key.split(":")[0];
     if (["home", "work"].includes(base)) return;
     const g = G(), day = today();
-    if ((g.placeDay || {})[base] === day) return;
-    setG({ placeDay: Object.assign({}, g.placeDay, { [base]: day }) });
-    moment(makeMoment("place", { p: (d && d.name) || PLACE[base] || key.split(":")[1] || base }));
+    const dayKey = base === "flat" ? key : base;
+    if ((g.placeDay || {})[dayKey] === day) return;
+    setG({ placeDay: Object.assign({}, g.placeDay, { [dayKey]: day }) });
+    let pl = null; try { pl = Vibe.map && Vibe.map.place ? Vibe.map.place(key) : null; } catch (e) {}
+    if (key === "flat:Мама") return moment(makeMoment("family", { t: "В гостях у родителей", p: "у родителей" }, null, { scene: "parents" }));
+    const name = (d && typeof d.name === "string" && d.name) || (pl && pl.label) || PLACE[base] || key.split(":")[1] || base;
+    moment(makeMoment("place", { p: name }, null, { scene: SCENE_PLACE[base] || null }));
   });
   Vibe.on("work", (d) => { if (d && d.promoted) moment(makeMoment("promo")); });
   Vibe.on("pay", (d) => {
@@ -508,28 +835,33 @@
       const id = list[list.length - 1];
       achSeen = list.length;
       const a = (Vibe.ACH || {})[id];
-      if (a && id !== "first") setTimeout(() => moment(makeMoment("ach", { t: a.t }, a.e)), 1600);
+      if (a && id !== "first" && !achPosted(id)) setTimeout(() => moment(makeMoment("ach", { t: a.t }, a.e, { achId: id })), 1600);
     } else achSeen = list.length;
   });
 
   /* ---------- Композер поста ---------- */
   function composer(m, { deal = null } = {}) {
     let cur = Object.assign({}, m);
+    if (!cur.scene) { const sc = sceneFor(cur); if (sc) cur.scene = sc; }
+    cur.flt = cur.flt || 0;
     let tags = new Set(cur.tags || []);
     if (deal) tags.add("реклама");
     const sug = [...new Set([].concat(deal ? ["реклама", "партнёрство"] : [], cur.sug || [], [trend()], GEN_TAGS))];
+    const done = cur.achId && achPosted(cur.achId);
+    const scList = hasScenes() ? Vibe.scenes.list : [];
     Vibe.ui.sheet(`
       <div class="display" style="font-size:24px;margin-bottom:10px">${deal ? "🤝 Интеграция" : "📸 Новый пост"}</div>
       <div class="vg-cmp-ph" data-ph>${photo(cur)}</div>
+      ${scList.length ? `<div class="vg-cmp-lbl">Где снимаем?</div><div class="hscroll vg-scpick" data-scenes>${scList.map((s) => `<button class="vg-scb ${cur.scene === s.k ? "on" : ""}" data-sc="${s.k}"><span class="vg-scb-ph">${Vibe.scenes.svg(s.k)}</span><small>${esc(s.n)}</small></button>`).join("")}</div>` : ""}
       <div style="display:flex;gap:8px;margin:10px 0">
         <button class="btn sm" data-reshoot>🎲 Переснять</button>
-        <button class="btn sm" data-filter>🌈 Фильтр</button>
+        <button class="btn sm" data-filter>🌈 Фильтр: <span data-fname>${FILTERS[cur.flt % FILTERS.length][0]}</span></button>
       </div>
       <textarea class="vg-ta" data-cap maxlength="300" placeholder="Подпись…">${esc(cur.text)}</textarea>
       <div class="muted" style="font-size:12px;font-weight:800;margin:10px 0 4px">Хештеги · 🔥 тренд дня: #${trend()}</div>
       <div class="chips" data-tags>${sug.map((t) => `<button class="chip ${tags.has(t) ? "on" : ""}" data-tag="${esc(t)}">${t === trend() ? "🔥" : "#"}${esc(t)}</button>`).join("")}</div>
       <div class="card tight c-lilac vg-fc" data-fc></div>
-      <button class="btn black xl block" data-pub style="margin-top:12px">Опубликовать <span class="arrow">→</span></button>
+      ${done ? `<button class="btn xl block vg-done" disabled style="margin-top:12px">Опубликовано ✓</button>` : `<button class="btn black xl block" data-pub style="margin-top:12px">Опубликовать <span class="arrow">→</span></button>`}
       <div class="fine">Публикуя, вы передаёте Корпорации права на фото, подпись, лицо и вайб. Навсегда. С любовью 💜</div>`, {
       onMount(sh, close) {
         const fc = sh.querySelector("[data-fc]");
@@ -550,14 +882,30 @@
           tags.has(t) ? tags.delete(t) : tags.add(t);
           b.classList.toggle("on"); FX.bump(b); upd();
         });
+        const ph = sh.querySelector("[data-ph]");
+        const scBox = sh.querySelector("[data-scenes]");
+        if (scBox) {
+          const on = scBox.querySelector(".vg-scb.on"); if (on) setTimeout(() => on.scrollIntoView({ inline: "center", block: "nearest" }), 60);
+          scBox.addEventListener("click", (e) => {
+            const b = e.target.closest("[data-sc]"); if (!b) return;
+            cur.scene = b.dataset.sc;
+            scBox.querySelectorAll(".vg-scb").forEach((x) => x.classList.toggle("on", x === b));
+            ph.innerHTML = photo(cur); FX.bump(ph); FX.bump(b); FX.sound.tap();
+          });
+        }
         sh.querySelector("[data-reshoot]").addEventListener("click", (e) => {
-          cur.s = pick(SIDES); cur.bg = Math.floor(Math.random() * BG.length);
-          sh.querySelector("[data-ph]").innerHTML = photo(cur); FX.bump(sh.querySelector("[data-ph]")); FX.burst(e.currentTarget, { emojis: ["📸", "✨"], count: 6 });
+          cur.s = pick(SIDES.filter((x) => x !== cur.s)); cur.bg = Math.floor(Math.random() * BG.length);
+          ph.innerHTML = photo(cur); FX.bump(ph); FX.burst(e.currentTarget, { emojis: ["📸", "✨"], count: 6 });
         });
-        sh.querySelector("[data-filter]").addEventListener("click", () => { cur.bg = (cur.bg + 1) % BG.length; sh.querySelector("[data-ph]").innerHTML = photo(cur); FX.bump(sh.querySelector("[data-ph]")); });
-        sh.querySelector("[data-pub]").addEventListener("click", (e) => {
+        sh.querySelector("[data-filter]").addEventListener("click", (e) => {
+          cur.flt = (cur.flt + 1) % FILTERS.length; cur.bg = (cur.bg + 1) % BG.length;
+          ph.innerHTML = photo(cur); FX.bump(ph);
+          const fn = e.currentTarget.querySelector("[data-fname]"); if (fn) fn.textContent = FILTERS[cur.flt][0];
+        });
+        const pubBtn = sh.querySelector("[data-pub]");
+        if (pubBtn) pubBtn.addEventListener("click", (e) => {
           const text = sh.querySelector("[data-cap]").value.trim() || cur.text;
-          const p = post({ e: cur.e, s: cur.s, bg: cur.bg, text, kind: deal ? "ad" : cur.kind, tags: [...tags], from: e.currentTarget, deal });
+          const p = post({ e: cur.e, s: cur.s, bg: cur.bg, text, kind: deal ? "ad" : cur.kind, tags: [...tags], from: e.currentTarget, deal, scene: cur.scene || null, flt: cur.flt || 0, meta: cur.meta || null, achId: cur.achId || null });
           if (!p) return;
           if (m.id) setG((g) => ({ drafts: g.drafts.filter((x) => x.id !== m.id) }));
           if (deal) {
@@ -580,7 +928,7 @@
       <p class="muted" style="font-weight:700;margin:0 0 12px">Настоящие моменты из жизни заходят лучше постановки</p>
       ${g.drafts.length ? `<h2 class="sec" style="margin-top:0">Моменты <small>${g.drafts.length}</small></h2><div class="hscroll">${g.drafts.map((d) => `<button class="vg-draft tap" data-draft="${d.id}">${photo(d, "sm")}<small>${esc(d.text)}</small></button>`).join("")}</div>` : ""}
       <h2 class="sec">Постановка</h2>
-      <div class="grid2 stagger">${SHOTS.map((s, i) => `<button class="card tight tap vg-shot" data-shot="${i}"><span style="font-size:34px">${s.e}</span><b>${s.t.split(".")[0]}</b></button>`).join("")}</div>`, {
+      <div class="vg-shots stagger">${SHOTS.map((s, i) => `<button class="tap vg-shot" data-shot="${i}">${photo({ id: "shot" + i, e: s.e, s: s.s, scene: s.sc, kind: s.k, text: s.t, bg: i }, "sm")}<b>${esc(s.t.split(".")[0])}</b></button>`).join("")}</div>`, {
       onMount(sh, close) {
         sh.addEventListener("click", (e) => {
           const d = e.target.closest("[data-draft]");
@@ -589,7 +937,7 @@
           if (s) {
             const sh0 = SHOTS[+s.dataset.shot];
             close();
-            setTimeout(() => composer({ kind: sh0.k === "cat" ? "cat" : sh0.k, e: sh0.e, s: sh0.s, bg: Math.floor(Math.random() * BG.length), text: sh0.t, tags: sh0.tags.slice(0, 1), sug: sh0.tags }), 320);
+            setTimeout(() => composer({ kind: sh0.k, e: sh0.e, s: sh0.s, scene: sh0.sc, bg: Math.floor(Math.random() * BG.length), text: sh0.t, tags: sh0.tags.slice(0, 1), sug: sh0.tags }), 320);
           }
         });
       },
@@ -597,15 +945,38 @@
   }
 
   /* ---------- Комментарии ---------- */
-  function commentsSheet(list, { title = "Комментарии", onSend } = {}) {
+  // live() — если передан, лист сам подтягивает новые комментарии, как в настоящей соцсети («печатает…» → реплика)
+  function commentsSheet(list, { title = "Комментарии", onSend, live = null } = {}) {
+    let liveT = null;
     Vibe.ui.sheet(`
-      <div class="display" style="font-size:22px;margin-bottom:8px">${title} <small class="muted" style="font-size:14px">${list.length}</small></div>
-      <div class="vg-cms stagger" data-list>${list.map(cmRow).join("") || `<p class="muted" style="font-weight:700">Пока тихо. Будь первым!</p>`}</div>
+      <div class="display" style="font-size:22px;margin-bottom:8px">${title} <small class="muted" style="font-size:14px" data-cnum>${list.length}</small></div>
+      <div class="vg-cms stagger" data-list>${list.map(cmRow).join("") || `<p class="muted vg-cm-empty" style="font-weight:700">Пока тихо. Будь первым!</p>`}</div>
       <div class="chips" data-q>${QUICK_CM.map((q) => `<button class="chip" data-qc>${q}</button>`).join("")}</div>
       <div style="display:flex;gap:8px"><div class="field" style="flex:1;height:50px"><input data-in maxlength="120" placeholder="Добавь комментарий…"></div><button class="icon-btn" data-send style="width:50px;height:50px;background:var(--lime)">➤</button></div>`, {
+      onClose() { clearInterval(liveT); },
       onMount(sh) {
         const box = sh.querySelector("[data-list]");
         const inp = sh.querySelector("[data-in]");
+        if (live) {
+          let shown = list.filter((c) => !c.mine).length, typing = false;
+          liveT = setInterval(() => {
+            if (!sh.isConnected) return clearInterval(liveT);
+            if (typing) return;
+            const all = live().filter((c) => !c.mine);
+            if (all.length <= shown) return;
+            const c = all[shown]; typing = true;
+            const ty = document.createElement("div"); ty.className = "vg-cm vg-typing";
+            ty.innerHTML = `<span class="vg-cm-a">${c.e}</span><div><b>${esc(c.a)}</b> <i>печатает</i><span class="vg-dots"><i></i><i></i><i></i></span></div>`;
+            const em = box.querySelector(".vg-cm-empty"); if (em) em.remove();
+            box.appendChild(ty); box.scrollTop = box.scrollHeight;
+            setTimeout(() => {
+              const row = document.createElement("div"); row.innerHTML = cmRow(c);
+              const el = row.firstElementChild; ty.replaceWith(el); FX.bump(el); FX.sound.pop();
+              box.scrollTop = box.scrollHeight; shown++; typing = false;
+              const cn = sh.querySelector("[data-cnum]"); if (cn) cn.textContent = box.querySelectorAll(".vg-cm:not(.vg-typing)").length;
+            }, 1300 + Math.min(1500, c.t.length * 25));
+          }, 1500);
+        }
         const send = (t) => {
           t = String(t || "").trim(); if (!t) return;
           const row = document.createElement("div"); row.innerHTML = cmRow({ a: me().handle, e: me().e, t, mine: true });
@@ -664,7 +1035,9 @@
           lastTap = { t: 0, id: "" };
         } else lastTap = { t, id: pid };
       } else if (act === "cm" && p) {
-        commentsSheet(commentsOf(p), {
+        const fresh = () => (p.me ? Object.assign({}, p, G().posts.find((x) => x.id === p.id) || {}) : p);
+        commentsSheet(commentsOf(fresh()), {
+          live: p.me ? () => commentsOf(fresh()) : null,
           onSend(t) {
             const g = G();
             setG({ myCm: Object.assign({}, g.myCm, { [pid]: [...(g.myCm[pid] || []), t].slice(-10) }) });
@@ -698,7 +1071,7 @@
     else if (a.story) frames = a.story.map((t, i) => ({ e: (a.posts[i % a.posts.length] || [a.e])[0], s: (a.posts[i % a.posts.length] || ["", "✨✨✨"])[1], bg: (hash(a.id) + i) % BG.length, st: t }));
     else {
       const ps = accPosts(a, 3).slice(0, 2);
-      frames = ps.map((p) => ({ e: p.e, s: p.s, bg: p.bg, st: p.text }));
+      frames = ps.map((p) => ({ e: p.e, s: p.s, bg: p.bg, st: p.text, id: p.id }));
       if (!frames.length) frames = [{ e: a.e, s: "✨☕🌤️", bg: hash(a.id) % BG.length, st: "Доброе утро! ☀️" }];
     }
     const el = document.createElement("div");
@@ -715,7 +1088,12 @@
       if (i >= frames.length) return close();
       if (i < 0) i = 0;
       const f = frames[i];
-      el.querySelector("[data-body]").innerHTML = photo(Object.assign({}, f, { st: null }), "story") + `<div class="vg-stext">${esc(f.st)}</div>`;
+      const fp = Object.assign({ text: f.st }, f, { st: null });
+      const sc = sceneFor(fp);
+      // Сторис как в больших соцсетях: размытый фон-локация во весь экран (cover) + чёткая карточка кадра по центру
+      el.querySelector("[data-body]").innerHTML = (sc
+        ? `<div class="vg-sbg">${Vibe.scenes.svg(sc)}</div><div class="vg-stcard">${photo(Object.assign(fp, { scene: sc }))}</div>`
+        : photo(fp, "vg-sph")) + `<div class="vg-stext">${esc(f.st)}</div>`;
       bars.forEach((b, k) => { b.style.transition = "none"; b.style.width = k < i ? "100%" : "0%"; });
       void el.offsetWidth;
       bars[i].style.transition = "width 3.8s linear"; bars[i].style.width = "100%";
@@ -956,21 +1334,31 @@
   function openMyStory() {
     const ps = myPosts().slice(0, 4);
     if (!ps.length) { FX.toast("Сторис пусты. Опубликуй момент — и кольцо загорится", "📸", 2000); return newPost(); }
-    openStory("me", { a: me(), frames: ps.map((p) => ({ e: p.e, s: p.s, bg: p.bg, st: p.text })) });
+    openStory("me", { a: me(), frames: ps.map((p) => ({ e: p.e, s: p.s, bg: p.bg, st: p.text, scene: p.scene, flt: p.flt, kind: p.kind, id: p.id })) });
   }
   function openHL(id) {
     if (id === "ach") return achAlbum();
     const h = HL.find((x) => x.id === id); if (!h) return;
     const ps = hlPosts(h).slice(0, 6);
     if (!ps.length) { FX.toast(`«${h.n}» пока пусто. Корпорация верит, что скоро будет`, h.e, 2200); return; }
-    openStory("me", { a: Object.assign(me(), { handle: h.e + " " + h.n }), frames: ps.map((p) => ({ e: p.e, s: p.s, bg: p.bg, st: p.text })) });
+    openStory("me", { a: Object.assign(me(), { handle: h.e + " " + h.n }), frames: ps.map((p) => ({ e: p.e, s: p.s, bg: p.bg, st: p.text, scene: p.scene, flt: p.flt, kind: p.kind, id: p.id })) });
   }
   function achAlbum() {
     const achs = Vibe.ACH_LIST ? Vibe.ACH_LIST() : [], have = S().achievements || [];
+    const posted = have.filter((id) => achPosted(id));
     Vibe.ui.sheet(`<div class="display" style="font-size:22px;margin-bottom:4px">Альбом достижений</div>
-      <p class="muted" style="font-weight:700;margin:0 0 12px">Открыто ${have.length} из ${achs.length}. Каждое можно запостить</p>
-      <div class="vg-achgrid">${achs.map(([id, a]) => `<button class="vg-hlc ${have.includes(id) ? "on" : ""}" data-ach="${id}"><span>${have.includes(id) ? a.e : "🔒"}</span><small>${esc(a.t)}</small></button>`).join("") || `<p class="muted">Скоро</p>`}</div>`, {
-      onMount(sh, close) { sh.addEventListener("click", (e) => { const b = e.target.closest("[data-ach]"); if (!b) return; close(); setTimeout(() => achSheet(b.dataset.ach), 320); }); },
+      <p class="muted" style="font-weight:700;margin:0 0 12px">Открыто ${have.length} из ${achs.length} · в блоге ${posted.length}. Каждое можно запостить один раз</p>
+      <div class="vg-achgrid">${achs.map(([id, a]) => { const h = have.includes(id), p = h && posted.includes(id); return `<button class="vg-hlc ${h ? "on" : ""} ${p ? "posted" : ""}" data-ach="${id}"><span>${h ? a.e : "🔒"}${p ? `<i class="vg-achok">✓</i>` : ""}</span><small>${esc(a.t)}</small>${h ? `<em class="vg-achst ${p ? "ok" : ""}">${p ? "Опубликовано ✓" : "📸 Запостить"}</em>` : ""}</button>`; }).join("") || `<p class="muted">Скоро</p>`}</div>`, {
+      onMount(sh, close) {
+        sh.addEventListener("click", (e) => {
+          const b = e.target.closest("[data-ach]"); if (!b) return;
+          const id = b.dataset.ach, a = (Vibe.ACH || {})[id];
+          close();
+          // «📸 Запостить» в альбоме — сразу в композер; остальное — карточка ачивки
+          if (e.target.closest(".vg-achst:not(.ok)") && a && !achPosted(id)) { const dr = G().drafts.find((x) => x.achId === id); setTimeout(() => composer(dr || makeMoment("ach", { t: a.t }, a.e, { achId: id })), 320); return; }
+          setTimeout(() => achSheet(id), 320);
+        });
+      },
     });
   }
   function editBio() {
@@ -1075,6 +1463,12 @@
       });
       const iv = setInterval(() => {
         root.querySelectorAll("[data-likes]").forEach((el) => { const q = cache.get(el.dataset.likes); if (q) { const v = fmt(likesOf(q)); if (!Vibe.sameText(el, v)) { el.textContent = v; FX.bump(el); } } });
+        root.querySelectorAll("[data-cmbox]").forEach((el) => {
+          const q0 = cache.get(el.dataset.cmbox); if (!q0 || !q0.me) return;
+          const q = Object.assign({}, q0, G().posts.find((x) => x.id === q0.id) || {});
+          const n = commentsOf(q).length;
+          if (+el.dataset.n !== n) { const first = el.dataset.n == null; el.dataset.n = n; el.innerHTML = cmBox(q); if (!first) FX.bump(el); }
+        });
         const mf = root.querySelector("[data-myf]");
         if (mf) { const v = followers(); if (+mf.dataset.val !== v) { FX.countTo(mf, v, { fmt: kfmt }); FX.bump(mf); } }
         updBadge(root);
@@ -1093,9 +1487,20 @@
   function achSheet(id) {
     const a = (Vibe.ACH || {})[id]; if (!a) return;
     const have = (S().achievements || []).includes(id);
-    Vibe.ui.sheet(`<div style="text-align:center"><div class="emo float" style="font-size:80px">${have ? a.e : "🔒"}</div><div class="display" style="font-size:26px">${esc(a.t)}</div><p class="muted" style="font-weight:700">${esc(a.d)}</p>
-      ${have ? `<button class="btn black block" data-pa>📸 Запостить в блог</button>` : `<div class="card tight c-lilac"><b>Ещё не открыто.</b> Корпорация верит в тебя 💜</div>`}</div>`, {
-      onMount(sh, close) { const b = sh.querySelector("[data-pa]"); if (b) b.addEventListener("click", () => { close(); setTimeout(() => composer(makeMoment("ach", { t: a.t }, a.e)), 320); }); },
+    const done = have && achPosted(id);
+    const btn = !have ? `<div class="card tight c-lilac"><b>Ещё не открыто.</b> Корпорация верит в тебя 💜</div>`
+      : done ? `<button class="btn block vg-done" disabled>Опубликовано ✓</button><div class="fine" style="margin-top:6px">Ачивка уже в блоге. Хвастаться дважды — моветон (и минус охват)</div>`
+      : `<button class="btn black block" data-pa>📸 Запостить в блог</button>`;
+    Vibe.ui.sheet(`<div style="text-align:center"><div class="emo float" style="font-size:80px">${have ? a.e : "🔒"}</div><div class="display" style="font-size:26px">${esc(a.t)}</div><p class="muted" style="font-weight:700">${esc(a.d)}</p>${btn}</div>`, {
+      onMount(sh, close) {
+        const b = sh.querySelector("[data-pa]");
+        if (b) b.addEventListener("click", () => {
+          if (achPosted(id)) return;
+          close();
+          const dr = G().drafts.find((x) => x.achId === id);
+          setTimeout(() => composer(dr || makeMoment("ach", { t: a.t }, a.e, { achId: id })), 320);
+        });
+      },
     });
   }
   function activity() {
@@ -1388,7 +1793,7 @@
   });
 
   /* ---------- Фоновый цикл блога: созревание постов, уровни славы, уведомления ---------- */
-  let lastToast = 0, lastLikeSum = null;
+  let lastToast = 0, lastLikeSum = null, cmSeen = null, lastCmToast = 0;
   function tick() {
     if (!S().profile || document.hidden) return;
     const g = G();
@@ -1419,6 +1824,19 @@
           <p>${kfmt(followers())} подписчиков в Vibegram. ${ti >= 4 ? "Звёзды отвечают, бренды платят, мама показывает соседям." : ti >= 3 ? "Теперь звёзды отвечают тебе в личку. Не зазнавайся." : ti >= 2 ? "Бренды уже выстраиваются в очередь (в очередь из одного бренда)." : "Корпорация заметила тебя. Это хорошо. Наверное."}</p>
           <button class="btn black block" data-close>Я звезда ✨</button>`, { sound: null });
       }
+    }
+    // Уведомление, когда под постом отписался кто-то из близких (как в настоящей соцсети)
+    const recent = G().posts.slice(0, 5).map((p) => commentsOf(Object.assign({ a: "me", me: true }, p)).filter((c) => !c.mine));
+    const cmTotal = recent.reduce((s, l) => s + l.length, 0);
+    if (cmSeen === null || cmTotal < cmSeen) cmSeen = cmTotal;
+    else if (cmTotal > cmSeen) {
+      const fresh = recent.map((l) => l.slice(-1)[0]).filter((c) => c && c.id)[0];
+      const onGram = Vibe.current && ["gram", "reels"].includes(Vibe.current.route.name);
+      if (fresh && !onGram && Date.now() - lastCmToast > 25000) {
+        lastCmToast = Date.now();
+        FX.toast(`${fresh.a}: ${fresh.t}`, "💬", 2800, { onClick: () => Vibe.go("gram", { tab: "me" }), label: "Ответить" });
+      }
+      cmSeen = cmTotal;
     }
     // Уведомления о лайках
     const sum = G().posts.reduce((s, p) => s + myLikes(p), 0);
@@ -1477,8 +1895,59 @@
     .vg-ph-s.s0 { top: 9%; left: 9%; animation-delay: -.6s; } .vg-ph-s.s1 { top: 12%; right: 10%; animation-delay: -1.4s; } .vg-ph-s.s2 { bottom: 9%; left: 14%; animation-delay: -2.1s; }
     .vg-ph-st { position: absolute; bottom: 8%; right: 6%; background: var(--yellow); border: 2px solid var(--ink); border-radius: 10px; padding: 3px 8px; font-weight: 900; font-size: 12px; transform: rotate(-5deg); }
     .vg-ph.sm .vg-ph-main { font-size: 46px; animation: none; } .vg-ph.sm .vg-ph-s { font-size: 16px; animation: none; }
-    .vg-ph.story { position: absolute; inset: 0; aspect-ratio: auto; }
-    .vg-ph.story .vg-ph-main { font-size: 160px; }
+    /* Сторис: свой класс vg-sph (глобальный .story с главной делал фон шириной 70px) */
+    .vg-ph.vg-sph { position: absolute; inset: 0; width: 100%; height: 100%; aspect-ratio: auto; border-radius: 0; }
+    .vg-ph.vg-sph .vg-ph-main, .vg-ph.vg-sph.vg-ph-sc .vg-ph-main { font-size: min(46vw, 200px); }
+    .vg-ph.vg-sph .vg-ph-s, .vg-ph.vg-sph.vg-ph-sc .vg-ph-s { font-size: min(12vw, 52px); }
+    .vg-ph.vg-sph .vg-ph-s.s0 { top: 42%; } .vg-ph.vg-sph .vg-ph-s.s1 { top: 38%; }
+    .vg-ph.vg-sph.vg-ph-sc .vg-ph-main { position: absolute; left: 0; right: 0; bottom: 21%; margin: 0; text-align: center; }
+    .vg-ph.vg-sph.vg-ph-sc .vg-ph-shadow { top: 79%; width: 46%; }
+    .vg-sbg { position: absolute; inset: 0; overflow: hidden; background: #1b1430; }
+    .vg-sbg .vg-scene-svg { transform: scale(1.18); filter: blur(14px) saturate(1.25) brightness(.78); }
+    .vg-stcard { position: absolute; left: 50%; top: 52%; width: min(calc(100% - 40px), 420px, 48vh); transform: translate(-50%, -50%) rotate(-1.5deg); border: 3px solid var(--ink); border-radius: 24px; overflow: hidden; box-shadow: 0 8px 0 rgba(14,14,18,.55), 0 18px 40px rgba(0,0,0,.35); animation: vg-stcard-in .45s var(--spring) both; }
+    @keyframes vg-stcard-in { from { transform: translate(-50%, -46%) rotate(-5deg) scale(.9); opacity: 0; } }
+    .vg-stcard .vg-ph { border-radius: 0; }
+    /* Сцены: SVG-локация во весь кадр, объект «стоит» на полу с тенью */
+    .vg-ph-sc { background: #fff4e0; container-type: inline-size; }
+    .vg-ph-sc::after { background: none; }
+    .vg-scene-svg { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+    .vg-ph-sc .vg-ph-main { position: relative; z-index: 1; margin-top: 12%; font-size: min(40vw, 150px); font-size: 40cqw; filter: drop-shadow(0 5px 0 rgba(27,20,48,.28)); }
+    .vg-ph-shadow { position: absolute; left: 50%; top: 79%; width: 40%; height: 7%; transform: translate(-50%, -50%); border-radius: 50%; background: rgba(27,20,48,.28); z-index: 1; animation: vg-shadow 3.5s ease-in-out infinite; }
+    @keyframes vg-shadow { 0%,100% { transform: translate(-50%,-50%) scale(1); } 50% { transform: translate(-50%,-50%) scale(.86); } }
+    .vg-ph-sc .vg-ph-s { z-index: 1; font-size: min(10vw, 40px); font-size: 11cqw; filter: drop-shadow(0 3px 0 rgba(27,20,48,.25)); }
+    .vg-ph-sc .vg-ph-s.s0 { top: 30%; left: 8%; } .vg-ph-sc .vg-ph-s.s1 { top: 26%; right: 8%; left: auto; }
+    .vg-ph-sc .vg-ph-st { z-index: 2; }
+    .vg-ph-sc[data-scene="office"] .vg-ph-main { margin-top: 0; } .vg-ph-sc[data-scene="office"] .vg-ph-shadow { top: 71.5%; width: 36%; }
+    .vg-ph.sm.vg-ph-sc .vg-ph-main { font-size: 40px; font-size: 42cqw; margin-top: 14%; }
+    .vg-ph.sm.vg-ph-sc .vg-ph-s { font-size: 14px; font-size: 12cqw; }
+    .vg-ph.sm .vg-ph-shadow { animation: none; }
+    .vg-cmp-lbl { font-size: 12px; font-weight: 800; color: var(--muted); margin: 12px 0 6px; }
+    .vg-scpick { gap: 8px; padding-bottom: 4px; }
+    .vg-scb { flex: 0 0 auto; width: 66px; display: flex; flex-direction: column; align-items: center; gap: 4px; transition: transform .2s var(--spring); }
+    .vg-scb-ph { position: relative; width: 60px; height: 60px; border-radius: 16px; overflow: hidden; border: 2px solid var(--ink); display: block; }
+    .vg-scb small { font-size: 10.5px; font-weight: 800; white-space: nowrap; max-width: 66px; overflow: hidden; text-overflow: ellipsis; }
+    .vg-scb.on .vg-scb-ph { box-shadow: 0 0 0 3px var(--bg), 0 0 0 5.5px var(--pink); }
+    .vg-scb.on small { color: var(--ink); } .vg-scb:not(.on) small { color: var(--muted); }
+    .vg-scb:active { transform: scale(.92); }
+    .vg-shots { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .vg-shots .vg-shot { background: var(--paper); border: 2px solid var(--ink); border-radius: 18px; overflow: hidden; box-shadow: 0 3px 0 var(--ink); padding: 0; gap: 0; }
+    .vg-shots .vg-shot .vg-ph { width: 100%; border-bottom: 2px solid var(--ink); }
+    .vg-shots .vg-shot b { display: block; padding: 8px 10px 10px; font-size: 12.5px; line-height: 1.2; font-weight: 900; min-height: 2.4em; }
+    .vg-shots .vg-shot:active { transform: translateY(2px); box-shadow: 0 1px 0 var(--ink); }
+    .vg-draft .vg-ph { border-bottom: 2px solid var(--ink); }
+    .vg-cmprev { padding: 2px 14px 0; font-size: 13.5px; font-weight: 600; line-height: 1.3; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+    .vg-cmprev b { font-weight: 900; margin-right: 3px; }
+    .vg-typing { color: var(--muted); }
+    .vg-typing i { font-style: normal; }
+    .vg-dots { display: inline-flex; gap: 3px; margin-left: 4px; vertical-align: middle; }
+    .vg-dots i { width: 5px; height: 5px; border-radius: 50%; background: var(--muted); animation: vg-dot 1s infinite ease-in-out; }
+    .vg-dots i:nth-child(2) { animation-delay: .15s; } .vg-dots i:nth-child(3) { animation-delay: .3s; }
+    @keyframes vg-dot { 0%,80%,100% { transform: translateY(0); opacity: .4; } 40% { transform: translateY(-4px); opacity: 1; } }
+    .btn.vg-done, .btn.vg-done:disabled { background: var(--mint); color: var(--ink); opacity: 1; cursor: default; box-shadow: none; transform: none; }
+    .vg-hlc span { position: relative; }
+    .vg-achok { position: absolute; right: -4px; bottom: -4px; width: 22px; height: 22px; border-radius: 50%; background: var(--mint); border: 2px solid var(--ink); font-style: normal; font-size: 12px; font-weight: 900; display: grid; place-items: center; line-height: 1; }
+    .vg-achst { font-style: normal; font-size: 8.5px; letter-spacing: -.1px; font-weight: 900; padding: 2px 5px; max-width: 100%; border-radius: 999px; background: var(--ink); color: #fff; white-space: nowrap; }
+    .vg-achst.ok { background: var(--mint); color: var(--ink); border: 1.5px solid var(--ink); }
     .vg-bigheart { position: absolute; left: 50%; top: 50%; font-size: 110px; transform: translate(-50%,-50%) scale(0); pointer-events: none; opacity: 0; filter: drop-shadow(0 4px 0 var(--ink)); }
     .vg-bigheart.go, .vg-rheart.go { animation: vg-heart .9s var(--spring) both; }
     @keyframes vg-heart { 0% { transform: translate(-50%,-50%) scale(0) rotate(-15deg); opacity: 1; } 35% { transform: translate(-50%,-50%) scale(1.25) rotate(8deg); opacity: 1; } 70% { transform: translate(-50%,-50%) scale(1) rotate(0); opacity: 1; } 100% { transform: translate(-50%,-110%) scale(.8); opacity: 0; } }
@@ -1607,10 +2076,10 @@
     .vg-shead small { opacity: .8; font-weight: 700; font-size: 12px; }
     .vg-sx { color: #fff; font-size: 24px; width: 40px; height: 40px; }
     .vg-sbody { position: absolute; inset: 0; }
-    .vg-stext { position: absolute; left: 20px; right: 20px; top: 62%; text-align: center; font-family: var(--font-display); font-size: 24px; line-height: 1.15; background: rgba(14,14,18,.6); border-radius: 18px; padding: 12px; animation: pop-in .4s var(--spring) both; }
+    .vg-stext { position: absolute; left: 20px; right: 20px; top: calc(var(--safe-top) + 78px); text-align: center; font-family: var(--font-display); font-size: 24px; line-height: 1.15; background: rgba(14,14,18,.6); border-radius: 18px; padding: 12px; animation: pop-in .4s var(--spring) both; }
     .vg-sfoot { position: absolute; left: 12px; right: 12px; bottom: calc(var(--safe-bottom) + 18px); display: flex; gap: 8px; align-items: center; z-index: 3; }
     .vg-sreact { font-size: 28px; width: 46px; height: 46px; border-radius: 50%; background: rgba(255,255,255,.15); }
-    .vg-sfoot .btn { margin-left: auto; }
+    .vg-sfoot .btn { margin-left: auto; color: var(--ink); background: #fff; }
     .vg-dm { max-height: 40vh; min-height: 120px; overflow-y: auto; display: flex; flex-direction: column; gap: 6px; }
     .vg-read { align-self: flex-end; font-size: 11px; font-weight: 800; color: var(--muted); }
     /* --- Оболочка Vibegram: шапка + скролл + нижнее меню --- */
@@ -1713,4 +2182,13 @@
     document.head.appendChild(st);
   }
   injectCss();
+  ensureScenes();
+  // Старые сохранения: чинить подписи, где уже успел появиться «[object Object]»
+  (function fixObjText() {
+    const g = S().gram; if (!g) return;
+    const bad = (t) => /\[object Object\]/.test(String(t || ""));
+    const fix = (t) => String(t).replace(/\[object Object\]/g, "город");
+    if (!(g.posts || []).some((p) => bad(p.text)) && !(g.drafts || []).some((d) => bad(d.text))) return;
+    setG((x) => ({ posts: x.posts.map((p) => (bad(p.text) ? Object.assign({}, p, { text: fix(p.text) }) : p)), drafts: x.drafts.map((d) => (bad(d.text) ? Object.assign({}, d, { text: fix(d.text) }) : d)) }));
+  })();
 })();

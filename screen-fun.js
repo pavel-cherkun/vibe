@@ -17,6 +17,18 @@
   const easeOut = (k) => 1 - Math.pow(1 - k, 4);
   const pct = (n) => (n >= 0 ? "+" : "−") + Math.abs(n).toFixed(2).replace(".", ",") + "%";
 
+  // Монета-вайбик в стиле «дофаминовый вектор» (вместо эмодзи 🪙). Тело SVG — для вставки в другие SVG
+  const coinBody = (cx = 50, cy = 50, r = 38) => {
+    const k = r / 38, I = "#1b1430";
+    return `<ellipse cx="${cx + 3 * k}" cy="${cy + 5 * k}" rx="${r}" ry="${r}" fill="#ff8a1f" stroke="${I}" stroke-width="${3.5 * k}"/>
+      <circle cx="${cx}" cy="${cy}" r="${r}" fill="#ffd23f" stroke="${I}" stroke-width="${3.5 * k}"/>
+      <circle cx="${cx}" cy="${cy}" r="${r * 0.72}" fill="none" stroke="${I}" stroke-width="${2.5 * k}" stroke-dasharray="${2 * k} ${4.5 * k}" stroke-linecap="round"/>
+      <path d="M${cx - 13 * k} ${cy - 14 * k} L${cx} ${cy + 15 * k} L${cx + 13 * k} ${cy - 14 * k}" fill="none" stroke="${I}" stroke-width="${6 * k}" stroke-linecap="round" stroke-linejoin="round"/>
+      <path d="M${cx - 22 * k} ${cy - 18 * k} Q${cx - 16 * k} ${cy - 28 * k} ${cx - 5 * k} ${cy - 30 * k}" fill="none" stroke="#fff" stroke-width="${4 * k}" stroke-linecap="round"/>`;
+  };
+  const coin = (size = 22) => `<svg class="fz-coin" width="${size}" height="${size}" viewBox="0 0 100 100" aria-hidden="true" style="vertical-align:-0.18em;display:inline-block;overflow:visible">${coinBody(48, 46, 38)}</svg>`;
+  if (!Vibe.coin) Vibe.coin = coin;
+
   // Набор таймеров/слушателей экрана — всё чистится одним вызовом
   function scope() {
     const t = new Set(), iv = new Set(), rafs = new Set(), offs = [];
@@ -164,6 +176,10 @@
   .fz-times { display: flex; justify-content: space-between; font-size: 11px; font-weight: 800; color: #9c97b4; margin-top: 6px; font-variant-numeric: tabular-nums; }
   .fz-ctrls { display: flex; align-items: center; justify-content: center; gap: 22px; margin-top: 12px; }
   .fz-ctrls .icon-btn { background: #fff; color: var(--ink); }
+  .fz-mus-sub { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 14px; }
+  .fz-snd { flex: 0 0 auto; height: 30px; padding: 0 10px; border-radius: 15px; border: 2px solid #000; background: #2a2340; color: #d9c8ff; font-weight: 800; font-size: 11px; }
+  .fz-snd.on { background: var(--lime); color: var(--ink); }
+  .fz-next { min-width: 0; font-size: 11px; font-weight: 800; color: #b9a8e6; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-align: right; }
   .fz-pp-btn { width: 82px; height: 82px; border-radius: 50%; background: var(--lime); border: 3px solid #000; box-shadow: 0 5px 0 #000, 0 0 0 4px rgba(198,255,77,.25); display: grid; place-items: center; transition: transform .18s var(--spring), box-shadow .18s; }
   .fz-pp-btn:active { transform: translateY(4px) scale(.94); box-shadow: 0 1px 0 #000; }
   .fz-player.playing .fz-pp-btn { animation: pulse 1.41s ease-in-out infinite; }
@@ -286,8 +302,12 @@
   /* WHEEL */
   .fz-wheel-box { position: relative; padding: 30px 0 18px; border-radius: 34px; overflow: hidden; }
   .fz-wheel-wrap { position: relative; width: min(310px, 82vw); aspect-ratio: 1 / 1; margin: 0 auto; }
-  .fz-wheel { position: absolute; inset: 14px; border-radius: 50%; will-change: transform; }
+  .fz-wheel { position: absolute; inset: 14px; border-radius: 50%; }
   .fz-wheel svg { width: 100%; height: 100%; display: block; overflow: visible; }
+  .fz-prz { display: flex; align-items: center; gap: 10px; }
+  .fz-prz b { display: block; font-size: 13px; line-height: 1.15; }
+  .fz-prz small { display: block; font-size: 11px; font-weight: 800; opacity: .8; margin-top: 2px; }
+  .fz-prz small.fz-micro { font-size: 7px; font-weight: 700; opacity: .65; letter-spacing: .2px; }
   .fz-rim { position: absolute; inset: 0; border-radius: 50%; background: var(--ink); box-shadow: 0 7px 0 rgba(0,0,0,.35); }
   .fz-bulb { position: absolute; width: 11px; height: 11px; margin: -5.5px 0 0 -5.5px; border-radius: 50%; background: #fff6b0; box-shadow: 0 0 8px #ffe14d; animation: fz-bulb 1s steps(1) infinite; }
   .fz-bulb.alt { animation-delay: -.5s; }
@@ -1218,6 +1238,12 @@
       chords: [[48, 52, 55, 59], [45, 48, 52, 55], [53, 57, 60, 64], [55, 59, 62, 65]], bass: [36, 33, 41, 43] },
     { id: "cashback", t: "Кэшбек на чувства (slowed + вайб)", a: "Лил Процент", e: "💜", art: "linear-gradient(135deg,#ff6bcb,#ffe14d)", len: 148, bpm: 84,
       chords: [[54, 57, 61, 64], [52, 56, 59, 62], [49, 52, 56, 59], [50, 54, 57, 61]], bass: [42, 40, 37, 38] },
+    { id: "unsub", t: "Отписка (займёт 14 шагов)", a: "Группа «Подтвердите действие»", e: "🔁", art: "linear-gradient(135deg,#7cf5c8,#2f5bff)", len: 158, bpm: 86,
+      chords: [[50, 53, 57, 60], [48, 52, 55, 59], [53, 57, 60, 64], [52, 55, 59, 62]], bass: [38, 36, 41, 40] },
+    { id: "kpi", t: "KPI в моём сердце", a: "Синергия feat. Бюджет на Q4", e: "📈", art: "linear-gradient(135deg,#ff8a1f,#ffd23f)", len: 144, bpm: 90,
+      chords: [[55, 59, 62, 65], [53, 57, 60, 64], [52, 55, 59, 62], [50, 53, 57, 60]], bass: [43, 41, 40, 38] },
+    { id: "babushka", t: "Бабушка звонит, а у меня наушники", a: "Мама Сказала Перезвонить", e: "☎️", art: "linear-gradient(135deg,#ffb3e0,#c9b6ff)", len: 176, bpm: 76,
+      chords: [[48, 52, 55, 60], [53, 57, 60, 65], [50, 53, 57, 62], [55, 59, 62, 67]], bass: [36, 41, 38, 43] },
   ];
   const PENTA = [0, 3, 5, 7, 10, 12, 15];
 
@@ -1375,6 +1401,10 @@
             <button class="fz-pp-btn" data-act="pp" aria-label="Играть/пауза"><span class="fz-pp"><i></i><i></i></span></button>
             <button class="icon-btn" data-act="next" aria-label="Следующий">⏭</button>
           </div>
+          <div class="fz-mus-sub">
+            <button class="fz-snd ${s.musSound ? "on" : ""}" data-act="snd" aria-label="Звук">${s.musSound ? "🔊 со звуком" : "🔈 тихий режим"}</button>
+            <span class="fz-next" data-next>дальше: ${TRACKS[((s.musTrack || 0) + 1) % TRACKS.length].t}</span>
+          </div>
           <div class="fz-ad" data-ad hidden></div>
         </div>
         <div data-prem>${musPremHtml()}</div>
@@ -1416,7 +1446,20 @@
         root.querySelector("[data-artist]").textContent = t.a;
         root.querySelector("[data-tlen]").textContent = mmss(t.len);
         root.querySelectorAll(".fz-trk").forEach((el, i) => el.classList.toggle("on", i === cur));
+        const nx = root.querySelector("[data-next]"); if (nx) nx.textContent = `дальше: ${TRACKS[(cur + 1) % TRACKS.length].t}`;
+        root.querySelector("[data-prog]").style.width = "0%";
+        root.querySelector("[data-tcur]").textContent = "0:00";
         FX.bump(root.querySelector("[data-title]"));
+      }
+      // Тихий режим по умолчанию: плеер «играет» визуально (винил, прогресс, автопереход), звук — по кнопке
+      let isOn = false;
+      const wantSound = () => S().musSound === true && S().sound !== false;
+      function startEngine() {
+        if (!wantSound()) return;
+        if (!engine) engine = createLofi(onBeat);
+        if (!engine) return;
+        engine.setTrack(TRACKS[cur]);
+        engine.play();
       }
       function setPlaying(on) {
         player.classList.toggle("playing", on);
@@ -1436,6 +1479,7 @@
       function showAd(then) {
         adOn = true;
         if (engine) engine.pause();
+        isOn = false;
         setPlaying(false);
         const ad = pick(ADS);
         let left = AD_SEC;
@@ -1473,19 +1517,14 @@
       }
       function play() {
         if (adOn) { FX.toast("Сначала реклама. Это недолго (5 сек жизни)", "📢"); return; }
-        if (S().sound === false) {
-          FX.toast("Звук выключен в профиле. Включи — и будет вайб", "🔇", 2600);
-          FX.shake(root.querySelector(".fz-pp-btn"));
-          return;
-        }
-        if (!engine) engine = createLofi(onBeat);
-        if (!engine) { FX.toast("Браузер не умеет в вайб. Обидно", "😶"); return; }
-        engine.setTrack(TRACKS[cur]);
-        engine.play(); setPlaying(true);
+        const was = isOn;
+        isOn = true; setPlaying(true);
+        startEngine();
+        if (was) return;
         if (Vibe.body) Vibe.body.effect("music");
         FX.burst(root.querySelector(".fz-pp-btn"), { emojis: ["🎵", "🎶", "✨", "💜"], count: 10, spread: 90 });
       }
-      function pause() { if (engine) engine.pause(); setPlaying(false); }
+      function pause() { isOn = false; if (engine) engine.pause(); setPlaying(false); }
       function go(i) {
         if (adOn) { FX.toast("Реклама. Её нельзя пропустить, только пережить", "📢"); FX.shake(adEl); return; }
         cur = (i + TRACKS.length) % TRACKS.length; pos = 0;
@@ -1493,7 +1532,7 @@
         setUI();
         if (countTrack()) { showAd(() => play()); return; }
         if (engine && engine.playing) engine.setTrack(TRACKS[cur]);
-        else play();
+        play();
       }
 
       // Визуал: эквалайзер из анализатора, пульс на бочку, ноты на такт
@@ -1501,15 +1540,23 @@
       const ambient = bars.map(() => 0.08);
       (function loop(t) {
         const dt = (t - last) / 1000; last = t;
-        const on = engine && engine.playing;
+        const on = isOn;
+        const audible = engine && engine.playing;
         if (on) {
-          engine.an.getByteFrequencyData(data);
+          if (audible) engine.an.getByteFrequencyData(data);
+          const bpm = TRACKS[cur].bpm, beatK = ((t / 1000) * bpm / 60) % 1;
           bars.forEach((b, i) => {
-            const v = data[Math.min(31, 1 + Math.floor(i * 1.3))] / 255;
+            // Без звука — «нарисованный» эквалайзер в темп трека
+            const v = audible ? data[Math.min(31, 1 + Math.floor(i * 1.3))] / 255
+              : 0.25 + 0.45 * Math.abs(Math.sin(t / (260 + i * 37) + i)) * (1 - beatK * 0.6) + (i < 5 ? 0.25 * (1 - beatK) : 0);
             ambient[i] += (Math.max(0.06, Math.pow(v, 1.4) * 1.15) - ambient[i]) * 0.5;
             b.style.transform = `scaleY(${clamp(ambient[i], 0.06, 1)})`;
           });
-          const now = engine.now();
+          if (!audible) {
+            const kb = Math.floor((t / 1000) * bpm / 60);
+            if (kb !== loop.kb) { loop.kb = kb; player.classList.add("beat"); setTimeout(() => player.classList.remove("beat"), 110); }
+          }
+          const now = audible ? engine.now() : 0;
           while (beats.length && beats[0].t <= now) {
             const b = beats.shift();
             if (b.type === "kick") { player.classList.add("beat"); setTimeout(() => player.classList.remove("beat"), 110); }
@@ -1560,7 +1607,18 @@
         const act = e.target.closest("[data-act]");
         if (!act) return;
         const a = act.dataset.act;
-        if (a === "pp") { FX.bump(act); if (engine && engine.playing) pause(); else play(); }
+        if (a === "pp") { FX.bump(act); if (isOn) pause(); else play(); }
+        else if (a === "snd") {
+          FX.bump(act);
+          const on = !S().musSound;
+          if (on && S().sound === false) { FX.toast("Звук выключен в профиле. Плеер играет тихо — так даже честнее", "🔇", 2600); return; }
+          Vibe.state.set({ musSound: on });
+          act.classList.toggle("on", on);
+          act.textContent = on ? "🔊 со звуком" : "🔈 тихий режим";
+          if (on && isOn) startEngine();
+          if (!on && engine) engine.pause();
+          FX.toast(on ? "Звук включён. Соседи в курсе" : "Тихий режим: вайб есть, звука нет", on ? "🔊" : "🔈", 1600);
+        }
         else if (a === "next") { FX.bump(act); go(cur + 1); }
         else if (a === "prev") { FX.bump(act); go(pos > 3 ? cur : cur - 1); }
         else if (a === "podcast") { FX.toast("Выпуск доступен с подпиской «Плюс». Иронично", "🎙️"); }
@@ -1615,7 +1673,7 @@
           <div class="stagger">
             ${Vibe.ui.hero({ title: "Играй и богатей*", text: `Рекорд: ${Vibe.fmt(best)} очков. Побьёшь?`, emo: "🕹️", color: "c-violet", sticker: "NEW 🔥" })}
             <button class="card tap c-yellow fz-gcard" data-act="catch" style="margin-top:14px">
-              <span class="e emo float">🪙</span>
+              <span class="e float">${Vibe.coin(70)}</span>
               <div><div class="display">Лови вайбики</div><p>20 секунд. Ловишь монетки, уворачиваешься от кредитов. Как в жизни, только быстрее.</p>
               <span class="badge" style="margin-top:8px;background:#fff">🏆 рекорд ${Vibe.fmt(best)}</span></div>
             </button>
@@ -1643,15 +1701,15 @@
           </div>
           <div class="fz-arena" data-arena>
             <div class="fz-hud">
-              <span class="badge">🪙 <b data-score>0</b></span>
+              <span class="badge">${Vibe.coin(16)} <b data-score>0</b></span>
               <span class="badge fz-combo" data-combo>×1</span>
               <span class="badge">⏱ <b data-time>20</b></span>
             </div>
             <div class="fz-tbar"><i data-tbar></i></div>
             <div class="fz-over" data-over>
-              <span class="emo float" style="font-size:80px">🪙</span>
+              <span class="float">${Vibe.coin(84)}</span>
               <div class="display" style="font-size:30px">Лови вайбики!</div>
-              <p style="font-weight:700;max-width:260px">Тапай монетки 🪙⭐💜💎. Не трогай 💣 и <b>кредиты</b>. Серия ловли = множитель.</p>
+              <p style="font-weight:700;max-width:260px">Тапай монетки ${Vibe.coin(18)}⭐💜💎. Не трогай 💣 и <b>кредиты</b>. Серия ловли = множитель.</p>
               <button class="btn black xl" data-act="start" style="margin-top:8px">Погнали! 🚀</button>
             </div>
           </div>`;
@@ -1673,7 +1731,7 @@
           const it = pickItem();
           const el = document.createElement("div");
           el.className = "fz-item" + (it.e === "credit" ? " credit" : "");
-          el.innerHTML = it.e === "credit" ? "<span>КРЕДИТ</span>" : it.e;
+          el.innerHTML = it.e === "credit" ? "<span>КРЕДИТ</span>" : it.e === "🪙" ? Vibe.coin(46) : it.e;
           const W = arena.clientWidth;
           const o = { it, el, x: rand(36, W - 36), y: -30, vy: rand(150, 230) + (20 - timeLeft) * 9, rot: rand(-30, 30), vr: rand(-120, 120), wob: rand(0, 6) };
           arena.appendChild(el);
@@ -1762,10 +1820,10 @@
             ${isBest ? `<span class="sticker" style="position:relative;transform:rotate(-6deg);background:var(--pink)">НОВЫЙ РЕКОРД 🏆</span>` : ""}
             <div class="big-num" style="font-size:84px" data-fscore>0</div>
             <div style="font-weight:800">очков · рекорд ${Vibe.fmt(Math.max(best, score))}</div>
-            <div class="badge" style="background:var(--yellow);font-size:14px;padding:8px 14px;margin-top:4px">= 🪙 ${vib} вайбиков</div>
+            <div class="badge" style="background:var(--yellow);font-size:14px;padding:8px 14px;margin-top:4px">= ${Vibe.coin(18)} ${vib} вайбиков</div>
             <div class="fz-row" style="margin-top:10px">
               <button class="btn" data-act="again">Ещё раз 🔁</button>
-              <button class="btn black" data-act="claim">Забрать 🪙</button>
+              <button class="btn black" data-act="claim">Забрать ${Vibe.coin(18)}</button>
             </div>`;
           arena.appendChild(fin);
           FX.countTo(fin.querySelector("[data-fscore]"), score, { from: 0, dur: 1100 });
@@ -1803,7 +1861,7 @@
           <div class="display" style="font-size:30px;margin:4px 0 12px">Сотри и выиграй <span class="emo wobble">👆</span></div>
           <div class="fz-scratch" data-sc>
             <div class="fz-prize ${prize.c}">
-              ${prize.zab ? Vibe.zabotik(90, "smile") : `<span class="e emo">${prize.e}</span>`}
+              ${prize.zab ? Vibe.zabotik(90, "smile") : prize.e === "🪙" ? `<span class="e">${Vibe.coin(86)}</span>` : `<span class="e emo">${prize.e}</span>`}
               <div class="display">${prize.t}</div>
               <div style="font-weight:700;font-size:13px;max-width:260px">${prize.d}</div>
             </div>
@@ -3023,16 +3081,22 @@
   /* ============================================================
      5. КОЛЕСО ВАЙБА — ежедневный спин
      ============================================================ */
+  // Сектора колеса. w — вес (0 = недостижимо: на колесе крупно, в шансах — микрошрифтом)
   const PRIZES = [
-    { l: "+50", e: "🪙", c: "#ffe14d", t: "+50 вайбиков", d: "Честно накручено. Почти как зарплата, только быстрее.", vib: 50, w: 18 },
-    { l: "Вещь", e: "🎁", c: "#8fd8ff", t: "Вещь в квартиру", d: "Настоящая вещь в инвентарь. С бонусом. Без доставки.", item: true, w: 13 },
-    { l: "Кредит 0%*", e: "🤑", c: "#ff6bcb", t: "Кредит под 0%*", d: "*0% в первые 0 дней, затем 89% годовых. Уже одобрен, уже скучает по вам.", w: 13 },
-    { l: "+100", e: "💰", c: "#c6ff4d", t: "+100 вайбиков", d: "Сотка! Можно купить 0,3 кофе в Vibe Eat.", vib: 100, w: 10 },
-    { l: "Ничего", e: "✨", c: "#d9c8ff", t: "Ничего, но красиво", d: "Зато как крутилось! Мы старались, анимация стоила дороже приза.", w: 16 },
-    { l: "x2 опыт", e: "⚡", c: "#ff6b2c", t: "x2 опыт", d: "+80 XP прямо сейчас. Уровень сам себя не поднимет.", xp: 80, w: 12 },
-    { l: "+20", e: "🪙", c: "#7cf5c8", t: "+20 вайбиков", d: "Маленькая победа — тоже победа. Особенно в понедельник.", vib: 20, w: 14 },
-    { l: "ДЖЕКПОТ", e: "💎", c: "#8b5cff", t: "ДЖЕКПОТ +300", d: "Вы сорвали банк! Банк, кстати, наш. Ничего страшного.", vib: 300, w: 4, dark: true },
+    { l: "+50", g: "coin", c: "#ffd23f", e: "🪙", t: "+50 вайбиков", d: "Честно накручено. Почти как зарплата, только быстрее.", vib: 50, w: 20 },
+    { l: "Квартира", sub: "в центре", g: "flat", c: "#8fd8ff", e: "🏙️", t: "Квартира в центре", d: "Двушка у метро, без ипотеки. Шанс 0,0001%. Мы проверяли: колесо до сих пор думает.", w: 0, dream: true },
+    { l: "Кэшбек", sub: "+категория", g: "card", c: "#c6ff4d", e: "💳", t: "Новая категория кэшбека", d: "", cb: true, w: 12 },
+    { l: "0%*", sub: "кредит", g: "doc", c: "#ff6bcb", e: "🤑", t: "Кредит под 0%*", d: "*0% в первые 0 дней, затем 89% годовых. Уже одобрен, уже скучает по вам.", w: 12 },
+    { l: "Отпуск", sub: "без уведомлений", g: "palm", c: "#7cf5c8", e: "🏝️", t: "Отпуск без уведомлений", d: "Две недели, телефон молчит, начальник забыл пароль. Шанс 0,0001%. Таких отпусков не бывает даже у нас.", w: 0, dream: true },
+    { l: "+100", g: "coin", c: "#ff8a1f", e: "💰", t: "+100 вайбиков", d: "Сотка! Можно купить 0,3 кофе в Vibe Eat.", vib: 100, w: 9 },
+    { l: "Ничего", g: "spark", c: "#c9b6ff", e: "✨", t: "Ничего, но красиво", d: "Зато как крутилось! Мы старались, анимация стоила дороже приза.", w: 17 },
+    { l: "Вещь", g: "gift", c: "#ffb3e0", e: "🎁", t: "Вещь в квартиру", d: "Настоящая вещь в инвентарь. С бонусом. Без доставки.", item: true, w: 13 },
+    { l: "Миллион", sub: "₫ на карту", g: "bag", c: "#8b5cf6", e: "💰", t: "Миллион на карту", d: "Шанс 0,0001%. Если выпадет — это сбой, и мы его заберём обратно с извинениями.", w: 0, dream: true, dark: true },
+    { l: "×2 опыт", g: "bolt", c: "#2f5bff", e: "⚡", t: "×2 опыт", d: "+80 XP прямо сейчас. Уровень сам себя не поднимет.", xp: 80, w: 12, dark: true },
   ];
+  const SEG = 360 / PRIZES.length;
+  const W_TOT = PRIZES.reduce((s, p) => s + p.w, 0);
+  const chance = (p) => (p.w ? `${Math.round((p.w / W_TOT) * 100)}%` : "0,0001%");
   const SPIN_COST = 50;
   // Вещи с колеса → Vibe.inv (бонусы к сну/настроению/внешности)
   const WHEEL_ITEMS = [
@@ -3042,6 +3106,7 @@
     { id: "socks_vibe", name: "Носки с вайбом", e: "🧦", cat: "wear", bonus: { look: 2, mood: 1 }, d: "Внешность +2. Видно только тебе, но ты знаешь." },
   ];
   const WHEEL_DUP_VIB = 40;
+  const WHEEL_CB_VIB = 60;
   function wheelItem() {
     if (!Vibe.inv) return null;
     const free = WHEEL_ITEMS.filter((x) => !Vibe.inv.has(x.id));
@@ -3049,31 +3114,79 @@
   }
   const bonusTxt = (b) => Object.entries(b || {}).map(([k, v]) => `${{ sleep: "сон", mood: "настроение", energy: "энергия", health: "здоровье", look: "внешность" }[k] || k} +${v}`).join(", ");
 
+  // Кэшбек-приз: бонусная категория до конца игрового месяца (сверх лимита выбора).
+  // Если категории на месяц ещё не выбраны — добавить нельзя (выбор бы «закрылся»), платим вайбиками.
+  function wheelCashback() {
+    const cb = Vibe.cashback;
+    if (!cb || !cb.chosen || !Vibe.game) return null;
+    const ids = cb.chosen();
+    if (!ids) return null;
+    const pool = (cb.offer ? cb.offer() : cb.CATS).filter((c) => !ids.includes(c.id) && !c.joke && c.r >= 0.03);
+    const c = pick(pool.length ? pool : (cb.CATS || []).filter((x) => !ids.includes(x.id)));
+    if (!c) return null;
+    return c;
+  }
+  function addCashbackCat(c) {
+    const m = Math.floor(Vibe.game.info().day / 30);
+    const cur = (S().cbChoice && S().cbChoice.m === m && S().cbChoice.ids) || [];
+    Vibe.state.set({ cbChoice: { m, ids: [...cur, c.id] } });
+  }
+
+  // Векторные значки секторов (центр 0,0, ~26 единиц)
+  const I = "#1b1430";
+  const GS = `stroke="${I}" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"`;
+  const GLYPH = {
+    coin: () => coinBody(0, 0, 12),
+    flat: () => `<path d="M-11 13 V-8 L-3 -13 V13 Z" fill="#fff" ${GS}/><path d="M-3 13 V-4 H11 V13 Z" fill="#ffd23f" ${GS}/>
+      <path d="M-8 -5 h2 M-8 0 h2 M-8 5 h2 M2 1 h2 M7 1 h1 M2 6 h2 M7 6 h1" stroke="${I}" stroke-width="2.2" stroke-linecap="round"/>`,
+    card: () => `<rect x="-13" y="-9" width="26" height="18" rx="4" fill="#fff" ${GS}/><path d="M-13 -3 H13" stroke="${I}" stroke-width="3.5"/>
+      <text x="5" y="7" font-family="Manrope, sans-serif" font-weight="900" font-size="8" fill="${I}" text-anchor="middle">%</text>`,
+    doc: () => `<path d="M-9 -13 H5 L10 -8 V13 H-9 Z" fill="#fff" ${GS}/><text x="0.5" y="5" font-family="Manrope, sans-serif" font-weight="900" font-size="8.5" fill="#ff4b3e" text-anchor="middle">0%*</text>`,
+    palm: () => `<ellipse cx="0" cy="10" rx="13" ry="4" fill="#ffd23f" ${GS}/><path d="M1 10 Q2 0 -1 -6" fill="none" stroke="${I}" stroke-width="3"/>
+      <path d="M-1 -6 Q-9 -12 -13 -5 Q-6 -8 -1 -6 Q4 -14 11 -9 Q4 -8 -1 -6 Q6 -4 9 2 Q2 -3 -1 -6" fill="#35c47a" ${GS}/>`,
+    bag: () => `<path d="M-5 -10 L5 -10 L3 -6 Q13 0 11 8 Q10 13 0 13 Q-10 13 -11 8 Q-13 0 -3 -6 Z" fill="#ffd23f" ${GS}/>
+      <text x="0" y="8" font-family="Manrope, sans-serif" font-weight="900" font-size="10" fill="${I}" text-anchor="middle">₫</text>`,
+    spark: () => `<path d="M0 -13 L3.5 -3.5 L13 0 L3.5 3.5 L0 13 L-3.5 3.5 L-13 0 L-3.5 -3.5 Z" fill="#fff" ${GS}/><circle cx="9" cy="-9" r="2.5" fill="#ffd23f" stroke="${I}" stroke-width="1.8"/>`,
+    gift: () => `<rect x="-11" y="-3" width="22" height="15" rx="2" fill="#ff4b3e" ${GS}/><rect x="-13" y="-8" width="26" height="6" rx="2" fill="#ffd23f" ${GS}/>
+      <path d="M0 -8 V12" stroke="${I}" stroke-width="2.5"/><path d="M0 -8 Q-9 -16 -8 -9 Z M0 -8 Q9 -16 8 -9 Z" fill="#fff" ${GS}/>`,
+    bolt: () => `<path d="M3 -14 L-9 2 H-1 L-4 14 L9 -3 H1 Z" fill="#ffd23f" ${GS}/>`,
+  };
+
   function wheelSvg() {
     const R = 140;
     const pt = (a, r = R) => [(Math.cos((a * Math.PI) / 180) * r).toFixed(2), (Math.sin((a * Math.PI) / 180) * r).toFixed(2)];
     const segs = PRIZES.map((p, i) => {
-      const a0 = i * 45 - 90, a1 = a0 + 45, mid = a0 + 22.5;
+      const a0 = i * SEG - 90, a1 = a0 + SEG, mid = a0 + SEG / 2;
       const [x0, y0] = pt(a0), [x1, y1] = pt(a1);
+      const ink = p.dark ? "#fff" : I;
+      const fs = p.l.length > 7 ? 11.5 : p.l.length > 5 ? 13 : 17;
       return `
-        <path d="M0 0 L${x0} ${y0} A${R} ${R} 0 0 1 ${x1} ${y1} Z" fill="${p.c}" stroke="#0e0e12" stroke-width="2.5"/>
+        <path d="M0 0 L${x0} ${y0} A${R} ${R} 0 0 1 ${x1} ${y1} Z" fill="${p.c}" stroke="${I}" stroke-width="3.5" stroke-linejoin="round"/>
+        ${p.dream ? `<path d="M0 0 L${x0} ${y0} A${R} ${R} 0 0 1 ${x1} ${y1} Z" fill="url(#fz-dream)" opacity=".5"/>` : ""}
         <g transform="rotate(${mid})">
-          <text x="44" y="4.5" font-family="Manrope, sans-serif" font-weight="800" font-size="${p.l.length > 7 ? 10.5 : 13}" fill="${p.dark ? "#fff" : "#0e0e12"}">${p.l}</text>
-          <text x="118" y="0" font-size="20" text-anchor="middle" dominant-baseline="central" transform="rotate(90 118 0)">${p.e}</text>
+          <text x="${p.sub ? 47 : 50}" y="${p.sub ? 1 : 5.5}" font-family="Manrope, sans-serif" font-weight="900" font-size="${fs}" fill="${ink}">${p.l}</text>
+          ${p.sub ? `<text x="48" y="11" font-family="Manrope, sans-serif" font-weight="800" font-size="${p.sub.length > 12 ? 6.4 : 7.5}" fill="${ink}" opacity=".85">${p.sub}</text>` : ""}
+          ${p.dream ? `<text x="66" y="${p.sub ? 18.5 : 14}" font-family="Manrope, sans-serif" font-weight="700" font-size="4.6" fill="${ink}" opacity=".75">шанс 0,0001%</text>` : ""}
+          <g transform="translate(124 0) rotate(90) scale(.9)">${GLYPH[p.g] ? GLYPH[p.g]() : ""}</g>
         </g>`;
     }).join("");
-    return `<svg viewBox="-150 -150 300 300">
-      <circle r="146" fill="#fff" stroke="#0e0e12" stroke-width="3"/>
-      ${segs}
-      <circle r="${R}" fill="none" stroke="#0e0e12" stroke-width="3"/>
-      ${PRIZES.map((_, i) => { const [x, y] = pt(i * 45 - 90, R - 2); return `<circle cx="${x}" cy="${y}" r="4" fill="#fff" stroke="#0e0e12" stroke-width="2"/>`; }).join("")}
+    const pegs = PRIZES.map((_, i) => { const [x, y] = pt(i * SEG - 90, R); return `<circle cx="${x}" cy="${y}" r="5" fill="#fff" stroke="${I}" stroke-width="2.5"/>`; }).join("");
+    return `<svg viewBox="-150 -150 300 300" width="300" height="300">
+      <defs><pattern id="fz-dream" width="10" height="10" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="5" height="10" fill="#fff"/></pattern></defs>
+      <g data-rot transform="rotate(0)">
+        <circle r="146" fill="#fff" stroke="${I}" stroke-width="3.5"/>
+        ${segs}
+        <circle r="${R}" fill="none" stroke="${I}" stroke-width="4"/>
+        <circle r="44" fill="none" stroke="${I}" stroke-width="3" stroke-dasharray="3 7" stroke-linecap="round"/>
+        ${pegs}
+      </g>
     </svg>`;
   }
 
   Vibe.screen("wheel", {
     render() {
-      const bulbs = Array.from({ length: 16 }, (_, i) => {
-        const a = (i / 16) * Math.PI * 2;
+      const bulbs = Array.from({ length: 20 }, (_, i) => {
+        const a = (i / 20) * Math.PI * 2;
         return `<i class="fz-bulb ${i % 2 ? "alt" : ""}" style="left:${(50 + Math.cos(a) * 47.6).toFixed(2)}%;top:${(50 + Math.sin(a) * 47.6).toFixed(2)}%"></i>`;
       }).join("");
       return `
@@ -3085,7 +3198,7 @@
             ${bulbs}
             <div class="fz-wheel" data-wheel>${wheelSvg()}</div>
             <div class="fz-hub">${Vibe.zabotik(56, "smile")}</div>
-            <svg class="fz-pointer" data-pointer viewBox="0 0 46 58"><path d="M23 56 L4 16 A19 19 0 1 1 42 16 Z" fill="#ff3b3b" stroke="#0e0e12" stroke-width="3" stroke-linejoin="round"/><circle cx="23" cy="18" r="7" fill="#fff" stroke="#0e0e12" stroke-width="2.5"/></svg>
+            <svg class="fz-pointer" data-pointer viewBox="0 0 46 58"><path d="M23 56 L4 16 A19 19 0 1 1 42 16 Z" fill="#ff4b3e" stroke="#1b1430" stroke-width="3.5" stroke-linejoin="round"/><circle cx="23" cy="18" r="7" fill="#fff" stroke="#1b1430" stroke-width="2.5"/></svg>
           </div>
           <div style="position:relative;text-align:center;margin-top:18px;padding:0 16px">
             <button class="btn black xl block fz-spin-btn" data-spin></button>
@@ -3094,27 +3207,31 @@
         </div>
         <h2 class="sec">Призы <small>шансы честные*</small></h2>
         <div class="grid2 stagger">
-          ${PRIZES.map((p) => `<div class="card tight" style="display:flex;align-items:center;gap:10px;background:${p.c};${p.dark ? "color:#fff" : ""}"><span class="emo" style="font-size:28px">${p.e}</span><b style="font-size:13px;line-height:1.15">${p.t}</b></div>`).join("")}
+          ${PRIZES.map((p) => `<div class="card tight fz-prz" style="background:${p.c};${p.dark ? "color:#fff" : ""}"><svg viewBox="-16 -16 32 32" width="30" height="30" style="flex:0 0 auto;overflow:visible">${GLYPH[p.g]()}</svg><div style="min-width:0"><b>${p.t}</b><small class="${p.dream ? "fz-micro" : ""}">шанс ${chance(p)}</small></div></div>`).join("")}
         </div>
         <h2 class="sec">Последние выигрыши</h2>
         <div class="fz-log" data-log></div>
-        <div class="fine">*Шансы честные в том смысле, что они точно есть. Один бесплатный спин в сутки, далее ${SPIN_COST} вайбиков за спин. Колесо не является азартной игрой, потому что азарт у вас, а не у нас.</div>`;
+        <div class="fine">*Шансы честные в том смысле, что они точно есть. Квартира, отпуск и миллион нарисованы на колесе в рекламных целях; их вероятность округлена до 0,0001% в большую сторону. Один бесплатный спин в сутки, далее ${SPIN_COST} вайбиков за спин. Колесо не является азартной игрой, потому что азарт у вас, а не у нас.</div>`;
     },
     mount(root) {
       const sc = scope();
       const wheel = root.querySelector("[data-wheel]");
+      const rotG = wheel.querySelector("[data-rot]");
       const pointer = root.querySelector("[data-pointer]");
       const box = root.querySelector("[data-box]");
       const btn = root.querySelector("[data-spin]");
       const note = root.querySelector("[data-note]");
       let rot = S().wheelRot || 0, spinning = false;
-      wheel.style.transform = `rotate(${rot}deg)`;
+      // Вращаем только группу внутри SVG атрибутом transform — никаких CSS scale/skew на колесе
+      const setRot = (r) => rotG.setAttribute("transform", `rotate(${r.toFixed(3)})`);
+      setRot(rot);
       const isFree = () => S().spunDay !== today();
+      const segAt = (r) => Math.floor(((((-r) % 360) + 360) % 360) / SEG) % PRIZES.length;
 
       function renderLog() {
         const log = S().wheelLog || [];
         root.querySelector("[data-log]").innerHTML = log.length
-          ? log.map((l) => `<span class="badge fz-popin" style="background:#fff;font-size:12px;padding:6px 10px">${l.e} ${l.t}</span>`).join("")
+          ? log.map((l) => `<span class="badge fz-popin" style="background:#fff;font-size:12px;padding:6px 10px">${l.e === "🪙" ? Vibe.coin(14) : l.e} ${l.t}</span>`).join("")
           : `<span class="muted" style="font-weight:700;font-size:13px">Пока пусто. Колесо ждёт тебя 🥺</span>`;
       }
       function updBtn() {
@@ -3122,7 +3239,7 @@
         btn.disabled = false;
         if (isFree()) { btn.innerHTML = `Крутить бесплатно! 🎡`; btn.classList.remove("yellow"); btn.classList.add("black"); note.textContent = "Первый спин сегодня — за наш счёт"; }
         else {
-          btn.innerHTML = `Крутить ещё · ${SPIN_COST} 🪙`;
+          btn.innerHTML = `Крутить ещё · ${SPIN_COST} ${Vibe.coin(20)}`;
           const now = new Date(), mid = new Date(now); mid.setHours(24, 0, 0, 0);
           const s = Math.floor((mid - now) / 1000);
           note.innerHTML = `Бесплатный спин через <span class="timer-pill">${String(Math.floor(s / 3600)).padStart(2, "0")}:${String(Math.floor((s % 3600) / 60)).padStart(2, "0")}:${String(s % 60).padStart(2, "0")}</span>`;
@@ -3131,9 +3248,8 @@
       sc.every(() => { if (!spinning && !isFree()) updBtn(); }, 1000);
 
       function choose() {
-        const tot = PRIZES.reduce((s, p) => s + p.w, 0);
-        let r = Math.random() * tot;
-        for (let i = 0; i < PRIZES.length; i++) { r -= PRIZES[i].w; if (r <= 0) return i; }
+        let r = Math.random() * W_TOT;
+        for (let i = 0; i < PRIZES.length; i++) { if (!PRIZES[i].w) continue; r -= PRIZES[i].w; if (r <= 0) return i; }
         return 0;
       }
 
@@ -3148,7 +3264,8 @@
           Vibe.refreshCounters();
           const pill = document.querySelector("[data-vibiki]");
           if (pill) { const r = pill.getBoundingClientRect(); floatText(`−${SPIN_COST} 🪙`, r.left + r.width / 2, r.top + 34, "#e5333d", 20); }
-          FX.coins(pill || { x: innerWidth - 60, y: 50 }, wheel, 5);
+          // Монетки летят в кнопку, а не в колесо: «желе»-анимация на колесе его и сплющивала
+          FX.coins(pill || { x: innerWidth - 60, y: 50 }, btn, 5);
         } else {
           Vibe.state.set({ spunDay: today() });
         }
@@ -3156,21 +3273,25 @@
         box.classList.add("spinning");
         FX.sound.whoosh(); FX.haptic([10, 20, 10]);
         const idx = choose();
-        const jitter = rand(-15, 15);
-        const desired = ((360 - (idx * 45 + 22.5 + jitter)) % 360 + 360) % 360;
+        // Иногда стрелка останавливается у самого края «мечты» по соседству — чтобы было обиднее
+        const nearDream = [idx - 1, idx + 1].map((j) => (j + PRIZES.length) % PRIZES.length).find((j) => PRIZES[j].dream);
+        const edge = SEG / 2 - 2.5;
+        let jitter = rand(-SEG / 2 + 5, SEG / 2 - 5);
+        if (nearDream != null && Math.random() < 0.55) jitter = ((nearDream - idx + PRIZES.length) % PRIZES.length === 1 ? 1 : -1) * edge;
+        const desired = ((360 - (idx * SEG + SEG / 2 + jitter)) % 360 + 360) % 360;
         const start = rot;
         const base = ((start % 360) + 360) % 360;
         const target = start + 360 * ri(6, 8) + ((desired - base + 360) % 360);
         const dur = rand(5200, 6200);
         const t0 = performance.now();
-        let lastSeg = Math.floor(((((-start) % 360) + 360) % 360) / 45);
+        let lastSeg = segAt(start);
         (function step(t) {
           const k = Math.min(1, (t - t0) / dur);
           // разгон 8%, затем долгое «физичное» торможение
           const e = k < 0.08 ? 0.5 * Math.pow(k / 0.08, 2) * 0.08 * 1.6 : 0.064 + (1 - 0.064) * (1 - Math.pow(1 - (k - 0.08) / 0.92, 3.4));
           rot = start + (target - start) * Math.min(1, e);
-          wheel.style.transform = `rotate(${rot}deg)`;
-          const seg = Math.floor(((((-rot) % 360) + 360) % 360) / 45);
+          setRot(rot);
+          const seg = segAt(rot);
           if (seg !== lastSeg) {
             lastSeg = seg;
             FX.sound.tick();
@@ -3178,14 +3299,14 @@
             if (k > 0.75) FX.haptic(4);
           }
           if (k < 1) sc.raf(step);
-          else done(idx);
+          else done(idx, nearDream != null && Math.abs(jitter) >= edge - 0.1 ? nearDream : null);
         })(t0);
       }
 
-      function done(idx) {
+      function done(idx, almost) {
         spinning = false; box.classList.remove("spinning");
-        rot = rot % 360;
-        wheel.style.transform = `rotate(${rot}deg)`;
+        rot = ((rot % 360) + 360) % 360;
+        setRot(rot);
         Vibe.state.set({ wheelRot: rot });
         let p = PRIZES[idx];
         // Приз-вещь: выбираем, чего ещё нет; если собрал всё — вайбики за дубль
@@ -3194,8 +3315,13 @@
           p = it ? Object.assign({}, p, { e: it.e, t: it.name, d: `${it.d} (${bonusTxt(it.bonus)})`, inv: it })
             : Object.assign({}, p, { e: "🪙", t: `Дубль! +${WHEEL_DUP_VIB} вайбиков`, d: "Все вещи уже у тебя. Колесо выкупило дубль обратно.", vib: WHEEL_DUP_VIB });
         }
+        // Кэшбек: реальная бонусная категория до конца месяца (или вайбики, если выбирать ещё не из чего)
+        if (p.cb) {
+          const c = wheelCashback();
+          p = c ? Object.assign({}, p, { e: c.e, t: `Кэшбек ${Math.round(c.r * 100)}% «${c.t}»`, d: "Бонусная категория до конца месяца — сверх лимита. Будет начисляться автоматически. Тратить, чтобы сэкономить — наш любимый вид спорта.", cbCat: c })
+            : Object.assign({}, p, { e: "🪙", t: `+${WHEEL_CB_VIB} вайбиков вместо кэшбека`, d: "Категории кэшбека на этот месяц ещё не выбраны, а без выбора добавить бонусную нельзя. Колесо заплатило вайбиками. Выбери категории в Vibe Pay.", vib: WHEEL_CB_VIB });
+        }
         pointer.animate([{ transform: "rotate(0)" }, { transform: "rotate(-24deg)" }, { transform: "rotate(10deg)" }, { transform: "rotate(-4deg)" }, { transform: "rotate(0)" }], { duration: 700, easing: "ease-out" });
-        FX.bump(wheel.parentElement);
         FX.confetti(); FX.sound.levelup(); FX.haptic([20, 40, 20, 40]);
         FX.burst(root.querySelector(".fz-hub"), { emojis: [p.e, "✨", "🎉", "⭐"], count: 20, spread: 170 });
         const log = [{ e: p.e, t: p.t }, ...(S().wheelLog || [])].slice(0, 6);
@@ -3211,18 +3337,25 @@
               FX.toast(`${it.name} — в инвентаре. ${bonusTxt(it.bonus)}`, it.e, 2800);
               if (from) FX.burst(from, { emojis: [it.e, "🎁", "✨"], count: 14 });
             } else Vibe.reward({ vibiki: WHEEL_DUP_VIB, xp: 10, from });
+          } else if (p.cbCat) {
+            addCashbackCat(p.cbCat);
+            Vibe.reward({ xp: 15, from });
+            FX.toast(`Кэшбек «${p.cbCat.t}» добавлен до конца месяца`, p.cbCat.e, 2800);
           } else if (p.vib) Vibe.reward({ vibiki: p.vib, xp: 10, from });
           else if (p.xp) Vibe.reward({ xp: p.xp, from });
           else Vibe.reward({ xp: 5, from, silent: true });
           Vibe.achieve("spinner");
         };
+        const miss = almost != null ? PRIZES[almost] : null;
+        const show = p.e === "🪙" ? `<div class="m-emo float">${Vibe.coin(80)}</div>` : `<div class="m-emo float">${p.e}</div>`;
         sc.to(() => {
           Vibe.modal(`
-            <div class="m-emo float">${p.e}</div>
+            ${show}
             <div class="display">${p.t}</div>
             <p>${p.d}</p>
+            ${miss ? `<div class="badge" style="background:var(--pink);margin-bottom:10px">Чуть-чуть не «${miss.t}»! Ещё спин?</div>` : ""}
             ${p.inv ? `<div class="badge" style="background:var(--lime);margin-bottom:10px">🎁 в инвентарь · ${bonusTxt(p.inv.bonus)}</div>` : ""}
-            <button class="btn black block xl" data-claim>${p.inv ? "Забрать вещь 🎁" : p.vib ? `Забрать ${p.vib} 🪙` : p.xp ? "Забрать опыт ⚡" : "Ну ок 🙃"}</button>`, {
+            <button class="btn black block xl" data-claim>${p.inv ? "Забрать вещь 🎁" : p.cbCat ? "Подключить кэшбек 💳" : p.vib ? `Забрать ${p.vib} ${Vibe.coin(20)}` : p.xp ? "Забрать опыт ⚡" : "Ну ок 🙃"}</button>`, {
             sound: "success",
             onMount(m, close) {
               m.querySelector("[data-claim]").addEventListener("click", (e) => { claim(e.currentTarget); close(); });
@@ -3233,7 +3366,7 @@
       }
 
       sc.on(btn, "click", spin);
-      sc.on(wheel, "click", () => { if (!spinning) { FX.bump(wheel); FX.toast("Жми на кнопку, колесо стесняется", "🎡"); } });
+      sc.on(wheel, "click", () => { if (!spinning) { FX.bump(root.querySelector(".fz-hub")); FX.toast("Жми на кнопку, колесо стесняется", "🎡"); } });
       renderLog(); updBtn();
       return () => sc.clear();
     },
