@@ -413,10 +413,10 @@
 
   /* ================= Финалы ================= */
   const ENDINGS = {
-    top: { t: "Топ-менеджер", e: "👔", legend: true, d: "Дорос до директора. Корпорация гордится. Совет директоров — тоже немного.", hint: "Дорасти до 6-го уровня должности" },
+    top: { t: "Топ-менеджер", e: "👔", legend: true, d: "Дорос до директора. Корпорация гордится. Совет директоров — тоже немного.", hint: "Дорасти до директора" },
     celeb: { t: "Селеба", e: "🌟", legend: true, d: "Тебя узнают на улицах Vibe City. Даже курьер Тимур просит селфи.", hint: "Максимальная слава в Vibegram" },
     rich: { t: "Миллионер", e: "💎", legend: true, d: "10 000 000 ₫ на карте. Кэшбек наконец-то заметен.", hint: "Накопить 10 000 000 ₫" },
-    soul: { t: "Остаться вручную", corp: "Душа компании", e: "🫶", legend: true, d: "Пятеро людей рядом — не по подписке. Это дороже любого кэшбека.", hint: "Пять человек на 7+ сердечках" },
+    soul: { t: "Свои люди", corp: "Душа компании", e: "🫶", legend: true, d: "Пятеро рядом — и ни один не по подписке. Это дороже любого кэшбека.", hint: "Пять человек на 7+ сердечках" },
     bankrupt: { t: "Банкротство", e: "💀", d: "Коллекторы передают привет. Корпорация — тоже: «Мы всегда рядом».", hint: "Уйти в глубокий минус надолго" },
     valley: { t: "Долина", e: "🌾", d: "Там нет кэшбека, зато есть тишина.", hint: "Есть письмо, которое стоит открыть. Когда-нибудь" },
     legend: { t: "Легенда Vibe City", e: "👑", d: "" },
@@ -428,6 +428,21 @@
     rich: (s) => s.balance >= 10000000,
     // Пять человек на 7+ сердечках; пёс Бублик тоже считается
     soul: () => !!(Vibe.chars && Vibe.chars.list && Vibe.chars.hearts && (Vibe.chars.list().filter((c) => Vibe.chars.hearts(c.id) >= 7).length + (Vibe.intercept && Vibe.intercept.bublikHearts() >= 7 ? 1 : 0)) >= 5),
+  };
+  // Квест «Легенда Vibe City»: четыре пути и прогресс по каждому (0..1)
+  function soulCount() {
+    if (!(Vibe.chars && Vibe.chars.list && Vibe.chars.hearts)) return 0;
+    return Vibe.chars.list().filter((c) => Vibe.chars.hearts(c.id) >= 7).length + (Vibe.intercept && Vibe.intercept.bublikHearts() >= 7 ? 1 : 0);
+  }
+  const PROGRESS = {
+    top: (s) => ({ p: Math.min(1, ((s.job && s.job.level) || 0) / 6), how: s.job ? `ступень ${(s.job.level || 0)} из 6` : "нужна работа" }),
+    celeb: () => { const f = Vibe.gram && Vibe.gram.fame ? Vibe.gram.fame() : 0; return { p: Math.min(1, f / 100), how: `слава ${Math.round(f)} из 100` }; },
+    rich: (s) => ({ p: Math.max(0, Math.min(1, s.balance / 10000000)), how: `${Vibe.rub(Math.max(0, s.balance))} из 10 000 000 ₫` }),
+    soul: () => { const n = soulCount(); return { p: Math.min(1, n / 5), how: `${n} из 5 человек на 7+ сердечках` }; },
+  };
+  Vibe.legend = {
+    // В интерфейсе Корпорации путь людей называется по-корпоративному
+    paths: () => LEGENDS.map((id) => Object.assign({ id, t: ENDINGS[id].corp || ENDINGS[id].t, e: ENDINGS[id].e, done: !!E()[id] }, PROGRESS[id](S()))),
   };
   const E = () => S().endings || {};
   const setE = (p) => set({ endings: Object.assign({}, E(), p) });
@@ -586,7 +601,7 @@
         ${rest.length ? rest.map(itemHTML).join("") : `<div class="card vm-empty"><div class="emo float" style="font-size:64px">${curTab === "spam" ? "🧹" : "📭"}</div><b>${curTab === "spam" ? "Спама нет. Подозрительно." : "Пусто. Письма придут с ходом жизни."}</b><div class="muted">Банк, Госвайб, HR и мама уже пишут.</div></div>`}
         ${gp ? grandpaHTML(gp) : ""}
       </div>
-      <button class="card tap vm-end" data-go="ending"><span style="font-size:32px">🏁</span><div style="flex:1;text-align:left"><b>Финалы жизни</b><div class="muted" style="font-size:12px;font-weight:700">Открыто в этой жизни: ${seenN} из 6${lives() ? ` · прожито жизней: ${lives()}` : ""}</div></div><span style="font-size:20px">→</span></button>
+      ${curTab === "inbox" ? `<button class="card tap vm-end" data-go="ending"><span style="font-size:32px">🏁</span><div style="flex:1;text-align:left"><b>Финалы жизни</b><div class="muted" style="font-size:12px;font-weight:700">Открыто в этой жизни: ${seenN} из 6${lives() ? ` · прожито жизней: ${lives()}` : ""}</div></div><span style="font-size:20px">→</span></button>` : ""}
       <div class="fine">Vibe Почта читает ваши письма, чтобы подбирать персональные предложения. Вы ведь не против? Вы согласились в пункте 3.14.</div>`;
   }
 

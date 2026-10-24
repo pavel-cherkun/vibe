@@ -7,6 +7,7 @@
   const ui = V.ui;
   const S = () => V.state.get();
   const rub = V.rub;
+  const esc = (t) => V.esc(String(t || ""));
 
   /* ---------- Локальные стили (только классы cm-*) ---------- */
   (function injectCss() {
@@ -90,6 +91,17 @@
 .cm-own{font-size:11px;font-weight:800;padding:6px 9px;border-radius:12px;border:2px solid var(--ink);background:var(--mint,#9ff0c8);white-space:nowrap}
 .prod.cm-owned .pic{filter:saturate(.75)}
 .cm-vibrow{display:flex;align-items:center;gap:12px;margin-top:12px}
+.cm-dlvs{display:grid;gap:8px}
+.cm-dlv{display:flex;gap:10px;align-items:center;text-align:left;width:100%;padding:10px 12px;border:2.5px solid rgba(14,14,18,.15);border-radius:18px;background:var(--paper);transition:transform .15s var(--spring),border-color .15s,background .15s}
+.cm-dlv.on{border-color:var(--ink);background:var(--lime);box-shadow:var(--shadow-sm)}
+.cm-dlv .e{font-size:26px}.cm-dlv .t{flex:1;min-width:0}.cm-dlv .t b{display:block;font-size:14px}.cm-dlv .t small{display:block;font-size:11px;font-weight:700;line-height:1.3;color:var(--muted)}.cm-dlv.on .t small{color:var(--ink)}
+.cm-dlv .p{font-weight:900;white-space:nowrap;font-size:14px}
+.cm-total{display:flex;justify-content:space-between;align-items:baseline;margin:14px 4px 10px}
+.cm-split.locked{background:#ecebf0;color:var(--muted);border-style:dashed;box-shadow:none}
+.cm-split-n{font-size:11px;font-weight:700;margin-top:6px;line-height:1.35}
+.cm-parcels{padding:12px 14px;margin-top:12px}
+.cm-parcel{display:flex;gap:10px;align-items:center;padding:8px 0;border-top:1.5px dashed rgba(14,14,18,.2)}
+.cm-parcel b{display:block;font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.cm-parcel small{display:block;font-size:11px;font-weight:800;margin-top:2px}
 .cm-nut{font-size:11px}
 .cm-fridge{display:flex;align-items:center;gap:12px;margin-top:12px}
 .cm-fridge .fz{font-size:40px}
@@ -209,7 +221,7 @@
   }
 
   // Карточка товара
-  function prodCard(svc, p, { likeKey = null, open = false, owned = false } = {}) {
+  function prodCard(svc, p, { likeKey = null, open = false, owned = false, pend = false } = {}) {
     return `<div class="card prod ${open ? "tap" : ""} ${owned ? "cm-owned" : ""}" ${open ? `data-open="${p.id}"` : ""}>
       <div class="pic ${p.col}">
         <span class="emo ${p.anim || "float"} d${p.d || 0}">${p.emo}</span>
@@ -222,7 +234,7 @@
       ${p.bonus ? bonusChips(p.bonus) : ""}
       <div class="row">
         <div><div class="price">${rub(p.price)}</div>${p.old ? `<div class="old-price">${rub(p.old)}</div>` : ""}</div>
-        ${owned ? `<span class="cm-own">✅ Уже есть</span>` : ctl(svc, p.id)}
+        ${owned ? `<span class="cm-own">✅ Уже есть</span>` : pend ? `<span class="cm-own">📦 Едет</span>` : ctl(svc, p.id)}
       </div>
     </div>`;
   }
@@ -482,6 +494,7 @@
       ],
       onPaid(order) {
         V.state.set({ eatTrack: { id: order.id, place: r.id, total: order.total } });
+        rideStart(order.id);
         // Ядро уже применило body "eat_out" по заголовку «Vibe Eat · …» (сытость, низкое качество еды).
         // Для полезной кухни дополнительно зовём "healthy" тихо: он добавляет приём пищи с q=92,
         // и nutrition подтягивается вверх — иначе боул ничем не отличался бы от шаурмы.
@@ -781,6 +794,7 @@
   // После оплаты продуктов — тот же трекинг, что у Vibe Eat, но из супермаркета
   function smPaid(order) {
     setTimeout(() => refreshCtl(order.svc), 50);
+    rideStart(order.id);
     FX.toast("Курьер уже крутит педали. Мороженое не растает. Наверное", "🚲", 2400);
     setTimeout(() => V.go("eat-track", { id: order.id, src: "supermarket" }), 500);
   }
@@ -893,13 +907,12 @@
     if (!V.inv || !p) return false;
     return V.inv.add({ id: p.inv, name: p.name, e: p.emo, cat: p.kind, bonus: Object.assign({}, p.bonus), src: "market" });
   }
-  const mkCard = (p) => prodCard("market", p, { likeKey: "mk-" + p.id, open: true, owned: owns(p.inv) });
+  const mkCard = (p) => prodCard("market", p, { likeKey: "mk-" + p.id, open: true, owned: owns(p.inv), pend: !owns(p.inv) && pending(p.id) });
   const SWATCH = ["#ff6bcb", "#ffe14d", "#c6ff4d", "#8fd8ff", "#0e0e12"];
 
   function mkDetail(p, root) {
-    const mon = Math.ceil((p.price * 3.12) / 36);
     const have = owns(p.inv);
-    const vibMax = V.vibikiPay ? V.vibikiPay(p.price) : 0;
+    const pend = pending(p.id);
     ui.sheet(`
       <div class="cm-bigpic ${p.col}">
         <span class="emo float">${p.emo}</span>
@@ -916,36 +929,15 @@
       <div style="font-weight:800;font-size:13px;margin-top:14px">Цвет</div>
       <div style="display:flex;gap:10px;margin-top:8px" data-group="col">${SWATCH.map((c, i) => `<button class="cm-swatch ${i === 0 ? "on" : ""}" data-pick="${i}" style="background:${c}" aria-label="Цвет"></button>`).join("")}</div>
       ${p.sizes ? `<div style="font-weight:800;font-size:13px;margin-top:14px">Размер</div><div class="chips" data-group="size" style="margin-top:4px">${p.sizes.map((s, i) => `<button class="chip ${i === 1 ? "on" : ""}" data-pick="${i}">${s}</button>`).join("")}</div>` : ""}
-      ${!have && vibMax > 0 ? `<div class="card tight cm-vibrow"><span style="font-size:26px">🪙</span><div style="flex:1;font-weight:800;font-size:14px">Списать ${V.fmt(vibMax)} вайбиков<div class="muted" style="font-size:12px">1 вайбик = 1 ₫, до 30% цены</div></div><button class="switch" data-vibsw aria-label="Вайбики"></button></div>` : ""}
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:16px">
-        <button class="btn" data-tocart ${have ? "disabled" : ""}>🛒 В корзину</button>
-        <button class="btn black" data-buy ${have ? "disabled" : ""}>${have ? "✅ Уже есть" : "Купить сейчас"}</button>
+        <button class="btn" data-tocart ${have || pend ? "disabled" : ""}>🛒 В корзину</button>
+        <button class="btn black" data-buy ${have || pend ? "disabled" : ""}>${have ? "✅ Уже есть" : pend ? "📦 Уже едет" : "Купить"}</button>
       </div>
-      <button class="btn block grad" data-inst style="margin-top:10px" ${have ? "hidden" : ""}>💳 В рассрочку на 36 мес — ${rub(mon)}/мес</button>
-      <div class="cm-instal card flat" style="padding:0 14px" data-instbox>
-        <div style="padding:12px 0;display:grid;gap:6px">
-          <div class="r"><span class="muted">Платёж</span><b>${rub(mon)} × 36</b></div>
-          <div class="r"><span class="muted">Платёж за возможность платить</span><b>12 ₫/мес</b></div>
-          <div class="r"><span class="muted">Страховка от рассрочки</span><b>9 ₫/мес</b></div>
-          <div class="r"><span class="muted">Комиссия за отсутствие комиссии</span><b>0 ₫*</b></div>
-          <div class="r"><span class="muted">Итого переплата</span><b style="color:#e5333d">312% 🙃</b></div>
-          <div class="fine" style="margin-top:2px">Первый платёж — сегодня, последний — когда ты уже забудешь, что это было. *Кроме случаев, когда не 0 ₫.</div>
-          <button class="btn sm pink block" data-instgo>Оформить · ${rub(mon + 21)} сегодня</button>
-        </div>
-      </div>
+      ${have || pend ? "" : splitBtn(p.price)}
+      <div class="muted" style="font-size:12px;font-weight:800;margin-top:10px">🚚 Доставка: ПВЗ бесплатно или курьер до двери — выберешь при оплате</div>
       <div class="fine">Цена до скидки установлена за 1 секунду до скидки. Товар «Осталось 2 шт.» — это мы так решили. Доставка 1–3 дня или 1–3 недели.</div>`, {
       onMount(sh, close) {
-        let useVib = false;
-        const buyBtn = sh.querySelector("[data-buy]");
         sh.addEventListener("click", (e) => {
-          const vs = e.target.closest("[data-vibsw]");
-          if (vs) {
-            useVib = !useVib; vs.classList.toggle("on", useVib); FX.sound.pop();
-            buyBtn.textContent = useVib ? `Купить · ${rub(p.price - vibMax)} + 🪙${V.fmt(vibMax)}` : "Купить сейчас";
-            FX.bump(buyBtn);
-            if (useVib) FX.burst(vs, { emojis: ["🪙", "✨"], count: 8, spread: 60 });
-            return;
-          }
           const lk = e.target.closest("[data-like]");
           if (lk) { toggleLike(lk); const card = root.querySelector(`[data-like="mk-${p.id}"]`); if (card) card.classList.toggle("on", lk.classList.contains("on")); return; }
           const pk = e.target.closest("[data-pick]");
@@ -957,7 +949,7 @@
           }
           if (e.target.closest("[data-tocart]")) {
             const b = e.target.closest("[data-tocart]");
-            if (have || cart.qty("market", p.id)) { FX.shake(b); FX.toast(have ? "Уже есть. Бонусы не складываются, только расходы" : "Уже в корзине. Одного хватит — честно", "🙅"); return; }
+            if (have || pend || cart.qty("market", p.id)) { FX.shake(b); FX.toast(pend ? "Уже едет к тебе. Терпение — тоже покупка" : have ? "Уже есть. Бонусы не складываются, только расходы" : "Уже в корзине. Одного хватит — честно", "🙅"); return; }
             cart.add("market", { id: p.id, name: p.name, price: p.price, emo: p.emo }, b);
             refreshCtl("market", p.id, true);
             FX.burst(b, { emojis: [p.emo, "✨"], count: 8 });
@@ -965,33 +957,12 @@
             setTimeout(close, 250);
             return;
           }
-          if (e.target.closest("[data-buy]")) {
-            const b = e.target.closest("[data-buy]");
-            if (have) return;
-            const vib = useVib ? Math.min(vibMax, V.vibikiPay(p.price)) : 0;
-            if (V.pay(p.price - vib, { title: "Vibe Market · " + p.name, emoji: p.emo, col: p.col, from: b })) {
-              if (vib) V.spendVibiki(vib);
-              mkGive(p);
-              close(); FX.confetti(); FX.sound.success();
-              refreshMarket(root);
-              setTimeout(() => V.modal(`<div class="m-emo float">${p.emo}</div><div class="display">Твоё!</div><p>${vib ? `Списали ${V.fmt(vib)} вайбиков — копили не зря. ` : ""}Уже у тебя${p.kind === "home" ? " в квартире" : p.kind === "wear" ? " в гардеробе" : ""}. Отзыв можно писать уже сейчас.</p>${p.bonus ? `<div style="display:flex;justify-content:center;margin:-4px 0 14px">${bonusChips(p.bonus)}</div>` : ""}<button class="btn black block" data-close>Огонь 🔥</button>`), 300);
-            }
-            return;
-          }
-          if (e.target.closest("[data-inst]")) {
-            const box = sh.querySelector("[data-instbox]");
-            box.classList.toggle("on");
-            FX.sound.pop(); FX.bump(e.target.closest("[data-inst]"));
-            if (box.classList.contains("on")) setTimeout(() => box.scrollIntoView({ behavior: "smooth", block: "nearest" }), 120);
-            return;
-          }
-          if (e.target.closest("[data-instgo]")) {
-            const b = e.target.closest("[data-instgo]");
-            if (V.pay(mon + 21, { title: `Рассрочка · ${p.name} (1/36)`, emoji: p.emo, col: "c-lilac", from: b })) {
-              mkGive(p); refreshMarket(root);
-              close(); FX.confetti();
-              FX.toast("Осталось 35 платежей. Мы напомним. Много раз", "📅", 3000);
-            }
+          const sb = e.target.closest("[data-buy],[data-split]");
+          if (sb) {
+            if (have || pend) return;
+            if (sb.dataset.split != null && sb.classList.contains("locked")) { FX.shake(sb); FX.toast(V.credit.split(p.price).why, "🔒", 3600); return; }
+            close();
+            setTimeout(() => mkCheckout([{ id: p.id, name: p.name, price: p.price, emo: p.emo, qty: 1 }], { root, split: sb.dataset.split != null }), 220);
           }
         });
       },
@@ -1010,15 +981,183 @@
     const ol = root.querySelector("#mk-owned");
     if (ol) ol.textContent = mkOwnedLine();
   }
-  // Корзина Market оплачена → всё купленное едет в инвентарь
-  function mkPaid(order) {
+  /* ---------- Доставка Маркета: ПВЗ / курьер / вместе с Eat ----------
+     state.mkParcels = [{ id, items:[{id,name,emo}], mode:"pvz"|"courier"|"combo", at, readyAt, ride, rideAt, paid }]
+     Вещь попадает в инвентарь только когда её получили: дошёл до ПВЗ или курьер привёз. */
+  const PVZ = "supermarket"; // ПВЗ Vibe Market — в здании Vibe Supermarket
+  const DLV = {
+    pvz: { e: "📦", t: "Забрать в ПВЗ", price: 0, wait: 30 },
+    courier: { e: "🛵", t: "Курьером до двери", price: 299, wait: 120 },
+    combo: { e: "🤝", t: "Вместе с едой или продуктами", price: 99 },
+  };
+  const nowMin = () => (V.game && V.game.minutes ? V.game.minutes() : 0);
+  const hhmm = (m) => `${pad2(Math.floor((m % 1440) / 60))}:${pad2(Math.floor(m % 60))}`;
+  const parcels = () => S().mkParcels || [];
+  const setParcels = (list) => V.state.set({ mkParcels: list });
+  const pending = (id) => parcels().some((x) => x.items.some((it) => it.id === id));
+  const pvzWalk = () => { const M = V.map; return M ? M.minutes(M.path(M.place("home"), M.place(PVZ)), "walk") : 10; };
+  // Идёт ли сейчас доставка Eat/продуктов, к которой можно «прицепить» посылку
+  function liveRide() {
+    const r = S().mkRide;
+    if (!r || (S().trackDone || {})[r.id]) return null;
+    return Date.now() - r.at < 40000 ? r : null;
+  }
+  // Новый заказ Eat/Supermarket: ждущие посылки едут с ним
+  function rideStart(orderId) {
+    V.state.set({ mkRide: { id: String(orderId), at: Date.now() } });
+    const wait = parcels().filter((x) => x.mode === "combo" && !x.ride);
+    if (!wait.length) return;
+    setParcels(parcels().map((x) => (x.mode === "combo" && !x.ride ? Object.assign({}, x, { ride: String(orderId), rideAt: Date.now() }) : x)));
+    setTimeout(() => FX.toast(`Курьер захватит и посылку с Маркета: ${wait.flatMap((x) => x.items.map((i) => i.emo)).join(" ")}`, "🤝", 3200), 900);
+  }
+  function deliver(list, how) {
+    if (!list.length) return;
+    const ids = new Set(list.map((x) => x.id));
+    setParcels(parcels().filter((x) => !ids.has(x.id)));
     const got = [];
-    (order.items || []).forEach((it) => { const p = MK.find((x) => x.id === it.id); if (p && mkGive(p)) got.push(p); });
-    setTimeout(() => { refreshCtl(order.svc); refreshMarket(document.querySelector('[data-screen="market"]')); }, 50);
-    V.modal(`<div class="m-emo float">📦</div><div class="display">Оплачено!</div>
-      <p>${got.length ? "Уже у тебя: " + got.map((p) => p.emo + " " + p.name).join(", ") + "." : "Посылка в пути. Отслеживай её 40 раз в день, как все."}</p>
-      ${got.length ? `<div style="display:flex;justify-content:center;flex-wrap:wrap;margin:-4px 0 14px">${got.map((p) => bonusChips(p.bonus)).join("")}</div>` : ""}
-      <button class="btn black block" data-close>Вайбово 🔥</button>`);
+    list.forEach((x) => x.items.forEach((it) => { const p = MK.find((m) => m.id === it.id); if (p && mkGive(p)) got.push(p); }));
+    refreshMarket(document.querySelector('[data-screen="market"]'));
+    refreshParcels();
+    if (!got.length) return;
+    FX.sound.success();
+    // С заказом еды — без второй модалки поверх «курьер у двери»
+    if (how === "combo") { FX.toast(`Курьер докинул посылку с Маркета: ${got.map((p) => p.emo + " " + p.name).join(", ")}. Теперь твоё`, "🤝", 4200); return; }
+    V.modal(`<div class="m-emo float">${how === "pvz" ? "📦" : how === "combo" ? "🤝" : "🛵"}</div>
+      <div class="display">${how === "pvz" ? "Посылка у тебя!" : "Курьер у двери!"}</div>
+      <p>${how === "pvz" ? "Сотрудник ПВЗ искал коробку 7 минут и нашёл её в первой же ячейке." : how === "combo" ? "Привёз вместе с заказом. Одна поездка — одна улыбка курьера." : "Позвонил в домофон один раз и сразу ушёл писать «не дозвонился». Но вернулся."} Теперь твоё: ${got.map((p) => p.emo + " " + p.name).join(", ")}.</p>
+      <div style="display:flex;justify-content:center;flex-wrap:wrap;margin:-4px 0 14px">${got.map((p) => bonusChips(p.bonus)).join("")}</div>
+      <button class="btn black block" data-close>Вайбово 🔥</button>`, { sound: "levelup" });
+  }
+  // Забрать из ПВЗ (только если ты физически там)
+  function pickup(silent) {
+    const here = V.trip ? V.trip.where() === PVZ : false;
+    const now = nowMin();
+    const ready = parcels().filter((x) => x.mode === "pvz" && now >= x.readyAt);
+    if (!here) { if (!silent) FX.toast("Сначала дойди до ПВЗ у Vibe Supermarket", "🚶", 2600, { go: "maps", params: { to: PVZ }, label: "Маршрут" }); return; }
+    if (!ready.length) {
+      const soon = parcels().filter((x) => x.mode === "pvz");
+      if (soon.length && !silent) FX.toast(`Посылка ещё едет в ПВЗ. Будет к ${hhmm(Math.min(...soon.map((x) => x.readyAt)))}`, "⏳", 2800);
+      return;
+    }
+    deliver(ready, "pvz");
+  }
+  function parcelsTick() {
+    if (!S().profile || !parcels().length) return;
+    const now = nowMin();
+    const done = S().trackDone || {}, starts = S().trackStarts || {};
+    const courier = parcels().filter((x) => x.mode === "courier" && now >= x.readyAt);
+    const combo = parcels().filter((x) => x.mode === "combo" && x.ride && (done[x.ride] || Date.now() - (starts[x.ride] || x.rideAt || 0) >= 42000));
+    let changed = false;
+    const list = parcels().map((x) => {
+      if (x.mode === "pvz" && !x.told && now >= x.readyAt) {
+        changed = true;
+        setTimeout(() => FX.toast(`Посылка ждёт в ПВЗ: ${x.items.map((i) => i.emo).join(" ")}. Дойти — ${pvzWalk()} мин пешком`, "📦", 4200, { go: "maps", params: { to: PVZ }, label: "Маршрут" }), 300);
+        return Object.assign({}, x, { told: true });
+      }
+      return x;
+    });
+    if (changed) { setParcels(list); refreshParcels(); }
+    if (courier.length) deliver(courier, "courier");
+    else if (combo.length) deliver(combo, "combo");
+  }
+  setInterval(() => { try { parcelsTick(); } catch (e) {} }, 4000);
+  if (V.on) V.on("arrive", (d) => { if (d && d.to === PVZ && parcels().some((x) => x.mode === "pvz")) setTimeout(() => pickup(true), 1200); });
+
+  function parcelLine(x) {
+    const now = nowMin(), its = x.items.map((i) => i.emo + " " + esc(i.name)).join(", ");
+    let st, act = "";
+    if (x.mode === "courier") st = `🛵 Курьер привезёт к ${hhmm(x.readyAt)} · ещё ~${Math.max(1, Math.round(x.readyAt - now))} мин`;
+    else if (x.mode === "pvz") {
+      if (now < x.readyAt) st = `📦 Едет в ПВЗ, будет к ${hhmm(x.readyAt)}`;
+      else { st = `📦 Ждёт в ПВЗ у Vibe Supermarket · ${pvzWalk()} мин пешком`; act = V.trip && V.trip.where() === PVZ ? `<button class="btn sm lime" data-pk>Забрать</button>` : `<button class="btn sm" data-go="maps" ${P({ to: PVZ })}>Дойти</button>`; }
+    } else if (x.ride) st = "🤝 Едет вместе с твоим заказом";
+    else { st = "🤝 Ждёт ближайший заказ еды или продуктов"; act = `<button class="btn sm" data-go="eat">Заказать</button>`; }
+    return `<div class="cm-parcel"><div style="flex:1;min-width:0"><b>${its}</b><small>${st}</small></div>${act}</div>`;
+  }
+  const parcelsHtml = () => (parcels().length ? `<div class="card c-sky cm-parcels"><div class="cm-row" style="margin-bottom:4px"><b>🚚 Твои посылки</b><small class="muted">${parcels().length}</small></div>${parcels().map(parcelLine).join("")}</div>` : "");
+  function refreshParcels() { const el = document.querySelector("#mk-parcels"); if (el) el.innerHTML = parcelsHtml(); }
+
+  // Кнопка «Частями» с условием доступности прямо на ней
+  function splitBtn(total) {
+    if (!V.credit) return "";
+    const sp = V.credit.split(total);
+    return `<button class="btn block cm-split ${sp.ok ? "grad" : "locked"}" data-split style="margin-top:10px">${sp.ok ? "🧩 " : ""}${sp.short}</button>
+      ${sp.ok ? `<div class="muted cm-split-n">25% сейчас, остальное — 3 платежа 30-го числа. Комиссия «за удобство» ${rub(sp.fee)}. Из лимита Vibe Credit</div>` : `<div class="muted cm-split-n">${sp.why}</div>`}`;
+  }
+
+  // Оформление заказа Маркета: способ доставки + оплата (сразу или частями)
+  function mkCheckout(items, { fromCart = false, root = null, split = false } = {}) {
+    const sub = items.reduce((a, i) => a + i.price * (i.qty || 1), 0);
+    const ride = liveRide();
+    let mode = "pvz", useVib = false;
+    const walk = pvzWalk();
+    const opt = (k, sub2) => `<button class="cm-dlv ${k === mode ? "on" : ""}" data-dlv="${k}"><span class="e">${DLV[k].e}</span><span class="t"><b>${DLV[k].t}</b><small>${sub2}</small></span><span class="p">${DLV[k].price ? rub(DLV[k].price) : "0 ₫"}</span></button>`;
+    ui.sheet(`
+      <div class="display" style="font-size:26px;margin-bottom:10px">Оформление</div>
+      <div class="card flat" style="padding:4px 14px">${items.map((i) => `<div class="li"><div class="ic c-yellow">${i.emo}</div><div class="tx"><b>${esc(i.name)}</b><small>${i.qty || 1} × ${rub(i.price)}</small></div><div class="amt">${rub(i.price * (i.qty || 1))}</div></div>`).join("")}</div>
+      <div style="font-weight:900;margin:14px 2px 8px">Как получить?</div>
+      <div class="cm-dlvs">
+        ${opt("pvz", `Готово через ~${DLV.pvz.wait} мин. Дойти до ПВЗ у Vibe Supermarket — ${walk} мин пешком. Лежит, пока не заберёшь`)}
+        ${opt("courier", `До двери через ~${DLV.courier.wait} мин. Ничего не надо делать — только ждать`)}
+        ${opt("combo", ride ? "Курьер с твоим заказом уже в пути — докинет посылку. Дешевле, чем отдельно" : "Приедет с ближайшим заказом из Vibe Eat или Супермаркета. Дешевле, чем отдельно")}
+      </div>
+      ${V.vibikiPay && V.vibikiPay(sub) > 0 ? `<div class="card tight cm-vibrow"><span style="font-size:26px">🪙</span><div style="flex:1;font-weight:800;font-size:14px">Списать ${V.fmt(V.vibikiPay(sub))} вайбиков<div class="muted" style="font-size:12px">1 вайбик = 1 ₫, до 30% цены</div></div><button class="switch" data-vibsw aria-label="Вайбики"></button></div>` : ""}
+      <div class="cm-total"><span class="display" style="font-size:20px">Итого</span><span class="big-num" style="font-size:28px" data-tot></span></div>
+      <button class="btn black xl block" data-mkpay></button>
+      <div data-splitbox></div>
+      <div class="fine">ПВЗ работает круглосуточно, кроме случаев, когда сотрудник вышел «на 5 минут». Курьер звонит один раз.</div>`, {
+      onMount(sh, close) {
+        const payBtn = sh.querySelector("[data-mkpay]");
+        const totOf = () => sub + DLV[mode].price;
+        const vibOf = () => (useVib ? Math.min(V.vibikiPay(sub), S().vibiki || 0) : 0);
+        const upd = () => {
+          const t = totOf(), v = vibOf();
+          sh.querySelector("[data-tot]").textContent = rub(t - v);
+          payBtn.innerHTML = `Оплатить ${rub(t - v)}${v ? ` + 🪙${V.fmt(v)}` : ""} <span class="arrow">→</span>`;
+          sh.querySelector("[data-splitbox]").innerHTML = useVib ? "" : splitBtn(t);
+        };
+        upd();
+        if (split) setTimeout(() => { const b = sh.querySelector("[data-split]"); if (b) { b.scrollIntoView({ block: "nearest", behavior: "smooth" }); FX.bump(b); } }, 300);
+        const finish = (paidTotal, how) => {
+          const now = nowMin();
+          const parcel = { id: "pc" + Date.now(), items: items.map((i) => ({ id: i.id, name: i.name, emo: i.emo })), mode, at: now, readyAt: now + (DLV[mode].wait || 0), paid: paidTotal };
+          if (mode === "combo" && ride) { parcel.ride = ride.id; parcel.rideAt = Date.now(); }
+          setParcels([...parcels(), parcel]);
+          if (fromCart) { cart.clear("market"); cart.renderBar("market"); }
+          close();
+          FX.confetti(); FX.sound.success();
+          const scr = root || document.querySelector('[data-screen="market"]');
+          setTimeout(() => { refreshCtl("market"); refreshMarket(scr); refreshParcels(); }, 50);
+          const what = mode === "pvz" ? `Через ~${DLV.pvz.wait} мин посылка будет в ПВЗ у Vibe Supermarket. Дойди и забери — вещь станет твоей, когда окажется в руках.`
+            : mode === "courier" ? `Курьер привезёт к ${hhmm(parcel.readyAt)}. Можно заниматься своими делами — он позвонит. Один раз.`
+            : parcel.ride ? "Курьер уже едет к тебе с заказом — посылку докинет заодно." : "Посылка подождёт на складе и приедет с ближайшим заказом еды или продуктов.";
+          V.modal(`<div class="m-emo float">${DLV[mode].e}</div><div class="display">${how === "split" ? "Оформлено частями!" : "Оплачено!"}</div><p>${what}</p>${how === "split" ? `<p class="muted" style="font-size:13px;font-weight:700">Остаток спишем 30-го — тремя платежами. Смотри в Vibe Pay → Кредиты.</p>` : ""}<button class="btn black block" data-close>Жду 📦</button>`);
+        };
+        sh.addEventListener("click", (e) => {
+          const d = e.target.closest("[data-dlv]");
+          if (d) { mode = d.dataset.dlv; sh.querySelectorAll("[data-dlv]").forEach((x) => x.classList.toggle("on", x === d)); FX.bump(d); FX.sound.pop(); upd(); return; }
+          const vs = e.target.closest("[data-vibsw]");
+          if (vs) { useVib = !useVib; vs.classList.toggle("on", useVib); FX.sound.pop(); upd(); return; }
+          if (e.target.closest("[data-mkpay]")) {
+            const t = totOf(), v = vibOf();
+            const title = "Vibe Market · " + (items.length === 1 ? items[0].name : `заказ (${items.length} шт.)`);
+            if (!V.pay(t - v, { title, emoji: items[0].emo, col: "c-pink", from: payBtn })) return; // нет денег — нет посылки
+            if (v) V.spendVibiki(v);
+            finish(t, "pay");
+            return;
+          }
+          const sb = e.target.closest("[data-split]");
+          if (sb) {
+            const t = totOf(), sp = V.credit.split(t);
+            if (!sp.ok) { FX.shake(sb); FX.toast(sp.why, "🔒", 3600); return; }
+            const name = items.length === 1 ? items[0].name : `заказ Маркета (${items.length})`;
+            if (!V.pay(sp.first, { title: `Vibe Market · частями 1/4 · ${name}`, emoji: "🧩", col: "c-lilac", from: sb })) return;
+            V.credit.takeSplit(name, sp.rest);
+            finish(t, "split");
+          }
+        });
+      },
+    });
   }
 
   // ?cat=watch — сразу открыть витрину; ?open=watch_band — и карточку товара
@@ -1028,7 +1167,8 @@
       const ci = mkCatIdx(params);
       return `
       ${ui.head("Vibe Market", "100 млн товаров · 2 нужных", ui.vibikiPill())}
-      <div class="field tap" id="mk-search">🔎 <span class="muted">Кроссовки, которые изменят жизнь</span></div>
+      <div id="mk-parcels">${parcelsHtml()}</div>
+      <div class="field tap" id="mk-search" style="margin-top:12px">🔎 <span class="muted">Кроссовки, которые изменят жизнь</span></div>
       <div class="cm-flash c-black" style="margin-top:14px">
         <span class="bolt emo wobble">⚡</span>
         <div class="badge" style="background:var(--pink)">FLASH-РАСПРОДАЖА</div>
@@ -1041,7 +1181,7 @@
       <div class="grid2 stagger" id="mk-grid" style="margin-top:6px">${MK.filter((p) => mkInTab(p, ci)).map(mkCard).join("")}</div>
       ${ui.marquee(["−87% на всё", "Осталось 2 шт.", "Рассрочка 0-0-36*", "Доставка завтра**"])}
       <div class="fine">*0 ₫ первоначальный взнос, 0 ₫ переплата, 36 месяцев раздумий. **Завтра — понятие относительное. Старые цены являются произведением искусства и охраняются законом.</div>
-      ${dock("market", { txTitle: "Vibe Market", col: "c-pink", onPaid: mkPaid })}`;
+      ${dock("market", { txTitle: "Vibe Market", col: "c-pink", onCheckout: () => mkCheckout(cart.items("market"), { fromCart: true }) })}`;
     },
     mount(root, params) {
       cart.renderBar("market");
@@ -1060,6 +1200,7 @@
         }
         tEl.textContent = hms(left);
         if (left <= 10) FX.bump(tEl);
+        if (left % 5 === 0) refreshParcels();
       }, 1000);
       root.addEventListener("click", (e) => {
         const c = e.target.closest("[data-cat]");
@@ -1072,10 +1213,12 @@
         if (shopClick(e, "market", (id) => MK.find((p) => p.id === id), {
           before(p, a) {
             if (owns(p.inv)) { FX.shake(a); FX.toast("Уже есть. Второй матрас сну не поможет", "🙅"); return false; }
+            if (pending(p.id)) { FX.shake(a); FX.toast("Уже едет к тебе. Загляни в «Твои посылки»", "📦"); return false; }
             if (cart.qty("market", p.id)) { FX.shake(a); FX.toast("Одного хватит. Бонусы не складываются", "🙅"); return false; }
           },
           after(p) { if (Math.random() < 0.35) setTimeout(() => FX.toast("С этим товаром часто покупают ещё 14 товаров", "🛍️"), 650); },
         })) return;
+        if (e.target.closest("[data-pk]")) { pickup(false); return; }
         const o = e.target.closest("[data-open]");
         if (o) { mkDetail(MK.find((p) => p.id === o.dataset.open), root); return; }
         if (e.target.closest("#mk-search")) {

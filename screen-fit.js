@@ -752,7 +752,8 @@
             const rec = V.body.wake();
             document.body.classList.remove("fit-nightfade");
             FX.toast(rec ? `Утро! ${T ? `Сон ${comma(rec.hours.toFixed(1))} ч, качество ${r0(rec.q * 100)}%` : `Проспал ${comma(rec.hours.toFixed(1))} ч`}. Утро вечера мудренее` : "Доброе утро!", "☀️", 3600);
-            update();
+            // Новое утро начинается с главной: там план дня, работа и деньги
+            if (root.isConnected) Vibe.resetTo("home"); else update();
           }, 700);
           return;
         }
@@ -879,7 +880,7 @@
           FX.burst(arena, { emojis: ["🏋️", "💪", "🔥", "✨"], count: 18 });
           V.reward({ vibiki: vib, xp, from: arena });
           const go = sh.querySelector("[data-wgo]");
-          go.style.display = ""; go.innerHTML = `Красота · +${vib} 🪙`;
+          go.style.display = ""; go.innerHTML = `Красота · +${vib} ${Vibe.coin(18)}`;
           go.addEventListener("click", () => { close(); setTimeout(update, 60); }, { once: true });
           update();
         }

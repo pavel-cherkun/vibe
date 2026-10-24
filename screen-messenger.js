@@ -80,7 +80,8 @@
     set({ msg_threads: Object.assign({}, TH(), { [id]: t }) });
     changed();
   }
-  let viewing = null;
+  let viewing = null, viewTok = 0;
+  const visible = (id) => { const w = who(id); return !!w && !(bots[id] && bots[id].list === false); };
 
   /* ---------- Кто есть кто ---------- */
   function who(id) {
@@ -104,6 +105,7 @@
     if (x.ev) msg.ev = x.ev;
     if (x.g) msg.g = x.g;
     if (x.a) msg.a = x.a;
+    if (x.ai) msg.ai = 1;
     t.m.push(msg);
     if (x.ask) t.q = x.ask;
     if (viewing !== id && msg.f !== "me") t.u = (t.u || 0) + 1;
@@ -135,8 +137,11 @@
       const t0 = all[id];
       if (!t0 || !(t0.p || []).length || t0.p[0].at > now) return;
       const t = Object.assign(blank(), t0);
-      const due = t.p.filter((x) => x.at <= now);
-      t.p = t.p.filter((x) => x.at > now);
+      // Ответ, который сейчас пишет модель, ждёт её (или таймаута) — висит «печатает…»
+      const ready = (x) => x.at <= now && !(x.hold && inflight.has(x.hold));
+      const due = t.p.filter(ready);
+      if (!due.length) return;
+      t.p = t.p.filter((x) => !ready(x));
       const ms = due.map((x) => deliverItem(id, t, x));
       t.m = t.m.slice(-90);
       next[id] = t;
@@ -232,34 +237,168 @@
   setInterval(tick, 2000);
 
   /* ---------- Ответы людей ---------- */
-  function composeReply(id, text) {
-    const low = String(text).toLowerCase();
+  // Скрипт: отвечаем по смыслу сообщения голосом конкретного человека (реплики — chars.js: lines + EXTRA)
+  const RX = {
+    hi: /(^|[^а-яё])(привет\S*|приветик|хай|здравствуй\S*|здрасьте|здорово|салют|хелло|добр(ое|ый|ой) (утро|день|вечер)|ку|йо|алло)([^а-яё]|$)/,
+    howru: /как (дела|ты|сам|сама|жизнь|день|оно|поживаешь|настроение|у тебя|прошёл|прошел)|что нового|чё как|че как|как вы/,
+    doing: /что делаешь|чем занят|ты где|ч[её] делаешь|что поделываешь|ты сейчас где/,
+    love: /люблю|скучаю|нравишься|обожаю|💗|❤️|💖|😘/,
+    bye: /(^|[^а-яё])(пока|спокойной|споки|до завтра|бай|доброй ночи|до встречи|до связи)([^а-яё]|$)/,
+    meet: /встрет|увидимся|погуля|сходим|приходи|заходи в гости|приеду|приезжай|давай (в|на) /,
+    thanks: /спасиб|благодар|пасиб|сенкс|спс/,
+    sorry: /извин|прости|сорян|сорри|виноват/,
+    sad: /грустн|устал|плохо|тяжело|печаль|депресс|выгор|одиноко|скучно|бесит|не могу больше|😢|😭|😔|😞/,
+    laugh: /ха-?ха|ахах|хах|(^|[^а-яё])лол|😂|🤣|😆|смешно|ору/,
+    ack: /^(ок|окей|ok|да|ага|угу|ясно|понял|поняла|хорошо|ладно|норм|супер|отлично|класс|👍|🙂|😊)[\s!.)]*$/,
+    q: /\?\s*$|^(что|как|где|когда|почему|зачем|кто|сколько|можно|а ты|ты |какой|какая|какое|куда|откуда)\s/,
+  };
+  // Не повторять то, что человек недавно уже писал
+  function say(id, key) {
+    const recent = th(id).m.slice(-12).filter((m) => m.f === "them").map((m) => m.t);
+    let t = line(id, key);
+    for (let k = 0; k < 4 && recent.includes(t); k++) t = line(id, key);
+    return t;
+  }
+  const busyLabel = (l) => String(l || "").replace(/^смотрит/, "смотрю").replace(/^бег /, "бегаю, ");
+  function composeReply(id, text, opts = {}) {
+    const low = String(text).toLowerCase().replace(/ё/g, "е");
+    const lowE = String(text).toLowerCase();
     const h = hearts(id);
     const out = [];
     const st = C() ? C().stateAt(id) : { s: "free" };
-    if (st.s === "sleep") out.push({ t: line(id, "asleep") });
+    if (st.s === "sleep") out.push({ t: say(id, "asleep") });
     const dlg = () => (C() ? C().nextDialog(id) : null);
-    if (/как дела|как ты|что нового|как жизнь|как сам|как сама|как день/.test(low)) {
-      const d = dlg();
-      out.push(d ? { t: d.q, ask: d.id } : { t: line(id, "small") });
-    } else if (/что делаешь|чем занят|ты где|чё делаешь|че делаешь/.test(low)) {
-      out.push({ t: st.s === "work" ? `${st.label === "на смене" ? "На смене" : "Работаю"}. ${line(id, "small")}` : st.s === "busy" ? `Сейчас ${st.label} 🙂` : line(id, "small") });
-    } else if (/люблю|скучаю|нравишься|обожаю|💗|❤️|💖/.test(low)) {
-      out.push({ t: h >= 6 ? line(id, "warm") : h >= 3 ? pick(["😊 Приятно. Очень", "Ой. Ты чего 😳 Мне тоже приятно с тобой", "Хи. Сохраню это сообщение"]) : pick(["😳 Эм… это неожиданно", "Ой. Давай для начала узнаем друг друга получше 🙂", "Хм. Ладно 🙂"]) });
-    } else if (/пока|спокойной|споки|до завтра|бай/.test(low)) {
-      out.push({ t: line(id, "bye") });
-    } else if (/встрет|увидимся|погуля|сходим/.test(low)) {
-      out.push({ t: `${line(id, "meet")} Выбирай время — жми «📍 Позвать»` });
-    } else if (/привет|хай|здрав|добр(ое|ый)|(^|\s)(ку|йо)([\s!.,]|$)|салют/.test(low)) {
-      out.push({ t: line(id, "hi") });
-      const d = Math.random() < 0.55 ? dlg() : null;
-      if (d) out.push({ t: d.q, ask: d.id });
-    } else {
-      out.push({ t: line(id, "small") });
-      const d = Math.random() < 0.3 ? dlg() : null;
-      if (d) out.push({ t: d.q, ask: d.id });
+    const has = (k) => RX[k].test(lowE) || RX[k].test(low);
+    const greet = has("hi");
+    // Главный смысл сообщения: первое совпадение по приоритету
+    const intent = ["love", "sad", "sorry", "thanks", "meet", "howru", "doing", "bye", "laugh", "ack", "q"].find(has) || (greet ? "hi" : "other");
+    if (greet && intent !== "hi" && intent !== "bye") out.push({ t: say(id, "hi") });
+    switch (intent) {
+      case "love":
+        out.push({ t: h >= 6 ? say(id, "warm") : h >= 3 ? pick(["😊 Приятно. Очень", "Ой. Ты чего 😳 Мне тоже приятно с тобой", "Хи. Сохраню это сообщение"]) : pick(["😳 Эм… это неожиданно", "Ой. Давай для начала узнаем друг друга получше 🙂", "Хм. Ладно 🙂"]) });
+        break;
+      case "howru": {
+        const a = say(id, "howru");
+        out.push({ t: a });
+        // Если сам не спросил «а ты как?», иногда заводит свою тему
+        const d = !/\?\s*$/.test(a) && Math.random() < 0.5 ? dlg() : null;
+        if (d) out.push({ t: d.q, ask: d.id });
+        break;
+      }
+      case "doing":
+        out.push({ t: st.s === "work" ? (id === "stas" ? say(id, "doing") : `${st.label === "на смене" ? "На смене" : "На работе"}. Освобожусь — напишу`) : st.s === "busy" ? `Сейчас ${busyLabel(st.label)} 🙂` : say(id, "doing") });
+        break;
+      case "meet": {
+        const up = upcomingWith(id);
+        if (up) out.push({ t: `Так мы же уже договорились: ${whenText(up)} 🙂` });
+        else { out.push({ t: say(id, "meet") }); if (!opts.meetUI) out.push({ f: "sys", t: id === "mom" && Vibe.care ? "📍 Время и место — «Профиль» → «Позвать»" : "📍 Время и место — кнопка «Позвать» внизу" }); }
+        break;
+      }
+      case "hi": {
+        out.push({ t: say(id, "hi") });
+        const d = Math.random() < 0.5 ? dlg() : null;
+        if (d) out.push({ t: d.q, ask: d.id });
+        break;
+      }
+      case "other": {
+        out.push({ t: say(id, "react") });
+        const d = Math.random() < 0.3 ? dlg() : null;
+        if (d) out.push({ t: d.q, ask: d.id });
+        else if (Math.random() < 0.35) out.push({ t: say(id, "small") });
+        break;
+      }
+      default: out.push({ t: say(id, intent === "ack" ? "react" : intent) }); // sad, sorry, thanks, bye, laugh, q
     }
-    return out;
+    return out.slice(0, 3);
+  }
+
+  /* ---------- Живые ответы через ИИ на устройстве (llm.js) ----------
+     Пока модель пишет, ответ-скрипт лежит в очереди с меткой hold и не доставляется («печатает…»).
+     Успех — текст заменяется ответом модели; ошибка/таймаут/перезагрузка — уходит скрипт. */
+  const inflight = new Set();
+  let llmChain = Promise.resolve();
+  const HOLD_MS = 45000;
+  const FEM = new Set(["mom", "katya", "m_4", "m_2"]);
+  const llmOn = () => { try { return !!(Vibe.llm && Vibe.llm.enabled() && Vibe.llm.status().ready); } catch (e) { return false; } };
+  function toneOf(id, h) {
+    const fam = (C() && C().raw(id) || {}).kind === "family";
+    if (h <= 1) return fam ? "вы почти не общаетесь, тебе обидно и одиноко: отвечай сдержанно, с лёгким упрёком" : "вы почти не знакомы и не общаетесь: отвечай сдержанно и коротко, без нежностей";
+    if (h <= 3) return fam ? "общаетесь редко, ты скучаешь, но не навязываешься" : "приятельские, но прохладные: вежливо, без откровенностей";
+    if (h <= 5) return "нормальные, дружелюбные";
+    if (h <= 7) return "близкие: тепло, с шутками, можно поделиться личным";
+    return "очень близкие: открыто, с нежностью и заботой";
+  }
+  function personSystem(id, ctx = {}) {
+    const c = C().raw(id), v = (C().voice && C().voice(id)) || {}, s = S();
+    const cg = (m, f) => (FEM.has(id) ? f : m);
+    const fem = (s.profile || {}).g === "f";
+    const hero = s.name || "собеседник";
+    const h = hearts(id), p = (Vibe.people && Vibe.people.get(id)) || {};
+    const L = c.lines || {};
+    const yrs = (n) => (n % 10 === 1 && n % 100 !== 11 ? "год" : n % 10 >= 2 && n % 10 <= 4 && (n % 100 < 12 || n % 100 > 14) ? "года" : "лет");
+    const samples = [...new Set([L.hi && L.hi[0], L.hi && L.hi[2], L.small && L.small[0], L.small && L.small[1], L.bye && L.bye[0]].filter(Boolean))].slice(0, 4).map((x) => `«${x}»`).join(" ");
+    const know = [];
+    if (s.job) know.push(`работает: ${(G() && G().jobTitle && G().jobTitle(s.job)) || s.job.title || "есть работа"}${s.job.company ? ", " + s.job.company : ""}`);
+    else if (s.profile) know.push("сейчас без работы");
+    if (ctx.idle >= 3) know.push(`не писал${fem ? "а" : ""} тебе ${ctx.idle} дн. — ты это заметил${cg("", "а")}`);
+    if (p.owes && id === "lyoha") know.push(`ты долж${cg("ен", "на")} ему ${rub(p.owes)} «до пятницы», немного стыдно`);
+    if (p.lastGift === today()) know.push("сегодня подарил" + (fem ? "а" : "") + " тебе подарок");
+    const up = upcomingWith(id);
+    if (up) know.push(`вы договорились встретиться ${whenText(up)}`);
+    if (id === "mom" && Vibe.care && Vibe.care.state && Vibe.care.state().auto) know.push("последнее время отвечает дежурными фразами, как открытка, и тебе от этого грустно");
+    if (C().isBirthday(id)) know.push("сегодня у тебя день рождения");
+    const st = C().stateAt(id);
+    const now = G() && s.game ? G().info() : null;
+    const where = ctx.asleep ? `только что проснул${cg("ся", "ась")} и читаешь сообщение` : st.s === "work" ? "на работе, отвечаешь урывками" : st.s === "busy" ? `занят${cg("", "а")}: ${String(st.label || "").replace(/^смотрит/, "смотришь")}` : cg("свободен", "свободна");
+    return [
+      `Ты — ${c.full}, ${c.age} ${yrs(c.age)}, в чате подписан${cg("", "а")} «${c.n}». Ты ${v.who || "знакомый собеседника"}. Работа: ${c.job}.`,
+      `Твои привычки: ${(c.habits || []).slice(0, 4).join("; ")}. Любимые темы: ${(c.topics || []).join(", ")}.`,
+      `Как ты пишешь: ${v.style || "коротко, по-дружески"}. Примеры твоих сообщений: ${samples} — пиши в этом духе, но своими словами.`,
+      `Тебе пишет ${hero} — ${fem ? "девушка, говори о ней и с ней в женском роде" : "парень, говори о нём и с ним в мужском роде"}${id === "nukov" ? ", ты обращаешься на «вы»" : ", вы на «ты»"}.${know.length ? " Что ты знаешь: " + know.join("; ") + "." : ""}`,
+      `Ваши отношения ${h} из 10 — ${toneOf(id, h)}.${now ? ` Сейчас ${now.time}, ты ${where}.` : ""}`,
+      "Правила: ты живой человек, не ИИ и не бот — никогда об этом не говори и не предлагай «помочь» как ассистент. Не говори рекламным языком Корпорации и ничего не продавай. Без реальных брендов, политики и религии. Ответь по смыслу на последнее сообщение: 1–2 коротких сообщения, как в мессенджере, каждое с новой строки, всего до 25 слов. Пиши только саму реплику — без имени, кавычек и пояснений. По-русски, с буквой «ё».",
+    ].join("\n").replace(/\{([^{}|\n]{1,40})\|([^{}|\n]{1,40})\}/g, fem ? "$2" : "$1"); // род героя в привычках/темах
+  }
+  const BAD_AI = /[぀-ヿ㐀-鿿가-힯]|искусственн|нейросет|языков\S* модел|ассистент|чат-?бот|я (—\s*)?бот|как ии|чем (я )?могу (вам |тебе )?помочь|могу ли я|предодобр|подключи\S* «?плюс|\{|\}/i;
+  function splitAI(txt, id) {
+    const w = who(id) || {};
+    let parts = String(txt || "").split(/\n+/).map((x) => x.trim()
+      .replace(new RegExp("^" + String(w.n || "").replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + "\\s*[:：]\\s*", "i"), "")
+      .replace(/^[«"“'„]+|[»"”']+$/g, "").replace(/^[—–-]\s+/, "").trim()).filter((x) => x.length > 0);
+    if (!parts.length || parts.some((x) => BAD_AI.test(x))) return [];
+    const latin = (parts.join(" ").match(/[a-z]/gi) || []).length, cyr = (parts.join(" ").match(/[а-яё]/gi) || []).length;
+    if (cyr < 2 || latin > cyr * 0.4) return [];
+    parts = parts.slice(0, 2).map((x) => (x.length > 220 ? x.slice(0, 217).replace(/\s+\S*$/, "") + "…" : x));
+    return parts;
+  }
+  function applyAI(id, tok, parts) {
+    const t = th(id);
+    const held = t.p.filter((x) => x.hold === tok);
+    if (!held.length) return false; // скрипт уже ушёл по таймауту
+    const asks = held.filter((x) => x.ask || x.f === "sys");
+    let at = Math.max(nowMin(), Math.min(...held.map((x) => x.at)));
+    t.p = t.p.filter((x) => x.hold !== tok);
+    parts.forEach((x, k) => { at += k ? rnd(0.5, 1.4) : 0; t.p.push({ at, t: x, reply: true, ai: 1 }); });
+    // Тема с выбором ответа (игровая логика сердечек) остаётся скриптовой — после живой реплики
+    asks.forEach((x) => { at += rnd(0.8, 1.6); const y = Object.assign({}, x, { at }); delete y.hold; t.p.push(y); });
+    t.p.sort((a, b) => a.at - b.at);
+    save(id, t);
+    return true;
+  }
+  function aiReply(id, tok, ctx) {
+    const job = () => {
+      if (!inflight.has(tok)) return null;
+      const hist = th(id).m.filter((m) => m.f !== "sys" && m.t).slice(-10)
+        .map((m) => ({ role: m.f === "me" ? "user" : "assistant", content: m.k === "gift" ? `(дарит тебе: ${m.t})` : String(m.t) }));
+      let sys;
+      try { sys = personSystem(id, ctx); } catch (e) { console.warn("[msg llm] prompt", e); inflight.delete(tok); changed(); return null; }
+      return Vibe.llm.reply(hist, { system: sys, maxTokens: 90, timeout: 20000, temperature: 0.8, human: true, name: (who(id) || {}).n || "" })
+        .then((txt) => { const parts = splitAI(txt, id); if (!parts.length) throw new Error("bad output"); applyAI(id, tok, parts); })
+        .catch((e) => console.warn("[msg llm] скрипт вместо ИИ:", e && e.message))
+        .finally(() => { if (inflight.delete(tok)) changed(); });
+    };
+    llmChain = llmChain.then(job, job);
+    setTimeout(() => { if (inflight.delete(tok)) { changed(); deliver(); } }, HOLD_MS);
   }
 
   function scheduleReplies(id, items, base) {
@@ -287,13 +426,26 @@
     if (b) return botReply(id, text);
     const w = who(id);
     if (!w) return;
+    const pl = (Vibe.people && Vibe.people.get(id)) || {};
+    const idle = pl.last == null ? 0 : today() - pl.last;
     if (C()) {
       const r = C().talk(id);
       if (r.first) setTimeout(() => FX.toast(`${w.n}: +2 близости за общение сегодня`, "💗", 1800), 300);
     } else if (Vibe.people) Vibe.people.set(id, { last: today() });
     if (extra.noReply) return;
     if (replyPending(id)) return;
-    const items = composeReply(id, text).map((x) => Object.assign({ reply: true }, x));
+    const asleep = C() ? C().stateAt(id).s === "sleep" : false;
+    const items = composeReply(id, text, { meetUI: !!extra.meetUI }).map((x) => Object.assign({ reply: true }, x));
+    // Модель готова → тот же ответ, но живыми словами; скрипт — запасной
+    if (llmOn() && w.ch && C()) {
+      const tok = "ai" + uid();
+      // Всё ждёт модель; темы с выбором и подсказки про кнопки потом встанут после живой реплики
+      items.forEach((x) => (x.hold = tok));
+      inflight.add(tok);
+      scheduleReplies(id, items, nowMin() + delayFor(id));
+      aiReply(id, tok, { idle, asleep });
+      return;
+    }
     scheduleReplies(id, items, nowMin() + delayFor(id));
   }
 
@@ -607,7 +759,9 @@
       queue(chatId, x);
     },
     thread: (id) => th(id).m.slice(),
-    unread(id) { const all = TH(); if (id) return (all[id] || {}).u || 0; return Object.values(all).reduce((s, t) => s + ((t && t.u) || 0), 0); },
+    // Счётчик = сумма по тем же чатам, что видны в списке: тред без собеседника (бот звезды Vibegram
+    // после перезагрузки, удалённый контакт) не должен висеть «непрочитанным», которого не открыть
+    unread(id) { const all = TH(); if (id) return (all[id] || {}).u || 0; return Object.keys(all).reduce((s, k) => s + (all[k] && all[k].u && visible(k) ? all[k].u : 0), 0); },
     addBot(id, def) {
       const chips = def.chips || (id === "zabotik" && (def.reply || def.ask) ? ["Что с деньгами?", "Спланируй день", "Как я?", "Что подарить маме?", "Закажи поесть", "Пошути"] : null);
       bots[id] = Object.assign({}, bots[id] || {}, def, { builtin: false }, chips ? { chips } : {});
@@ -623,6 +777,7 @@
     onChange(fn) { listeners.add(fn); return () => listeners.delete(fn); },
     tick,
     read(id) { const t = th(id); if (t.u) { t.u = 0; save(id, t); } },
+    llmOn,
   });
 
   /* ================= Список чатов ================= */
@@ -637,7 +792,7 @@
       const t = Object.assign(blank(), all[id] || {});
       const last = t.m[t.m.length - 1];
       const pin = id === "zabotik" || w.kind === "family" || (partner && partner.id === id) || !!(bots[id] && bots[id].pin);
-      return { id, w, t, last, pin, at: last ? last.at : -1, typing: !w.bot && (t.p || []).some((x) => x.at - nowMin() < 2 && x.at > nowMin() - 1) && stat(id).s !== "sleep" };
+      return { id, w, t, last, pin, at: last ? last.at : -1, typing: !w.bot && (t.p || []).some((x) => x.at - nowMin() < 2 && (x.at > nowMin() - 1 || (x.hold && inflight.has(x.hold)))) && stat(id).s !== "sleep" };
     }).filter(Boolean).sort((a, b) => (b.pin - a.pin) || (b.at - a.at) || (hearts(b.id) - hearts(a.id)));
   }
   function preview(r) {
@@ -790,7 +945,7 @@
         ${w.bot ? "" : `<div class="mx-acts">
           ${w.id === "mom" && Vibe.care ? `<button class="btn lime" data-a="call">📞 Позвонить</button>
           <button class="btn" data-a="care">🤖 ${Vibe.care.state().auto ? "Забота: вкл" : "Vibe Забота"}</button>` : `<button class="btn pink" data-a="gift">🎁 Подарок</button>
-          <button class="btn yellow" data-a="meet">📍 Позвать</button>`}
+          <button class="btn yellow" data-a="meet">📍 Позвать</button>${w.id === "dad" && Vibe.mini ? `<button class="btn lime" data-a="fish">🎣 На рыбалку</button>` : ""}`}
           <button class="btn" data-a="prof">👤 Профиль</button>
         </div>`}
         <form class="mx-form" data-form><input data-input placeholder="Сообщение…" autocomplete="off" maxlength="300"><button type="submit" aria-label="Отправить">➤</button></form>
@@ -800,6 +955,9 @@
       const id = who(p.id || "zabotik") ? p.id || "zabotik" : "zabotik";
       const w = who(id);
       viewing = id;
+      // Тот же чат, открытый поверх себя (тост «Ответить»), — старый экран снимается через 360 мс
+      // и не должен обнулять viewing у нового, иначе входящие считаются непрочитанными
+      const myTok = ++viewTok;
       const box = $(root, "[data-msgs]");
       const typing = $(root, "[data-typing]");
       const input = $(root, "[data-input]");
@@ -811,7 +969,8 @@
         save(id, t);
       }
       const toBottom = (smooth) => root.scrollTo({ top: root.scrollHeight, behavior: smooth ? "smooth" : "auto" });
-      const markRead = () => { const t = th(id); if (t.u) { t.u = 0; set({ msg_threads: Object.assign({}, TH(), { [id]: t }) }); } };
+      // Прочитали → сообщаем подписчикам (список чатов, счётчики), но не из текущего redraw
+      const markRead = () => { const t = th(id); if (t.u) { t.u = 0; set({ msg_threads: Object.assign({}, TH(), { [id]: t }) }); setTimeout(changed, 0); } };
       markRead();
       requestAnimationFrame(() => toBottom(false));
       let lastChips = "";
@@ -886,7 +1045,7 @@
         if (q) {
           FX.bump(q);
           const txt = q.dataset.chip;
-          if (/^Давай встретимся/.test(txt) && !w.bot) { send(txt); setTimeout(() => meetSheet(id), 500); return; }
+          if (/^Давай встретимся/.test(txt) && !w.bot) { FX.sound.like(); userSend(id, txt, { meetUI: true }); setTimeout(() => meetSheet(id), 500); return; }
           send(txt.replace(/^👋 /, ""));
           return;
         }
@@ -903,6 +1062,7 @@
         if (e.target.closest("[data-gram]")) { Vibe.go("gram-profile", { id }); return; }
         if (e.target.closest("[data-prof]") || e.target.closest('[data-a="prof"]')) { profile(id); return; }
         if (e.target.closest('[data-a="gift"]')) { giftSheet(id); return; }
+        if (e.target.closest('[data-a="fish"]') && Vibe.mini) { Vibe.go("mini-fishing"); return; }
         if (e.target.closest('[data-a="call"]') && Vibe.care) { Vibe.care.call(e.target.closest('[data-a="call"]')); return; }
         if (e.target.closest('[data-a="care"]') && Vibe.care) { Vibe.care.sheet(); return; }
         if (e.target.closest('[data-a="meet"]')) { meetSheet(id); return; }
@@ -915,7 +1075,7 @@
         off(); clearInterval(iv);
         root.removeEventListener("click", onClick);
         form.removeEventListener("submit", onSubmit);
-        if (viewing === id) viewing = null;
+        if (viewTok === myTok) viewing = null;
       };
     },
   });
