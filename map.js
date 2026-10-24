@@ -57,7 +57,27 @@
     metro2: { x: ST[4], y: ST[2], e: "Ⓜ️", label: "м. Сити" },
     clinic: Object.assign(door(0, 2, 2), { e: "🏥", label: "Vibe Health" }),
     club: Object.assign(door(3, 2, 0), { e: "🎤", label: "Клуб «Осталось 2 билета»" }),
+    // Новые точки города (только добавлены; старые ключи не менялись)
+    metro3: { x: ST[2], y: ST[2], e: "Ⓜ️", label: "м. Центральная" },
+    metro4: { x: ST[3], y: ST[4], e: "Ⓜ️", label: "м. Стадион" },
+    gym: Object.assign(door(2, 3, 0), { e: "🏋️", label: "Фитнес «Минус вайб»" }),
+    pvz: Object.assign(door(1, 4, 4), { e: "📦", label: "ПВЗ Vibe Box" }),
+    cafe: Object.assign(door(1, 2, 3), { e: "☕", label: "Кофейня «Овсяный раф»" }),
+    school: Object.assign(door(0, 4, 1), { e: "🏫", label: "Школа №42" }),
+    cinema: Object.assign(door(4, 2, 3), { e: "🎬", label: "Кинотеатр «Спойлер»" }),
+    police: Object.assign(door(0, 0, 0), { e: "🚓", label: "Полиция" }),
+    post: Object.assign(door(2, 4, 2), { e: "📮", label: "Vibe Почта" }),
+    gas: Object.assign(door(4, 4, 2), { e: "⛽", label: "АЗС «Литр мечты»" }),
+    bcenter: Object.assign(door(3, 0, 1), { e: "🏢", label: "БЦ «Опен-спейс»" }),
+    beach: { x: 740, y: 902, e: "🏖️", label: "Пляж «Шезлонг 990 ₫»" },
+    pier: { x: 938, y: ST[3], e: "⛴️", label: "Причал · паром" },
+    station: { x: 30, y: 800, e: "🚉", label: "Вокзал · электричка" },
   };
+  // Заречье — соседний город за рекой Вайбой; туда ведёт Мост Рассрочки (по ул. Подписочной)
+  const PARENTS = { x: -226, y: 262, e: "🏡", label: "Родители · другой берег" };
+  const MIN_X = -390;    // карту можно сдвинуть на запад до Заречья
+  const FAR_X = -60;     // точки западнее — на другом берегу
+  const BRIDGE_MIN = 22; // мост: пробка/разводка, ≈40 мин на такси от дома
   // Рестораны Vibe Eat: id 1..8
   const RESTAURANTS = [[0, 1, 0], [1, 2, 0], [2, 1, 2], [3, 3, 0], [4, 2, 2], [0, 3, 1], [2, 3, 2], [4, 1, 0]];
   // Кварталы под жильё (спальный и центр)
@@ -92,7 +112,7 @@
       const h = hash(key);
       const b = HOME_BLOCKS[h % HOME_BLOCKS.length];
       // Родители живут в соседнем городе на другом берегу
-      if (key === "flat:Мама") return Object.assign(door(b[0], b[1], (h >> 4) % 6), { e: "🏡", label: "Родители · другой берег" });
+      if (key === "flat:Мама") return Object.assign({ col: -1, row: 1, district: "Заречье" }, PARENTS);
       return Object.assign(door(b[0], b[1], (h >> 4) % 6), { e: "🏠", label: "Квартира" });
     }
     return null;
@@ -119,10 +139,12 @@
   // Минуты в пути: такси ~30 км/ч в пробках, пешком 5, метро ~25 + 8 мин на вход/ожидание
   function minutes(points, mode = "taxi") {
     const d = km(points);
-    if (mode === "walk") return Math.max(3, Math.round((d / 5) * 60));
-    if (mode === "metro") return Math.max(8, Math.round((d / 25) * 60 + 10));
-    if (mode === "courier") return Math.max(12, Math.round((d / 18) * 60 + 15));
-    return Math.max(4, Math.round((d / 28) * 60 + 3));
+    // Через реку в Заречье: мост (пробка) или электричка — плюс ~22 мин в любом режиме
+    const far = points.some((p) => p.x < FAR_X) ? BRIDGE_MIN : 0;
+    if (mode === "walk") return Math.max(3, Math.round((d / 5) * 60)) + far;
+    if (mode === "metro") return Math.max(8, Math.round((d / 25) * 60 + 10)) + far;
+    if (mode === "courier") return Math.max(12, Math.round((d / 18) * 60 + 15)) + far;
+    return Math.max(4, Math.round((d / 28) * 60 + 3)) + far;
   }
   function pointAt(points, k) {
     const total = len(points);
@@ -161,7 +183,7 @@
   };
   const GROUND = { "Сити": "#e2e7ff", "Центр": "#ffe8da", "Спальный": "#e4f6da" };
   const DIAG = 808; // декоративная «Аллея Позитива»: x + y = 808 (не маршрут)
-  const RIVER_D = "M-170 352C-95 352-40 306 30 306L92 306C140 306 150 336 175 336C195 336 200 318 214 318L284 318";
+  const RIVER_D = "M4 306L92 306C140 306 150 336 175 336C195 336 200 318 214 318L284 318";
 
   let cityCache = null;
   function cityMarkup() {
@@ -180,7 +202,7 @@
     const chip = (x, y, e) => { top += `<g transform="translate(${r1(x)} ${r1(y)})"><rect x="-10" y="-10" width="24" height="24" rx="8" fill="${INK}"/><rect x="-12" y="-12" width="24" height="24" rx="8" fill="#fff" stroke="${INK}" stroke-width="2"/><text y="5" font-size="14" text-anchor="middle">${e}</text></g>`; };
 
     /* --- Море, остров, дамбы --- */
-    sea += `<rect x="-200" y="-200" width="${SIZE + 400}" height="${SIZE + 400}" fill="${WATER}"/>`;
+    sea += `<rect x="-520" y="-200" width="${SIZE + 720}" height="${SIZE + 400}" fill="${WATER}"/>`;
     let waves = "";
     for (let i = 0; i < 90 && waves.length < 4000; i++) {
       const x = Math.round(-190 + R() * (SIZE + 380)), y = Math.round(-190 + R() * (SIZE + 380));
@@ -189,6 +211,9 @@
     }
     sea += `<path d="${waves}" stroke="#fff" stroke-width="2.5" fill="none" stroke-linecap="round" opacity=".65"/>`;
     sea += `<text x="-40" y="620" font-size="22">⛵</text><text x="935" y="300" font-size="20">🛥️</text><text x="700" y="-22" font-size="18">⛵</text>`;
+    // Пляж-коса на юге (под островом, чтобы берег лёг поверх)
+    sea += `<ellipse cx="744" cy="${SIZE + 6}" rx="128" ry="44" fill="${INK}" transform="translate(0 4)"/><ellipse cx="744" cy="${SIZE + 6}" rx="128" ry="44" fill="#ffe7a6" stroke="${INK}" stroke-width="3"/>`;
+    sea += `<ellipse cx="744" cy="${SIZE + 6}" rx="140" ry="54" fill="none" stroke="#fff" stroke-width="2.5" stroke-dasharray="14 10" opacity=".75"/>`;
     // Песчаный берег и зелёный пояс
     sea += `<rect x="6" y="6" width="${SIZE - 12}" height="${SIZE - 12}" rx="56" fill="#ffe7a6" stroke="${INK}" stroke-width="3"/>`;
     sea += `<rect x="16" y="16" width="${SIZE - 32}" height="${SIZE - 32}" rx="46" fill="${GRASS}" stroke="#d8c98f" stroke-width="2"/>`;
@@ -448,6 +473,176 @@
     });
     water += `<path d="${alley}" stroke="${INK}" stroke-width="25" fill="none"/><path d="${alley}" stroke="#9be58a" stroke-width="21" fill="none"/><path d="${alley}" stroke="#f7e7b4" stroke-width="5" fill="none" stroke-linecap="round"/>`;
 
+    /* --- Заречье: соседний город на другом берегу реки Вайбы --- */
+    const R2 = rng(4242);
+    const coastX = (y) => -150 + Math.sin(y / 70) * 7 + Math.sin(y / 23) * 3;
+    let cpS = "", cpG = "";
+    for (let y = -480; y <= 1400; y += 20) { cpS += `L${r1(coastX(y))} ${y}`; cpG += `L${r1(coastX(y) - 11)} ${y}`; }
+    sea += `<path d="M-540 -480${cpS}L-540 1400Z" fill="#ffe7a6" stroke="${INK}" stroke-width="3"/>`;
+    sea += `<path d="M-540 -480${cpG}L-540 1400Z" fill="${GRASS}" stroke="#d8c98f" stroke-width="2"/>`;
+    // Волны в реке
+    let rw = "";
+    for (let i = 0; i < 40; i++) {
+      const x = Math.round(-128 + R2() * 110), y = Math.round(-180 + R2() * 1280);
+      if (Math.abs(y - ST[1]) < 34 || Math.abs(y - 800) < 30) continue;
+      rw += `M${x} ${y}q5-4 10 0t10 0`;
+    }
+    sea += `<path d="${rw}" stroke="#fff" stroke-width="2.5" fill="none" stroke-linecap="round" opacity=".6"/>`;
+    // Дороги Заречья: ул. Заречная (продолжение моста), ул. Садовая, пер. Дачный
+    const ZR = [[-540, ST[1], -150, ST[1]], [-300, -480, -300, 1400], [-300, 600, -158, 600]];
+    const zrect = ([x1, y1, x2, y2], w) => (y1 === y2 ? `x="${x1}" y="${y1 - w / 2}" width="${x2 - x1}" height="${w}"` : `x="${x1 - w / 2}" y="${y1}" width="${w}" height="${y2 - y1}"`);
+    ZR.forEach((r) => (sea += `<rect ${zrect(r, 26)} fill="${ROAD}" stroke="${INK}" stroke-width="2.5"/>`));
+    ZR.forEach((r) => (sea += `<rect ${zrect(r, 21)} fill="${ROAD}"/>`));
+    sea += `<path d="M-540 ${ST[1]}H-150M-300 -480V1400M-300 600H-158" stroke="#d6cdb8" stroke-width="2" stroke-dasharray="10 9"/>`;
+    // Кварталы Заречья
+    const ZB = { nw: [-470, -60, -317, 214], n: [-283, -60, -170, 214], w: [-470, 250, -317, 582], par: [-283, 250, -170, 582], sw: [-470, 618, -317, 782], dacha: [-283, 618, -170, 782] };
+    const zI = {};
+    Object.entries(ZB).forEach(([k, [x1, y1, x2, y2]]) => {
+      sea += `<rect x="${x1}" y="${y1}" width="${x2 - x1}" height="${y2 - y1}" rx="12" fill="${WALK}" stroke="${INK}" stroke-width="2.5"/>`;
+      sea += `<rect x="${x1 + 7}" y="${y1 + 7}" width="${x2 - x1 - 14}" height="${y2 - y1 - 14}" rx="7" fill="${k === "dacha" ? "#d9f2b8" : GROUND["Спальный"]}"/>`;
+      zI[k] = { x: x1 + 7, y: y1 + 7, w: x2 - x1 - 14, h: y2 - y1 - 14 };
+    });
+    houses(zI.nw, "Спальный", 7, 11, []);
+    houses(zI.w, "Спальный", 7, 11, []);
+    houses(zI.sw, "Спальный", 7, 10, []);
+    // ДК «Ностальгия» + домики
+    add(zI.n.x + 16, zI.n.y + zI.n.h - 40, 72, 30, 13, ["#ffb547", "#fff0c4", "#dcc08a"], { win: "none", detail: "sign", text: "ДК" });
+    houses({ x: zI.n.x, y: zI.n.y, w: zI.n.w, h: zI.n.h - 64 }, "Спальный", 7, 10, []);
+    // Дом родителей: домик с крышей, забор, грядки, яблоня
+    {
+      const hx = PARENTS.x, hy = PARENTS.y + 8;
+      feat += `<rect x="${hx - 46}" y="${hy}" width="92" height="74" rx="8" fill="#e6f8cf" stroke="#7a4a2b" stroke-width="2.2" stroke-dasharray="4 2.5"/>`;
+      feat += `<rect x="${hx - 34}" y="${hy + 30}" width="40" height="28" rx="2" fill="${INK}" transform="translate(3 3)"/>`;
+      feat += `<rect x="${hx - 34}" y="${hy + 30}" width="40" height="28" rx="2" fill="#fff1a8" stroke="${INK}" stroke-width="2.2"/>`;
+      feat += `<path d="M${hx - 39} ${hy + 32}L${hx - 14} ${hy + 12}L${hx + 11} ${hy + 32}Z" fill="#ff6b5b" stroke="${INK}" stroke-width="2.2" stroke-linejoin="round"/>`;
+      feat += `<rect x="${hx - 2}" y="${hy + 12}" width="6" height="10" fill="#c9b8ff" stroke="${INK}" stroke-width="1.6"/>`;
+      feat += `<rect x="${hx - 29}" y="${hy + 37}" width="10" height="9" fill="#8fd8ff" stroke="${INK}" stroke-width="1.5"/><rect x="${hx - 13}" y="${hy + 42}" width="9" height="16" fill="#ff6bcb" stroke="${INK}" stroke-width="1.5"/>`;
+      feat += `<path d="M${hx + 14} ${hy + 40}h22M${hx + 14} ${hy + 50}h22M${hx + 14} ${hy + 60}h22" stroke="#7a4a2b" stroke-width="6" stroke-linecap="round"/><path d="M${hx + 15} ${hy + 40}h20M${hx + 15} ${hy + 50}h20M${hx + 15} ${hy + 60}h20" stroke="#5fd35f" stroke-width="2.5" stroke-dasharray="3 3" stroke-linecap="round"/>`;
+      tree(hx + 28, hy + 16, 1); tree(hx - 38, hy + 66);
+      LIT += `M${hx - 24} ${hy + 41}h0`;
+      houses({ x: zI.par.x, y: zI.par.y + 98, w: zI.par.w, h: zI.par.h - 98 }, "Спальный", 7, 10, []);
+      top += `<text x="${hx}" y="${hy + 88}" font-size="9" font-weight="900" fill="#7a2e1d" text-anchor="middle" font-family="Manrope, sans-serif" paint-order="stroke" stroke="#fff" stroke-width="3.5" stroke-linejoin="round">Родители 💛</text>`;
+    }
+    // Дачи и огороды
+    {
+      const I = zI.dacha, cw = I.w / 3, ch = I.h / 3, soil = ["#c9a26b", "#b98d57", "#d6b27c"];
+      let rows = "";
+      for (let j = 0; j < 3; j++) for (let i = 0; i < 3; i++) {
+        const x = I.x + i * cw + 3, y = I.y + j * ch + 3, w = cw - 6, h = ch - 6;
+        feat += `<rect x="${r1(x)}" y="${r1(y)}" width="${r1(w)}" height="${r1(h)}" rx="4" fill="${soil[(i + j) % 3]}" stroke="${INK}" stroke-width="1.5"/>`;
+        for (let k = y + 7; k < y + h - 4; k += 7) rows += `M${r1(x + 5)} ${r1(k)}h${r1(w * 0.55)}`;
+        if ((i + j) % 2 === 0) add(x + w * 0.62 + 3, y + h - 12, w * 0.3, 8, 5, ["#ff8a8a", "#fbf0ea", "#d3bbb1"], { win: "none" });
+        else tree(x + w * 0.8, y + h * 0.5);
+      }
+      feat += `<path d="${rows}" stroke="#36b856" stroke-width="2.5" stroke-dasharray="3 2.5" stroke-linecap="round"/>`;
+      chip(I.x + I.w - 12, I.y + 8, "🥒");
+    }
+    // Лес за станцией
+    for (let i = 0; i < 70; i++) {
+      const x = -470 + R2() * 300, y = 840 + R2() * 520;
+      if (Math.abs(x + 300) < 20 || (y < 880 && x > -330 && x < -180)) continue;
+      tree(x, y, R2() < 0.5);
+    }
+    for (let i = 0; i < 26; i++) { const y = -470 + R2() * 400; tree(-470 + R2() * 150, y, R2() < 0.5); tree(-283 + R2() * 110, y, R2() < 0.5); }
+    // Станция Заречье
+    add(-292, 860, 64, 18, 10, ["#8fd8ff", "#eef5fa", "#b3c3cf"], { win: "rows" });
+    feat += `<rect x="-330" y="809" width="150" height="12" rx="3" fill="#dcd8cf" stroke="${INK}" stroke-width="1.8"/>`;
+    chip(-196, 846, "🚉");
+
+    /* --- Электричка в Заречье: рельсы по мосту --- */
+    const RY = 800;
+    water += `<rect x="-160" y="${RY - 9}" width="176" height="18" fill="${INK}" opacity=".28" transform="translate(4 5)"/>`;
+    for (let x = -130; x < 10; x += 38) water += `<rect x="${x}" y="${RY - 4}" width="8" height="18" fill="${INK}" opacity=".35"/>`;
+    water += `<path d="M-540 ${RY}H45" stroke="${INK}" stroke-width="15"/><path d="M-540 ${RY}H45" stroke="#cdbb98" stroke-width="11"/>`;
+    water += `<path d="M-540 ${RY}H45" stroke="#7a4a2b" stroke-width="9" stroke-dasharray="2 4.5"/>`;
+    water += `<path d="M-540 ${RY - 3}H45M-540 ${RY + 3}H45" stroke="#5b5566" stroke-width="1.6"/>`;
+    water += `<rect x="17" y="${RY + 9}" width="27" height="12" rx="3" fill="#dcd8cf" stroke="${INK}" stroke-width="1.8"/>`;
+    // Поезд ездит туда-обратно (SMIL — работает и в innerHTML)
+    const car = (x, c) => `<rect x="${x}" y="-6" width="22" height="12" rx="4" fill="${c}" stroke="${INK}" stroke-width="2"/><path d="M${x + 4} -2h14" stroke="#fff" stroke-width="2.5" stroke-dasharray="3 2"/>`;
+    water += `<g transform="translate(-400 ${RY})"><animateTransform attributeName="transform" type="translate" values="-420 ${RY};-84 ${RY};-84 ${RY};-420 ${RY};-420 ${RY}" keyTimes="0;.42;.55;.93;1" dur="26s" repeatCount="indefinite"/>${car(0, "#c6ff4d")}${car(24, "#c6ff4d")}${car(48, "#ff6bcb")}</g>`;
+
+    /* --- Мост Рассрочки: ул. Подписочная → Заречье --- */
+    {
+      const y = ST[1], w = RW(1), xa = -158, xb = 47, py = [-112, -36];
+      water += `<rect x="${xa}" y="${y - w / 2}" width="${xb - xa}" height="${w}" fill="${INK}" opacity=".3" transform="translate(4 6)"/>`;
+      py.forEach((x) => (water += `<rect x="${x - 9}" y="${y - w / 2 - 12}" width="18" height="${w + 24}" rx="4" fill="${INK}" opacity=".3" transform="translate(4 6)"/>`));
+      water += `<rect x="${xa}" y="${y - w / 2}" width="${xb - xa}" height="${w}" fill="${ROAD}"/>`;
+      water += `<path d="M${xa} ${y}H${xb}" stroke="#d6cdb8" stroke-width="2" stroke-dasharray="10 9"/>`;
+      water += `<path d="M${xa} ${y - w / 2}H${xb}M${xa} ${y + w / 2}H${xb}" stroke="${INK}" stroke-width="3.5"/>`;
+      water += `<path d="M${xa} ${y - w / 2 + 3}H${xb}M${xa} ${y + w / 2 - 3}H${xb}" stroke="#ff6bcb" stroke-width="1.5" stroke-dasharray="2 4"/>`;
+      // Пилоны и ванты
+      const cab = (yy) => `M${xa + 6} ${yy}Q${(xa + py[0]) / 2} ${yy + (yy < y ? 6 : -6)} ${py[0]} ${yy}Q${(py[0] + py[1]) / 2} ${yy + (yy < y ? 9 : -9)} ${py[1]} ${yy}Q${(py[1] + 8) / 2} ${yy + (yy < y ? 6 : -6)} 8 ${yy}`;
+      water += `<path d="${cab(y - w / 2 - 6)}${cab(y + w / 2 + 6)}" stroke="#8b5cff" stroke-width="2.2" fill="none"/>`;
+      py.forEach((x) => {
+        water += `<rect x="${x - 9}" y="${y - w / 2 - 12}" width="18" height="${w + 24}" rx="4" fill="#ffe14d" stroke="${INK}" stroke-width="2.5"/>`;
+        water += `<rect x="${x - 4}" y="${y - w / 2 - 7}" width="8" height="8" rx="2" fill="#ff6bcb" stroke="${INK}" stroke-width="1.5"/><rect x="${x - 4}" y="${y + w / 2 - 1}" width="8" height="8" rx="2" fill="#ff6bcb" stroke="${INK}" stroke-width="1.5"/>`;
+        BIG += `M${x} ${y - w / 2 - 8}h0`;
+      });
+    }
+
+    /* --- Метро: пунктир линий под землёй --- */
+    {
+      const mp = (m) => [m.x + 24, m.y + 28];
+      const [a, b, c, d] = [mp(FIXED.metro1), mp(FIXED.metro3), mp(FIXED.metro2), mp(FIXED.metro4)];
+      const md = `M${a[0]} ${a[1]}H${b[0]}V${b[1]}H${c[0]}M${b[0]} ${a[1]}H${d[0]}V${d[1]}`;
+      water += `<path d="${md}" stroke="#ff3b5c" stroke-width="6" stroke-dasharray="1 10" stroke-linecap="round" fill="none" opacity=".7"/>`;
+    }
+
+    /* --- Побережье: причал, пляж, маяк --- */
+    {
+      const y = ST[3];
+      water += `<rect x="878" y="${y - 7}" width="${FIXED.pier.x + 30 - 878}" height="14" fill="${INK}" opacity=".3" transform="translate(3 5)"/>`;
+      water += `<rect x="878" y="${y - 7}" width="${FIXED.pier.x + 30 - 878}" height="14" fill="#e8c690" stroke="${INK}" stroke-width="2.5"/>`;
+      let pl = ""; for (let x = 884; x < FIXED.pier.x + 28; x += 6) pl += `M${x} ${y - 6}v12`;
+      water += `<path d="${pl}" stroke="#b98d57" stroke-width="1.4"/>`;
+      top += `<text x="${FIXED.pier.x + 6}" y="${y + 34}" font-size="24" text-anchor="middle">⛴️</text>`;
+      // Пляж: зонтики и шезлонги
+      [[668, 934, "#ff6bcb"], [712, 950, "#ffe14d"], [760, 936, "#8fd8ff"], [806, 950, "#c6ff4d"], [842, 928, "#ff8a8a"]].forEach(([x, yy, c]) => {
+        feat += `<rect x="${x + 6}" y="${yy + 2}" width="12" height="6" rx="2" fill="#fff" stroke="${INK}" stroke-width="1.3"/>`;
+        feat += `<circle cx="${x}" cy="${yy}" r="8" fill="${c}" stroke="${INK}" stroke-width="2"/><path d="M${x - 8} ${yy}h16M${x} ${yy - 8}v16" stroke="#fff" stroke-width="1.5"/>`;
+      });
+      chip(744, 966, "🏖️");
+      // Маяк на камне (северо-восток)
+      const lx = 958, ly = -26;
+      feat += `<ellipse cx="${lx}" cy="${ly + 8}" rx="24" ry="13" fill="#b9b2a6" stroke="${INK}" stroke-width="2.5"/>`;
+      feat += `<rect x="${lx - 6}" y="${ly - 22}" width="12" height="30" rx="2" fill="#fff" stroke="${INK}" stroke-width="2"/><path d="M${lx - 6} ${ly - 12}h12M${lx - 6} ${ly - 2}h12" stroke="#ff3b5c" stroke-width="5"/>`;
+      feat += `<circle cx="${lx}" cy="${ly - 25}" r="5" fill="#ffe14d" stroke="${INK}" stroke-width="2"/>`;
+      BIG += `M${lx} ${ly - 25}h0`;
+    }
+
+    /* --- Новые точки города: значки --- */
+    ["gym", "pvz", "cafe", "school", "cinema", "police", "post", "gas", "bcenter"].forEach((k) => chip(FIXED[k].x, FIXED[k].y - 4, FIXED[k].e));
+    chip(30, RY + 30, "🚉");
+
+    /* --- Подписи ориентиров --- */
+    const tag = (t, x, y, o = {}) => {
+      const tr = o.rot ? ` transform="rotate(${o.rot} ${r1(x)} ${r1(y)})"` : "";
+      top += `<text x="${r1(x)}" y="${r1(y)}"${tr} font-size="${o.size || 8.5}" font-weight="900" fill="${o.fill || "#3b3550"}" text-anchor="middle" font-family="Manrope, sans-serif" letter-spacing=".2" paint-order="stroke" stroke="${o.stroke || "#fff"}" stroke-width="3.5" stroke-linejoin="round"${o.italic ? ` font-style="italic"` : ""}>${t}</text>`;
+    };
+    const vb_ = (c, r) => vblock(c, r);
+    tag("Озеро Лайков", vb_(1, 1).cx, vb_(1, 1).y1 + 16);
+    tag("Парк «Без вайфая»", vb_(3, 1).cx, vb_(3, 1).y1 + 14);
+    tag("Vibe HQ", vb_(2, 2).cx + 8, vb_(2, 2).y2 - 6, { fill: "#4b2fb8" });
+    tag("Рынок", vb_(3, 2).x1 + 66, vb_(3, 2).y1 + 14);
+    tag("Кэшбек-Арена", vb_(3, 4).cx, vb_(3, 4).y2 - 4);
+    tag("Колесо вайба", vb_(4, 3).cx, vb_(4, 3).y2 - 4);
+    tag("Vibe Health", vb_(0, 2).x2 - 36, vb_(0, 2).y2 - 2, { fill: "#c8102e" });
+    tag("Набережная", vb_(0, 1).cx, vb_(0, 1).y2 - 2);
+    tag("Аллея Позитива", 168, DIAG - 168 + 2, { rot: -45 });
+    tag("Мост Рассрочки", -74, ST[1] - 30, { size: 10 });
+    tag("платный 💳", -74, ST[1] + 36, { size: 8 });
+    tag("р. Вайба", -78, 560, { size: 12, fill: "#fff", stroke: "#2a8fd0", rot: -90, italic: true });
+    tag("р. Вайба", -78, 80, { size: 12, fill: "#fff", stroke: "#2a8fd0", rot: -90, italic: true });
+    tag("протока", 20, 290, { size: 7.5, fill: "#fff", stroke: "#2a8fd0", italic: true });
+    tag("Вокзал", 30, RY + 50);
+    tag("ст. Заречье · 40 мин до центра", -250, 900);
+    tag("ДК «Ностальгия»", zI.n.x + 52, zI.n.y + zI.n.h - 2);
+    tag("Дачи", zI.dacha.x + 20, zI.dacha.y - 1);
+    tag("Причал", FIXED.pier.x - 20, ST[3] - 14);
+    tag("Пляж «Шезлонг 990 ₫»", 744, 990);
+    top += `<text x="-226" y="470" font-size="15" letter-spacing="4" font-family="Dela Gothic One, sans-serif" fill="${INK}" opacity=".6" text-anchor="middle" paint-order="stroke" stroke="#fff" stroke-width="5" stroke-linejoin="round">ЗАРЕЧЬЕ</text>`;
+    tag("соседний город", -226, 486, { size: 8.5, fill: "#5b5566" });
+
     /* --- Деревья: Бульвар Вайба и зелёный пояс --- */
     [ST[4] - RW(4) / 2 - 5, ST[4] + RW(4) / 2 + 5].forEach((y) => {
       for (let x = A + 22; x < Z - 10; x += 21) if (!nearX(x)) tree(x, y);
@@ -455,8 +650,8 @@
     for (let p = 70; p < SIZE - 60; p += 27) {
       if (Math.abs(p - ST[2]) > 34) tree(p, 31);
       if (Math.abs(p - ST[3]) > 34) tree(p, SIZE - 31);
-      if (p < 270 || p > 372) tree(31, p);
-      tree(SIZE - 31, p);
+      if ((p < 270 || p > 372) && Math.abs(p - ST[1]) > 24 && Math.abs(p - 800) > 22) tree(31, p); // не на мосту и не на рельсах
+      if (Math.abs(p - ST[3]) > 16) tree(SIZE - 31, p); // не на причале
     }
     const trees = (d, r) => d ? `<path d="${d}" stroke="${INK}" stroke-width="${r * 2 + 3}" stroke-linecap="round"/><path d="${d}" stroke="#36b856" stroke-width="${r * 2}" stroke-linecap="round"/><path d="${d}" stroke="#86e86e" stroke-width="${r}" stroke-linecap="round" transform="translate(-1.5 -1.5)"/>` : "";
 
@@ -513,7 +708,7 @@
       top += lab(V_NAMES[i], v, (ST[VS[i]] + ST[VS[i] + 1]) / 2, true, isAve(i));
       if (isAve(i)) { top += lab(H_NAMES[i], (ST[3] + ST[4]) / 2, v, false, true); top += lab(V_NAMES[i], v, (ST[0] + ST[1]) / 2, true, true); }
     });
-    [[FIXED.metro1], [FIXED.metro2]].forEach(([m]) => {
+    [[FIXED.metro1], [FIXED.metro2], [FIXED.metro3], [FIXED.metro4]].forEach(([m]) => {
       const x = m.x + 24, y = m.y + 28;
       top += `<circle cx="${x}" cy="${y}" r="9" fill="#ff3b5c" stroke="${INK}" stroke-width="2"/><text x="${x}" y="${y + 4}" font-size="11" font-weight="900" fill="#fff" text-anchor="middle" font-family="Manrope, sans-serif">M</text>`;
     });
@@ -562,7 +757,7 @@
     svg.innerHTML = `
       <defs><linearGradient id="vibe-grad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#8b5cff"/><stop offset=".6" stop-color="#ff6bcb"/><stop offset="1" stop-color="#ffb547"/></linearGradient></defs>
       <g class="vm-city">${cm.city}</g>
-      <rect class="vm-shade" x="-200" y="-200" width="${SIZE + 400}" height="${SIZE + 400}"/>
+      <rect class="vm-shade" x="-560" y="-200" width="${SIZE + 760}" height="${SIZE + 400}"/>
       <g class="vm-lights">${cm.lights}</g>
       <g class="vm-traffic"></g>
       <g class="vm-route"></g>
@@ -623,7 +818,7 @@
     function clamp() {
       vb.w = Math.max(220, Math.min(SIZE + 200, vb.w));
       vb.h = vb.w * aspect();
-      vb.x = Math.max(-60, Math.min(SIZE + 60 - vb.w, vb.x));
+      vb.x = Math.max(MIN_X, Math.min(SIZE + 60 - vb.w, vb.x)); // западнее — Заречье
       vb.y = Math.max(-60, Math.min(SIZE + 60 - vb.h, vb.y));
     }
     let anim = null;

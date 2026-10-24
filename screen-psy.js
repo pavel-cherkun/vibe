@@ -584,7 +584,7 @@
       return `
         ${V.ui.head("Vibe Психолог", "Забота по подписке", V.ui.vibikiPill())}
         <div class="stagger">
-          ${V.ui.hero({ title: "Как ты на самом деле?", text: "Не «нормально». По-настоящему", emo: "🛋️", color: "c-lilac", sticker: hasSub() ? "🫶 в кармане" : "−50% с подпиской" })}
+          ${V.ui.hero({ title: `<span class="psy-hero-t">Как ты на самом деле?</span>`, text: `Не «нормально». По-настоящему<span class="sticker psy-hero-st">${hasSub() ? "🫶 в кармане" : "−50% с подпиской"}</span>`, emo: "🛋️", color: "c-lilac" })}
           <div data-psy-body>${bodyHtml()}</div>
         </div>`;
     },
@@ -693,6 +693,8 @@
       .psy-tool small { font-size: 11px; font-weight: 800; opacity: .75; }
       .psy-off { margin-top: 12px; font-size: 13px; font-weight: 600; }
       .psy-sub { padding: 16px; }
+      .psy-hero-t { display: block; font-size: 28px; line-height: 1.05; }
+      .psy-hero-st { position: static; display: table; margin-top: 12px; transform: rotate(-4deg); white-space: nowrap; }
       .psy-list { margin: 10px 0 12px 18px; font-size: 13px; font-weight: 700; display: grid; gap: 4px; }
       .psy-daily { font-size: 13px; font-weight: 800; background: #fff; border: var(--line); border-radius: 14px; padding: 8px 10px; margin-bottom: 10px; }
       .psy-help { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; }

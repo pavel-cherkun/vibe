@@ -155,7 +155,7 @@
     });
     doctorsOn(day).forEach((d) => pts.push({ h: clamp(d.h, 6, 23.6), e: d.e, t: `${d.t} ${d.time}`, c: "k-v", go: "health" }));
     const plan = Vibe.sched ? Vibe.sched.forDay(day) : [];
-    plan.forEach((p) => pts.push({ h: clamp(p.hour + (p.min || 0) / 60, 6, 23.6), e: p.e, t: `${esc(p.title)} ${pad(p.hour)}:${pad(p.min || 0)}`, c: "k-v", go: "maps" }));
+    plan.forEach((p) => pts.push({ h: clamp(p.hour + (p.min || 0) / 60, 6, 23.6), e: p.e, t: `${esc(p.title)} ${pad(p.hour)}:${pad(p.min || 0)}`, c: "k-v", go: p.mini ? "mini-" + p.mini : p.go || "maps" }));
     if (!plan.some((p) => p.kind === "concert")) concertsOn(day).forEach((t) => pts.push({ h: 20, e: "🎤", t: `${esc(t.t)} 20:00`, c: "k-v", go: "tickets" }));
 
     // Раскладка точек без наложений

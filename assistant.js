@@ -638,6 +638,8 @@
     },
     mount(root, params) {
       const tos = [];
+      // Напоминания Вайбота дублируются в его чат мессенджера: прочитаны здесь — не висят непрочитанными там
+      try { if (Vibe.msg && Vibe.msg.read) Vibe.msg.read("zabotik"); } catch (e) {}
       const logEl = root.querySelector("[data-ablog]");
       const inp = root.querySelector("[data-abin]");
       const scroll = () => { root.scrollTop = root.scrollHeight; };

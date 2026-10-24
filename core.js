@@ -14,6 +14,34 @@
   Vibe.busy = () => !!document.querySelector(".modal, .sheet, .mr-ov") || /welcome|ending/.test(location.hash);
   Vibe.rub = (n) => Vibe.fmt(n) + " ₫";
   Vibe.esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+  /* ---------- Монета вайбиков: Vibe.coin(size) → HTML ----------
+     Переливающаяся золотая монета: градиент, гурт, буква V и бегущий блик.
+     Анимация — только transform у блика (дёшево), с паузой между проходами;
+     у каждой монеты своя задержка, чтобы они не мигали хором. */
+  let coinN = 0;
+  Vibe.coin = (size = 20, { still = false } = {}) =>
+    `<span class="vcoin${still ? " still" : ""}" style="--cs:${size}px;--cd:${(coinN++ * 0.37) % 3.2}s" aria-hidden="true"><i>V</i></span>`;
+  (function coinCss() {
+    const st = document.createElement("style");
+    st.textContent = `
+    .vcoin{--cs:20px;position:relative;display:inline-grid;place-items:center;flex:0 0 auto;width:var(--cs);height:var(--cs);border-radius:50%;
+      vertical-align:-.22em;overflow:hidden;isolation:isolate;
+      border:max(1.5px,calc(var(--cs)*.085)) solid #1b1430;
+      background:radial-gradient(circle at 32% 28%,#fffbe0 0 12%,transparent 34%),conic-gradient(from 200deg,#ffb020,#ffe14d,#fff3a6,#ffd23f,#ff9f1c,#ffcc33,#ffb020);
+      box-shadow:inset 0 0 0 calc(var(--cs)*.08) #ffcf3a,inset 0 0 0 calc(var(--cs)*.13) #e89412;}
+    .vcoin i{font-style:normal;font-family:"Dela Gothic One",system-ui,sans-serif;font-size:calc(var(--cs)*.5);line-height:1;color:#b8650a;
+      text-shadow:0 calc(var(--cs)*.03) 0 #fff6c4;transform:translateY(calc(var(--cs)*.02));position:relative;z-index:1}
+    .vcoin::after{content:"";position:absolute;top:-20%;bottom:-20%;left:0;width:45%;z-index:2;pointer-events:none;
+      background:linear-gradient(100deg,transparent 0,rgba(255,255,255,.95) 45%,rgba(255,255,255,.95) 55%,transparent 100%);
+      transform:translateX(-160%) skewX(-18deg);animation:vcoin-shine 3.6s ease-in-out var(--cd,0s) infinite}
+    .vcoin.still::after{display:none}
+    @keyframes vcoin-shine{0%,62%{transform:translateX(-160%) skewX(-18deg)}100%{transform:translateX(330%) skewX(-18deg)}}
+    @media (prefers-reduced-motion:reduce){.vcoin::after{animation:none;display:none}}
+    .vib-pill{height:40px;padding:0 12px 0 6px;font-size:14px;gap:6px;box-shadow:var(--shadow-sm);background:var(--lime)}
+    .vib-pill [data-vibiki]{font-variant-numeric:tabular-nums}`;
+    (document.head || document.documentElement).appendChild(st);
+  })();
+
 
   /* ---------- Шина событий: Vibe.on("pay"|"track"|"work"|"body"|"attend"|"post"|..., fn), Vibe.emit(name, data) ---------- */
   const bus = {};
@@ -75,7 +103,8 @@
   };
 
   /* ---------- Уровни и награды ---------- */
-  Vibe.need = (level) => 100 + level * 40;
+  // Кривая опыта: первый вечер даёт ~80 XP, 2-й уровень — к концу первого рабочего дня
+  Vibe.need = (level) => 200 + level * 120;
   const ACH = {
     first: { e: "🐣", t: "Новичок", d: "{Зарегистрировался|Зарегистрировалась} в Vibe" },
     employed: { e: "💼", t: "Трудоустроен", d: "{Нашёл|Нашла} работу" },
@@ -116,7 +145,7 @@
     };
     if (vibiki > 0 && !silent) {
       FX.coins(from || { x: innerWidth / 2, y: innerHeight * 0.6 }, target || { x: innerWidth - 60, y: 50 }, Math.min(10, 3 + Math.floor(vibiki / 40)), { onDone: apply });
-      FX.toast(`+${Vibe.fmt(vibiki)} вайбиков${xp ? ` · +${xp} XP` : ""}`, "🪙", 1800);
+      FX.toast(`+${Vibe.fmt(vibiki)} вайбиков${xp ? ` · +${xp} XP` : ""}`, "🪙", 1800, { go: "profile", log: false });
     } else apply();
   };
 
@@ -125,8 +154,13 @@
     Vibe.modal(`
       <div class="m-emo float">🚀</div>
       <div class="display">Уровень ${level}!</div>
-      <p>Теперь твой кэшбек ${(1 + level / 1000).toFixed(3)}%. Это на 0,001% больше. Ты {заслужил|заслужила}.</p>
-      <button class="btn black block" data-close>Вайбово 🔥</button>`, { sound: "levelup" });
+      ${(() => {
+        const L = Vibe.levels, at = L && L.at(level), nx = L && L.next(level);
+        if (!L) return `<p>Ты {заслужил|заслужила}.</p>`;
+        return `<p>${at ? `Новое звание: <b>${at.t}</b>.${at.perk ? ` ${at.perk}.` : ""}` : `Звание: ${L.title(level)}.`} Ты {заслужил|заслужила}.</p>${nx ? `<div class="fine" style="margin-top:-4px">Дальше — «${nx.t}» на ${nx.lv}-м уровне${nx.perk ? `: ${nx.perk.toLowerCase()}` : ""}</div>` : ""}`;
+      })()}
+      <button class="btn black block" data-close>Вайбово 🔥</button>
+      <button class="btn block" data-close data-lvsheet style="margin-top:8px">Что даёт уровень</button>`, { sound: "levelup", onMount(m) { const b = m.querySelector("[data-lvsheet]"); if (b) b.addEventListener("click", () => setTimeout(() => Vibe.levels && Vibe.levels.sheet(), 320)); } });
   };
 
   // Списать деньги, записать операцию, начислить кэшбек
@@ -219,6 +253,7 @@
 
   function render(route, mode) {
     if (Vibe.unlock && screens[route.name] && !Vibe.unlock.isOpen(route.name) && screens.locked) route = { name: "locked", params: { s: route.name }, key: route.key };
+    else if (Vibe.plusOnly && Vibe.plusOnly(route.name) && !S.plus && !S.unlockAll && screens.locked) route = { name: "locked", params: { s: route.name, plus: 1 }, key: route.key };
     const def = screens[route.name] || screens.notfound;
     const stackEl = document.getElementById("stack");
     const prev = current;
@@ -330,7 +365,7 @@
       ${right}
     </div>`;
 
-  ui.vibikiPill = () => `<button class="badge" data-go="profile" style="height:40px;padding:0 12px;font-size:13px;box-shadow:var(--shadow-sm)">🪙 <span data-vibiki>${Vibe.fmt(S.vibiki)}</span></button>`;
+  ui.vibikiPill = () => `<button class="badge vib-pill" data-go="profile" aria-label="Вайбики">${Vibe.coin(22)}<span data-vibiki>${Vibe.fmt(S.vibiki)}</span></button>`;
 
   ui.hero = ({ title, text = "", emo = "", color = "c-yellow", sticker = "" }) => `
     <div class="hero ${color}">
@@ -489,9 +524,9 @@
       <div style="margin:14px 4px;display:grid;gap:6px;font-weight:700">
         ${feeList.map((f) => `<div style="display:flex;justify-content:space-between"><span class="muted">${f.t}</span><span>${f.a ? Vibe.rub(f.a) : "0 ₫ 🎉"}</span></div>`).join("")}
         <div style="display:flex;justify-content:space-between;align-items:baseline;margin-top:6px"><span class="display" style="font-size:20px">Итого</span><span class="big-num" style="font-size:28px">${Vibe.rub(total)}</span></div>
-        <div class="badge" style="justify-self:start;background:var(--yellow)">🪙 +${Vibe.fmt(Math.round(total * ((Vibe.cashback ? Vibe.cashback.rate(svc === "eat" ? "Vibe Eat" : "Vibe Market").rate : 0.005)) * (S.plus ? 2 : 1)))} вайбиков кэшбеком</div>
+        <div class="badge" style="justify-self:start;background:var(--yellow)">${Vibe.coin(16)} +${Vibe.fmt(Math.round(total * ((Vibe.cashback ? Vibe.cashback.rate(svc === "eat" ? "Vibe Eat" : "Vibe Market").rate : 0.005)) * (S.plus ? 2 : 1)))} вайбиков кэшбеком</div>
       </div>
-      ${Vibe.vibikiPay && Vibe.vibikiPay(total) > 0 ? `<div class="card tight" style="display:flex;align-items:center;gap:12px;margin-bottom:12px"><span style="font-size:26px">🪙</span><div style="flex:1;font-weight:800">Списать ${Vibe.fmt(Vibe.vibikiPay(total))} вайбиков<div class="muted" style="font-size:12px">1 вайбик = 1 ₫, до 30% суммы</div></div><button class="switch" data-vib></button></div>` : ""}
+      ${Vibe.vibikiPay && Vibe.vibikiPay(total) > 0 ? `<div class="card tight" style="display:flex;align-items:center;gap:12px;margin-bottom:12px">${Vibe.coin(30)}<div style="flex:1;font-weight:800">Списать ${Vibe.fmt(Vibe.vibikiPay(total))} вайбиков<div class="muted" style="font-size:12px">1 вайбик = 1 ₫, до 30% суммы</div></div><button class="switch" data-vib></button></div>` : ""}
       <button class="btn black xl block" data-pay>Оплатить через Vibe Pay <span class="arrow">→</span></button>
       <div class="fine">Нажимая «Оплатить», вы соглашаетесь с офертой, политикой, политикой об оферте и подпиской «Плюс Вайб» за 299 ₫/мес после пробного периода.</div>
     `, {
@@ -581,6 +616,22 @@
   const ios = /iP(hone|ad|od)/.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
   let deferred = null;
   window.addEventListener("beforeinstallprompt", (e) => { e.preventDefault(); deferred = e; });
+  // Один раз через пару минут игры предлагаем поставить настоящее приложение (Android — установка, iPhone — «На экран „Домой“»)
+  setTimeout(function invite() {
+    try {
+      if (standalone() || localStorage.getItem("vibe-install-asked") || !Vibe.state.get().profile) return;
+      if (!deferred && !ios) return;
+      if (Vibe.busy && Vibe.busy()) { setTimeout(invite, 30000); return; }
+      localStorage.setItem("vibe-install-asked", "1");
+      Vibe.ui.sheet(`
+        <div class="display" style="font-size:26px">Vibe как приложение</div>
+        <p style="font-weight:700;margin:8px 0 14px">${deferred ? "Поставь Vibe на телефон как настоящее приложение: своя иконка, весь экран, работает без сети." : "На iPhone Vibe ставится через Safari: «Поделиться» → «На экран „Домой“». Откроется на весь экран, как приложение."}</p>
+        <button class="btn black block xl" data-close data-doinstall>${deferred ? "Установить" : "Как это сделать"}</button>
+        <button class="btn block" style="margin-top:8px" data-close>Потом</button>`, {
+        onMount(sh) { sh.querySelector("[data-doinstall]").addEventListener("click", () => setTimeout(() => Vibe.app.install(), 250)); },
+      });
+    } catch (e) {}
+  }, 120000);
   window.addEventListener("appinstalled", () => { deferred = null; FX.confetti(); FX.toast("Vibe теперь на главном экране. Корпорация всегда под рукой", "📲", 3200); });
   if ("serviceWorker" in navigator && location.protocol !== "file:") navigator.serviceWorker.register("sw.js").catch(() => {});
 

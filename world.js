@@ -517,3 +517,11 @@
     return out;
   };
 })();
+
+// Плавающий виджет «в пути» — trip-widget.js. Пока его тега нет в index.html, подгружаем сами (без дублей)
+document.addEventListener("DOMContentLoaded", () => {
+  if ((window.Vibe && Vibe.tripWidget) || document.querySelector('script[src^="trip-widget.js"]')) return;
+  const s = document.createElement("script");
+  s.src = "trip-widget.js?v=37";
+  document.body.appendChild(s);
+});
