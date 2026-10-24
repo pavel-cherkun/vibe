@@ -31,13 +31,13 @@
       <div class="prof-hero c-grad">
         <div class="prof-ava"><span class="emo float">${(s.profile && s.profile.avatar) || "😎"}</span></div>
         <div class="display" style="font-size:30px;margin-top:10px">${Vibe.esc(s.name)}</div>
-        <div style="font-weight:800;opacity:.9">${s.plus ? "💎 Плюс Вайб" : "Обычный смертный"} · уровень <span data-level>${s.level}</span></div>
+        <button data-lvinfo style="font-weight:800;opacity:.95;background:none;border:0;color:inherit;padding:0;font-size:inherit">${s.plus ? "💎 Плюс Вайб · " : ""}уровень <span data-level>${s.level}</span> · ${Vibe.levels ? Vibe.levels.title(s.level) : ""} ›</button>
         <div class="progress" style="margin:14px 0 4px;background:rgba(255,255,255,.35)"><i data-xpbar style="--p:${Math.round((s.xp / need) * 100)}%"></i></div>
         <div style="font-size:12px;font-weight:800">${s.xp} / ${need} XP до следующего уровня</div>
       </div>
 
       <div class="grid3 stagger" style="margin-top:14px">
-        <div class="card tight c-yellow stat"><span class="emo">🪙</span><b data-vibiki>${Vibe.fmt(s.vibiki)}</b><small>вайбиков</small></div>
+        <div class="card tight c-yellow stat"><span class="emo">${Vibe.coin(30)}</span><b data-vibiki>${Vibe.fmt(s.vibiki)}</b><small>вайбиков</small></div>
         <div class="card tight c-orange stat"><span class="emo">🔥</span><b>${s.streak}</b><small>дней подряд</small></div>
         <button class="card tight c-mint stat tap" data-gramach><span class="emo">🏆</span><b>${s.achievements.length}</b><small>ачивок · в Vibegram</small></button>
       </div>
@@ -58,7 +58,7 @@
       <div class="card" style="padding:4px 16px">
         ${[
           ["⭐", "c-yellow", "Персонаж и навыки", "класс, перки, внешность, репутация, слава", 'data-go="skills"'],
-          ["🎯", "c-orange", "Цели жизни", `${(s.goalsDone || []).length} из ${Vibe.game.GOALS.length}`, 'data-act="goals"'],
+          ["👑", "c-orange", "Легенда Vibe City", Vibe.legend ? `4 пути · лучший ${Math.max(...Vibe.legend.paths().map((x) => Math.round(x.p * 100)))}%` : "4 пути к легенде", 'data-act="goals"'],
           ["🏆", "c-mint", "Достижения", `${s.achievements.length} из ${Vibe.ACH_LIST().length} · альбом в Vibegram`, "data-gramach"],
           ["🎒", "c-violet", "Мои вещи", Vibe.inv && Vibe.inv.list().length ? `${Vibe.inv.list().length} шт.` : "пока пусто", 'data-act="things"'],
           ["🎬", "c-pink", "Финалы жизни", "как закончить эту жизнь — в письмах Корпорации", 'data-go="ending"'],
@@ -92,6 +92,7 @@
     },
     mount(root) {
       root.addEventListener("click", (e) => {
+        if (e.target.closest("[data-lvinfo]") && Vibe.levels) { Vibe.levels.sheet(); return; }
         const u = e.target.closest("[data-unsub]");
         if (u) {
           Vibe.modal(`<div class="m-emo">🥺</div><div class="display">Отменить?</div><p>Мы будем скучать. И теряем ${Vibe.rub((Vibe.subs.list().find((x) => x.id === u.dataset.unsub) || {}).price || 0)} в месяц.</p><div style="display:grid;gap:10px"><button class="btn black block" data-yes>Отменить подписку</button><button class="btn block" data-close>Оставить</button></div>`, {
@@ -187,7 +188,7 @@
           <div style="text-align:center"><div class="emo float" style="font-size:80px">${item.e}</div>
           <div class="display" style="font-size:24px;margin:8px 0">${item.t}</div>
           <div class="big-num" style="font-size:46px;margin-bottom:6px">${Vibe.rub(item.a)}</div>
-          <span class="badge" style="background:var(--yellow)">🪙 +${Math.round(item.a * 0.03)} вайбиков</span></div>
+          <span class="badge" style="background:var(--yellow)">${Vibe.coin(14)} +${Math.round(item.a * 0.03)} вайбиков</span></div>
           <button class="btn black xl block" style="margin-top:18px" data-qrpay>Оплатить <span class="arrow">→</span></button>`, {
           onMount(sh, close) {
             sh.querySelector("[data-qrpay]").addEventListener("click", (e) => {
@@ -239,7 +240,7 @@
       </div>
       <div class="stack stagger" style="margin-top:16px">
         ${[["🪙", "c-yellow", "Кэшбек ×2", "Все вайбики удваиваются"], ["🛵", "c-pink", "Доставка 0 ₫", "Из Eat и Supermarket*"], ["🎧", "c-violet", "Музыка без рекламы", "Только реклама Vibe"], ["💘", "c-coral", "Кто тебя лайкнул", "В Vibe Match"], ["🚕", "c-sky", "−5% на такси", "Кроме часов пик. Час пик — всегда"]]
-          .map(([e, c, t, d]) => `<div class="card tight" style="display:flex;gap:12px;align-items:center"><div class="li-ic ${c}" style="width:50px;height:50px;border-radius:16px;border:2px solid var(--ink);display:grid;place-items:center;font-size:26px"><span class="emo">${e}</span></div><div style="flex:1"><b>${t}</b><div class="muted" style="font-size:13px">${d}</div></div><span class="badge">✓</span></div>`).join("")}
+          .map(([e, c, t, d]) => `<div class="card tight" style="display:flex;gap:12px;align-items:center"><div class="li-ic ${c}" style="width:50px;height:50px;border-radius:16px;border:2px solid var(--ink);display:grid;place-items:center;font-size:26px"><span class="emo">${e === "🪙" ? Vibe.coin(30) : e}</span></div><div style="flex:1"><b>${t}</b><div class="muted" style="font-size:13px">${d}</div></div><span class="badge">✓</span></div>`).join("")}
       </div>
       ${s.plus
         ? `<button class="btn block" style="margin-top:20px" data-act="cancel">Отменить подписку</button>`
@@ -291,28 +292,71 @@
   }
 
   /* ================= Все сервисы ================= */
+  // Все сервисы экосистемы: каждый — ровно один раз, в своей категории.
+  // [экран, название, что это, эмодзи, цвет, параметры?]
   const ALL = [
-    ["Деньги", [["pay", "Pay", "💳", "c-yellow"], ["invest", "Invest", "🚀", "c-black"], ["pay", "Credit", "🤑", "c-lime"], ["plus", "Плюс", "💎", "c-sky"]]],
-    ["Еда и покупки", [["eat", "Eat", "🍜", "c-pink"], ["supermarket", "Supermarket", "🥑", "c-lime"], ["market", "Market", "🛍️", "c-pink"], ["pets", "Pets", "🐶", "c-yellow"]]],
-    ["Передвижение", [["maps", "Maps", "🚕", "c-sky"], ["drive", "Drive", "🚗", "c-coral"], ["auto", "Auto", "🚙", "c-sky"], ["travel", "Travel", "🏝️", "c-orange"]]],
-    ["Деньги на стороне", [["gig", "Gig", "🚲", "c-lime"], ["gov", "Госвайб", "🏛️", "c-white"], ["charity", "Добро", "💝", "c-mint"], ["wheel", "Колесо", "🎡", "c-holo"]]],
-    ["Люди и я", [["people", "Близкие", "🫂", "c-pink"], ["chats", "Мессенджер", "💬", "c-sky"], ["gram", "Vibegram", "📸", "c-grad"], ["mail", "Почта", "✉️", "c-sky"], ["skills", "Навыки", "⭐", "c-yellow"], ["style", "Style", "🧥", "c-violet"], ["hobby", "Hobby", "🎸", "c-orange"], ["psy", "Психолог", "🛋️", "c-lilac"]]],
-    ["Тело и время", [["fit", "Fit", "⌚", "c-lime"], ["fitness", "Фитнес", "🏋️", "c-orange"], ["calendar", "Календарь", "📅", "c-yellow"], ["search", "Поиск", "🔍", "c-white"]]],
-    ["Подписки и связь", [["media", "Плюс", "🍿", "c-violet"], ["books", "Книги", "📚", "c-yellow"], ["cinema", "Кино", "🎬", "c-black"], ["telecom", "Телеком", "📶", "c-lime"], ["insure", "Страхование", "☂️", "c-sky"], ["cola", "Vibe Cola", "🥤", "c-coral"], ["flowers", "Цветы", "💐", "c-pink"]]],
-    ["Жильё", [["rent", "Rent", "🔑", "c-mint"], ["home-buy", "Home", "🏠", "c-yellow"], ["clean", "Clean", "🫧", "c-sky"], ["style", "Style", "🧥", "c-orange"]]],
-    ["Жизнь", [["job", "Job", "💼", "c-blue"], ["match", "Match", "💘", "c-pink"], ["health", "Health", "💊", "c-white"], ["learn", "Learn", "🎓", "c-lilac"], ["hobby", "Hobby", "🎸", "c-coral"], ["fit", "Fitness", "🏋️", "c-lime"], ["people", "Семья", "🧸", "c-yellow"], ["charity", "Добро", "💝", "c-black"]]],
-    ["Развлечения", [["music", "Music", "🎧", "c-violet"], ["tickets", "Tickets", "🎤", "c-orange"], ["games", "Games", "🎮", "c-lime"], ["invest", "Invest", "🚀", "c-black"]]],
+    ["Деньги", "💸", "c-yellow", [
+      ["pay", "Pay", "Банк", "💳", "c-yellow"], ["pay", "Кредит", "Предодобрено", "🤑", "c-lime", { credit: "1" }],
+      ["invest", "Invest", "Инвестиции", "🚀", "c-black"], ["insure", "Страховка", "От всего", "☂️", "c-sky"],
+      ["plus", "Плюс Вайб", "Подписка", "💎", "c-holo"]]],
+    ["Еда и покупки", "🛒", "c-pink", [
+      ["eat", "Eat", "Готовая еда", "🍜", "c-pink"], ["supermarket", "Продукты", "За 15 минут", "🥑", "c-lime"],
+      ["market", "Market", "Маркетплейс", "🛍️", "c-pink"], ["style", "Style", "Одежда", "🧥", "c-violet"],
+      ["flowers", "Цветы", "Букеты", "💐", "c-coral"], ["cola", "Vibe Cola", "Напиток", "🥤", "c-orange"],
+      ["pets", "Pets", "Зоотовары", "🐶", "c-yellow"]]],
+    ["Дом", "🏠", "c-mint", [
+      ["rent", "Rent", "Аренда", "🔑", "c-mint"], ["home-buy", "Home", "Ипотека", "🏠", "c-yellow"],
+      ["clean", "Clean", "Уборка", "🫧", "c-sky"]]],
+    ["Работа и учёба", "💼", "c-blue", [
+      ["job", "Job", "Работа", "💼", "c-blue"], ["gig", "Gig", "Подработки", "🚲", "c-lime"],
+      ["learn", "Learn", "Курсы", "🎓", "c-lilac"], ["skills", "Навыки", "Прокачка", "⭐", "c-yellow"]]],
+    ["Здоровье", "💊", "c-lime", [
+      ["health", "Health", "Врачи, аптека", "💊", "c-white"], ["fit", "Fit", "Браслет", "⌚", "c-lime"],
+      ["fitness", "Фитнес", "Зал", "🏋️", "c-orange"], ["psy", "Психолог", "Выгорание", "🛋️", "c-lilac"]]],
+    ["Развлечения", "🎉", "c-violet", [
+      ["music", "Music", "Музыка", "🎧", "c-violet"], ["books", "Книги", "Читалка", "📚", "c-yellow"],
+      ["cinema", "Кино", "Фильмы", "🎬", "c-black"], ["games", "Games", "Игры", "🎮", "c-lime"],
+      ["tickets", "Tickets", "Концерты", "🎤", "c-orange"], ["media", "Медиа", "Всё в одном", "🍿", "c-pink"],
+      ["hobby", "Hobby", "Увлечения", "🎸", "c-coral"], ["wheel", "Колесо", "Испытай удачу", "🎡", "c-holo"]]],
+    ["Люди", "🫂", "c-coral", [
+      ["chats", "Чаты", "Мессенджер", "💬", "c-sky"], ["gram", "Vibegram", "Соцсеть", "📸", "c-grad"],
+      ["match", "Match", "Знакомства", "💘", "c-pink"], ["people", "Близкие", "Семья, друзья", "🧸", "c-yellow"],
+      ["mail", "Почта", "Письма", "✉️", "c-white"]]],
+    ["Город и связь", "🏙️", "c-sky", [
+      ["maps", "Maps", "Карты, такси", "🚕", "c-sky"], ["drive", "Drive", "Каршеринг", "🚗", "c-coral"],
+      ["auto", "Auto", "Свой автомобиль", "🚙", "c-mint"], ["travel", "Travel", "Путешествия", "🏝️", "c-orange"],
+      ["telecom", "Телеком", "Связь", "📶", "c-lime"], ["gov", "Госвайб", "Госуслуги", "🏛️", "c-white"],
+      ["charity", "Добро", "Благотворительность", "💝", "c-pink"]]],
+    ["Под рукой", "🧰", "c-white", [
+      ["calendar", "Календарь", "Планы, задания", "📅", "c-yellow"], ["search", "Поиск", "По всему Vibe", "🔍", "c-white"]]],
   ];
+  const isLocked = (go) => !!(Vibe.unlock && Vibe.unlock.isOpen && Vibe.unlock.isOpen(go) === false);
+  const isPlus = (go) => { try { return !!(typeof Vibe.plusOnly === "function" && Vibe.plusOnly(go)); } catch (e) { return false; } };
   Vibe.screen("all", {
     render() {
+      const total = ALL.reduce((n, [, , , it]) => n + it.length, 0);
+      const open = ALL.reduce((n, [, , , it]) => n + it.filter((x) => !isLocked(x[0])).length, 0);
       return `
-      ${Vibe.ui.head("Все сервисы", "одна жизнь · одно приложение", Vibe.ui.vibikiPill())}
-      <div class="field" style="margin-bottom:6px">🔍 <input placeholder="Найти сервис" data-search></div>
-      ${ALL.map(([g, items]) => `
-        <h2 class="sec">${g}</h2>
-        <div class="svc-grid stagger">
-          ${items.map(([go, s, e, c]) => { const lk = Vibe.unlock && !Vibe.unlock.isOpen(go); return `<button class="svc ${lk ? "locked-tile" : ""}" data-go="${go}" data-name="${s.toLowerCase()}"><span class="svc-ic ${c}">${lk ? `<span class="dot-count" style="background:#fff;animation:none">🔒</span>` : ""}<span class="emo">${e}</span></span><b>${s}</b></button>`; }).join("")}
-        </div>`).join("")}
+      ${Vibe.ui.head("Все сервисы", `открыто ${open} из ${total}`, Vibe.ui.vibikiPill())}
+      <div class="field al-search">🔍 <input placeholder="Найти сервис" data-search autocomplete="off"></div>
+      <div class="al-jump" data-noswipe>${ALL.map(([g, e], i) => `<button class="chip" data-jump="${i}"><span>${e}</span>${g}</button>`).join("")}</div>
+      ${ALL.map(([g, ge, gc, items], i) => {
+        const n = items.filter((x) => !isLocked(x[0])).length;
+        return `
+        <section class="al-sec" data-sec="${i}">
+          <h2 class="sec al-h"><span class="al-gi ${gc}">${ge}</span>${g}<small>${n === items.length ? "всё открыто" : `${n} из ${items.length}`}</small></h2>
+          <div class="al-grid stagger">
+            ${items.map(([go, name, ru, e, c, params]) => {
+              const lk = isLocked(go), pl = isPlus(go);
+              return `<button class="al-tile ${lk ? "is-locked" : ""}" data-go="${go}" ${params ? `data-params='${JSON.stringify(params)}'` : ""} data-name="${(name + " " + ru + " " + go).toLowerCase()}">
+                <span class="svc-ic al-ic ${c}"><span class="emo">${e}</span>${lk ? `<span class="al-lock" aria-label="Закрыто">🔒</span>` : ""}${pl ? `<span class="al-plus">Плюс</span>` : ""}</span>
+                <b>${name}</b><small>${lk ? "откроется позже" : ru}</small>
+              </button>`;
+            }).join("")}
+          </div>
+        </section>`;
+      }).join("")}
+      <div class="al-empty" data-empty hidden><div class="emo float">🛸</div><b>Такого сервиса пока нет</b><small>Но кредит на него уже предодобрен</small></div>
       <div class="card c-black" style="margin-top:26px;text-align:center">
         <div class="emo float" style="font-size:54px">👻</div>
         <div class="display" style="font-size:22px;color:var(--lime);margin:6px 0">Vibe Forever</div>
@@ -323,10 +367,49 @@
       const inp = root.querySelector("[data-search]");
       inp.addEventListener("input", () => {
         const q = inp.value.trim().toLowerCase();
-        root.querySelectorAll(".svc").forEach((el) => (el.style.display = !q || el.dataset.name.includes(q) ? "" : "none"));
+        let any = false;
+        root.querySelectorAll(".al-sec").forEach((sec) => {
+          let vis = 0;
+          sec.querySelectorAll(".al-tile").forEach((el) => { const on = !q || el.dataset.name.includes(q); el.style.display = on ? "" : "none"; if (on) vis++; });
+          sec.style.display = vis ? "" : "none";
+          if (vis) any = true;
+        });
+        root.querySelector("[data-empty]").hidden = any;
+        root.querySelector(".al-jump").style.display = q ? "none" : "";
+      });
+      root.addEventListener("click", (e) => {
+        const j = e.target.closest("[data-jump]");
+        if (!j) return;
+        const sec = root.querySelector(`[data-sec="${j.dataset.jump}"]`);
+        if (sec) root.scrollTo({ top: sec.offsetTop - 10, behavior: "smooth" });
       });
     },
   });
+  (function () {
+    const st = document.createElement("style");
+    st.textContent = `
+    .al-search{margin-bottom:10px}
+    .al-jump{display:flex;gap:8px;overflow-x:auto;margin:0 -16px 4px;padding:2px 16px 8px;scrollbar-width:none}
+    .al-jump::-webkit-scrollbar{display:none}
+    .al-jump .chip{height:34px;padding:0 12px;font-size:13px}
+    .al-h{display:flex;align-items:center;gap:10px}
+    .al-h small{margin-left:auto}
+    .al-gi{width:34px;height:34px;flex:0 0 34px;border-radius:12px;border:2px solid var(--ink);display:grid;place-items:center;font-size:18px;box-shadow:0 2px 0 var(--ink)}
+    .al-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:16px 6px}
+    .al-tile{display:flex;flex-direction:column;align-items:center;text-align:center;gap:3px;min-width:0}
+    .al-ic{width:64px;height:64px;font-size:30px}
+    .al-tile:active .al-ic{transform:translateY(3px) scale(.92) rotate(-6deg);box-shadow:none}
+    .al-tile b{font-size:12px;font-weight:900;margin-top:4px;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    .al-tile small{font-size:10px;font-weight:700;color:var(--muted);line-height:1.15;max-width:100%}
+    .al-tile.is-locked .al-ic .emo{filter:grayscale(1);opacity:.45}
+    .al-tile.is-locked .al-ic{background:#ece8dc}
+    .al-tile.is-locked b{color:var(--muted)}
+    .al-lock{position:absolute;top:-7px;right:-7px;width:26px;height:26px;border-radius:50%;background:var(--ink);border:2px solid var(--ink);display:grid;place-items:center;font-size:12px;box-shadow:0 2px 0 rgba(0,0,0,.25)}
+    .al-plus{position:absolute;bottom:-8px;left:50%;transform:translateX(-50%) rotate(-4deg);background:var(--holo);border:2px solid var(--ink);border-radius:999px;font-size:9.5px;font-weight:900;padding:1px 7px;white-space:nowrap;color:var(--ink)}
+    .al-empty{display:grid;justify-items:center;text-align:center;gap:4px;padding:30px 0}
+    .al-empty .emo{font-size:56px}.al-empty small{color:var(--muted);font-weight:700}`;
+    document.head.appendChild(st);
+  })();
 
   /* ================= 404 ================= */
   Vibe.screen("notfound", {

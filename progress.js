@@ -65,10 +65,51 @@
       <button class="btn black block" data-close>Ого 🔥</button>`, { sound: "levelup" });
   }
 
+  /* ---------- Плюс Вайб: развлечения по подписке ---------- */
+  const PLUS_ONLY = ["music", "cinema", "books"];
+  Vibe.plusOnly = (name) => PLUS_ONLY.includes(name);
+
+  /* ---------- Уровни: звание в Корпорации и реальные бонусы ---------- */
+  const LEVELS = [
+    { lv: 1, t: "Новичок экосистемы", perk: "" },
+    { lv: 3, t: "Резидент Vibe", perk: "Ежедневный сундук +20%" },
+    { lv: 5, t: "Свой в экосистеме", perk: "+1 категория кэшбека в месяц" },
+    { lv: 7, t: "Амбассадор", perk: "Ежедневный сундук +50%" },
+    { lv: 10, t: "Лицо Vibe", perk: "Ещё +1 категория кэшбека" },
+    { lv: 15, t: "Акционер мечты", perk: "Сундук ×2. Акций не дадим" },
+  ];
+  const levels = (Vibe.levels = {
+    LEVELS,
+    title: (lv = S().level) => LEVELS.filter((x) => x.lv <= lv).pop().t,
+    next: (lv = S().level) => LEVELS.find((x) => x.lv > lv) || null,
+    at: (lv) => LEVELS.find((x) => x.lv === lv) || null,
+    chestMult: (lv = S().level) => (lv >= 15 ? 2 : lv >= 7 ? 1.5 : lv >= 3 ? 1.2 : 1),
+    sheet() {
+      const lv = S().level;
+      Vibe.ui.sheet(`
+        <div class="display" style="font-size:24px">Уровень ${lv} · ${levels.title(lv)}</div>
+        <p class="muted" style="font-weight:700;margin:4px 0 12px">Опыт капает за всё: работу, цели, задания дня, общение. Чем выше уровень, тем больше Корпорация тебе доверяет. И тем больше ты ей {должен|должна}.</p>
+        <div class="card" style="padding:4px 16px">${LEVELS.map((x) => `<div class="li" style="${x.lv <= lv ? "" : "opacity:.5"}"><div class="ic ${x.lv <= lv ? "c-lime" : "c-white"}">${x.lv <= lv ? "✓" : x.lv}</div><div class="tx"><b>${x.t}</b><small>${x.lv === 1 ? "старт" : `уровень ${x.lv}${x.perk ? " · " + x.perk : ""}`}</small></div></div>`).join("")}</div>
+        <div class="fine">Сейчас: категорий кэшбека ${cashback.limit()}, сундук ×${String(levels.chestMult(lv)).replace(".", ",")}. Сервисы открываются не уровнем, а жизнью: работа, зарплата, повышение.</div>`);
+    },
+  });
+
   // Экран-заглушка для закрытого сервиса
   Vibe.screen("locked", {
     render(p) {
       const name = p.s || "";
+      if (p.plus) {
+        const [title, e] = NAMES[name] || ["Сервис", "💎"];
+        return `
+        ${Vibe.ui.head(title, "по подписке")}
+        <div class="hero c-grad" style="text-align:center;min-height:240px;color:#fff">
+          <div class="emo float" style="font-size:90px">${e}</div>
+          <div class="display" style="max-width:none;font-size:30px;color:#fff">💎 ${title}</div>
+          <p style="max-width:none;margin-top:10px">Входит в «Плюс Вайб». Музыка, кино и книги — без рекламы и без ограничений. Первый месяц — 1 ₫</p>
+        </div>
+        <button class="btn black block xl" style="margin-top:14px" data-go="plus">Подключить «Плюс Вайб»</button>
+        <div class="fine">Можно и без подписки: книги в библиотеке, музыка у соседа за стенкой. Мы такое не рекомендуем.</div>`;
+      }
       const t = tierOf(name) || TIERS[1];
       const [title, e] = NAMES[name] || ["Сервис", "🔒"];
       const idx = TIERS.indexOf(t);
@@ -222,7 +263,8 @@
       while (out.length < 8 && pool.length) { h = (h * 1103515245 + 12345) >>> 0; out.push(pool.splice(h % pool.length, 1)[0]); }
       return out;
     },
-    limit: () => (S().plus ? 4 : 3),
+    // Категорий в месяц: 3, с «Плюсом» 4, и ещё +1 на 5-м и на 10-м уровне
+    limit: () => (S().plus ? 4 : 3) + (S().level >= 5 ? 1 : 0) + (S().level >= 10 ? 1 : 0),
     chosen() { const c = S().cbChoice; return c && c.m === month() ? c.ids : null; },
     choose(ids) { set({ cbChoice: { m: month(), ids: ids.slice(0, cashback.limit()) } }); },
     rate(title, forced) {

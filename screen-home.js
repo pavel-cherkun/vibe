@@ -30,7 +30,6 @@
     { go: "psy", s: "Психолог", ru: "Выгорание", e: "🛋️", c: "c-lilac" },
     { go: "health", s: "Health", ru: "Врачи, аптека", e: "💊", c: "c-white" },
     { go: "invest", s: "Invest", ru: "Инвестиции", e: "🚀", c: "c-black" },
-    { go: "mail", s: "Почта", ru: "Письма", e: "✉️", c: "c-sky" },
     { go: "telecom", s: "Телеком", ru: "Связь", e: "📶", c: "c-lime" },
     { go: "all", s: "Ещё", ru: "Все сервисы", e: "🪐", c: "c-holo" },
   ];
@@ -78,7 +77,7 @@
       <div class="card job-card c-lime first-eve">
         <div class="li-ic c-white"><span class="emo wobble">${g0.e}</span></div>
         <div style="flex:1;text-align:left"><b>${g0.t} ✓</b><small>${line}</small></div>
-        <button class="btn black sm" data-act="goal">+${g0.r} 🪙</button>
+        <button class="btn black sm" data-act="goal">+${g0.r} ${Vibe.coin(18)}</button>
       </div>` : `
       <button class="card tap job-card c-lilac first-eve" ${g0.act ? `data-act="${g0.act}"` : `data-go="${g0.go}"`}>
         <div class="li-ic c-white"><span class="emo float">${g0.e}</span></div>
@@ -112,18 +111,27 @@
     const left = job ? G.tasksLeft() : 0;
     const b = Vibe.body ? (Vibe.body.tick(), Vibe.body.get()) : null;
     const prod = b ? Vibe.body.productivity().value : 0;
+    const steps = b ? Math.round(b.steps || 0) : 0;
     const bars = b ? [
-      ["⚡", "Энергия", b.energy, "var(--yellow)"],
-      ["🍽️", "Сытость", b.food, "var(--pink)"],
-      ["😊", "Настроение", b.mood, "var(--sky)"],
-      ["👟", "Шаги", Math.min(100, (b.steps / Vibe.body.STEP_GOAL) * 100), "var(--lime)"],
+      ["⚡", "Энергия", b.energy, "#ffd23f"],
+      ["🍽️", "Сытость", b.food, "#ff6bcb"],
+      ["😊", "Настроение", b.mood, "#8fd8ff"],
+      ["👟", steps >= 1000 ? (steps / 1000).toFixed(1).replace(".", ",") + "к шагов" : steps + " шагов", Math.min(100, (steps / Vibe.body.STEP_GOAL) * 100), "#c6ff4d"],
     ] : [];
     const warn = !b ? "" : b.sleeping ? "😴 Ты спишь" : b.sick ? "🤒 Ты болеешь" : b.food < 25 ? "🍽️ Ты голоден" : b.energy < 20 ? "🥱 Пора спать" : b.mood < 30 ? "🌧️ Грустишь" : "";
     return `
       ${b ? `
       <button class="card tap fit-mini" data-go="fit">
-        <div class="fm-head"><b>⌚ Vibe Fit</b>${warn ? `<span class="badge" style="background:var(--coral)">${warn}</span>` : `<span class="badge">Продуктивность ${prod}%</span>`}</div>
-        <div class="fm-bars">${bars.map(([e, t, v, c]) => `<div class="fm-bar"><span>${e}</span><div class="progress" style="height:10px;flex:1"><i style="--p:${Math.round(v)}%;background:${c}"></i></div><small>${Math.round(v)}%</small></div>`).join("")}</div>
+        <div class="fm-head"><b><span class="fm-watch">⌚</span> Vibe Fit</b>${warn ? `<span class="badge fm-warn">${warn}</span>` : `<span class="badge fm-ok">всё в норме</span>`}</div>
+        <div class="fm-rings">${bars.map(([e, t, v, c]) => { const p = Math.max(0, Math.min(100, Math.round(v))), low = p < 25 && t !== bars[3][1]; return `
+          <div class="fm-ring ${low ? "low" : ""}">
+            <div class="fm-dial" style="--c:${low ? "#ff8a8a" : c};--p:${p}">
+              <svg viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="32" r="29" fill="${low ? "#ffe0da" : "#f3eee2"}" stroke="#1b1430" stroke-width="2.5"/><circle class="fm-arc" cx="32" cy="32" r="23" pathLength="100" stroke-dasharray="${p} 100" transform="rotate(-90 32 32)"/><circle cx="32" cy="32" r="17.5" fill="#fff" stroke="#1b1430" stroke-width="2.5"/></svg>
+              <span class="fm-e">${e}</span>
+            </div>
+            <b>${p}%</b><small>${t}</small>
+          </div>`; }).join("")}</div>
+        <div class="fm-prod"><span class="fm-prod-l">🧠 Продуктивность</span><div class="fm-prod-bar"><i style="width:${Math.max(4, prod)}%"></i></div><b>${prod}%</b></div>
       </button>` : ""}
 
       ${up.length ? `<div class="hscroll up-row">${up.map((u) => `
@@ -138,10 +146,10 @@
       <div class="card goal-card ${goal.done ? "c-yellow" : ""}">
         <div style="display:flex;gap:12px;align-items:center">
           <span class="emo ${goal.done ? "wobble" : "float"}" style="font-size:42px">${goal.e}</span>
-          <div style="flex:1"><button class="muted" data-act="goals" style="font-weight:800;font-size:12px;background:none;border:0;padding:0;color:inherit">Цель ${goal.index} из ${goal.total} · все цели ›</button><div class="display" style="font-size:19px">${goal.t}</div></div>
+          <div style="flex:1"><button class="muted" data-act="goals" style="font-weight:800;font-size:12px;background:none;border:0;padding:0;color:inherit">Шаг ${goal.index} · путь к легенде Vibe City ›</button><div class="display" style="font-size:19px">${goal.t}</div></div>
         </div>
         <div class="progress" style="margin:10px 0 8px"><i style="--p:${Math.round(goal.progress * 100)}%"></i></div>
-        ${goal.done ? `<button class="btn black block" data-act="goal">Забрать +${goal.r} 🪙</button>` : `<button class="btn sm" data-go="${goal.go}">Как это сделать →</button>`}
+        ${goal.done ? `<button class="btn black block" data-act="goal">Забрать +${goal.r} ${Vibe.coin(20)}</button>` : `<button class="btn sm" data-go="${goal.go}">Как это сделать →</button>`}
       </div>` : ""}
 
       ${soonPlans().length ? `
@@ -165,9 +173,10 @@
       return `
       <div class="home-top">
         <div class="logo home-logo">Vibe</div>
-        <div style="display:flex;gap:10px;align-items:center">
+        <div style="display:flex;gap:8px;align-items:center">
           ${Vibe.ui.vibikiPill()}
-          <button class="icon-btn" ${Vibe.screens.mail ? 'data-go="mail"' : 'data-act="bell"'} aria-label="Почта">${Vibe.screens.mail ? "✉️" : "🔔"}${Vibe.mail && Vibe.mail.unread() ? `<span class="dot-count">${Vibe.mail.unread() > 99 ? "99+" : Vibe.mail.unread()}</span>` : ""}</button>
+          <button class="icon-btn" data-notifs aria-label="Уведомления">🔔${(() => { const n = Vibe.notifs ? Vibe.notifs.unread() : 0; return `<span class="dot-count" data-notif-count ${n ? "" : "hidden"}>${n > 99 ? "99+" : n}</span>`; })()}</button>
+          ${Vibe.screens.mail ? `<button class="icon-btn" data-go="mail" aria-label="Почта">✉️${Vibe.mail && Vibe.mail.unread() ? `<span class="dot-count">${Vibe.mail.unread() > 99 ? "99+" : Vibe.mail.unread()}</span>` : ""}</button>` : ""}
           <button class="icon-btn" data-go="chats" aria-label="Чаты">💬${Vibe.msg && Vibe.msg.unread() ? `<span class="dot-count" style="background:var(--lime)">${Vibe.msg.unread()}</span>` : ""}</button>
         </div>
       </div>
@@ -202,7 +211,7 @@
           <span style="font-weight:800">•• 4521</span>
         </div>
         <div class="big-num pc-bal" data-balance>${Vibe.rub(s.balance)}</div>
-        <div style="position:relative;font-weight:800;font-size:13px">Кэшбек: <span class="badge" style="background:#fff">🪙 <span data-vibiki>${Vibe.fmt(s.vibiki)}</span> вайбиков</span></div>
+        <div style="position:relative;font-weight:800;font-size:13px">Кэшбек: <span class="badge" style="background:#fff">${Vibe.coin(16)} <span data-vibiki>${Vibe.fmt(s.vibiki)}</span> вайбиков</span></div>
         <div class="pc-actions">
           <button data-act="transfer"><span>↗</span>Перевести</button>
           <button data-go="job"><span>💼</span>Работа</button>
@@ -261,16 +270,9 @@
         <div class="emo promo-emo float">🤑</div>
       </div>` : ""}
 
-      ${open("plus") ? `<button class="card c-holo plus-card tap" data-go="plus">
-        <div class="display" style="font-size:28px">Плюс Вайб</div>
-        <div style="font-weight:800;margin:6px 0 12px">${s.plus ? "Ты в Плюсе. Кэшбек ×2 💎" : "Кэшбек ×2, доставка 0 ₫, музыка без рекламы"}</div>
-        <span class="btn black sm">${s.plus ? "Управлять" : "Первый месяц за 1 ₫"}</span>
-        <div class="emo plus-emo wobble">💎</div>
-      </button>` : ""}
-
       <h2 class="sec">Для тебя <small>подобрано Вайботом</small></h2>
       <div class="hscroll">
-        ${FEED.filter((f) => open(f.go)).map((f) => `
+        ${(!s.plus && open("plus") ? [{ go: "plus", k: "Плюс Вайб", t: "Музыка, кино и книги, кэшбек ×2 и доставка за 0 ₫", m: "Первый месяц — 1 ₫", e: "💎", c: "c-holo" }] : []).concat(FEED.filter((f) => open(f.go))).map((f) => `
           <button class="card feed-card ${f.c} tap" data-go="${f.go}">
             <div class="badge" style="background:#fff">${f.k}</div>
             <b>${f.t}</b>
@@ -372,11 +374,27 @@
   .search .search-ph { overflow:hidden; text-overflow:ellipsis; }
   [data-main] > .job-card { margin:0 0 14px; }
   .clock { font-size:12px; font-weight:800; color:var(--muted); margin-top:6px; }
-  .fit-mini { display:block; width:100%; text-align:left; margin-top:14px; padding:12px 14px; }
-  .fm-head { display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; }
-  .fm-head b { font-size:15px; font-weight:900; }
-  .fm-bars { display:grid; grid-template-columns:1fr 1fr; gap:6px 12px; }
-  .fm-bar { display:flex; align-items:center; gap:6px; font-size:14px; } .fm-bar small { font-size:11px; font-weight:900; width:30px; text-align:right; }
+  .fit-mini { display:block; width:100%; text-align:left; margin-top:14px; padding:14px 14px 12px; background:#fff; }
+  .fm-head { display:flex; justify-content:space-between; align-items:center; gap:8px; margin-bottom:12px; }
+  .fm-head b { font-family:var(--font-display); font-weight:400; font-size:18px; display:flex; align-items:center; gap:6px; }
+  .fm-watch { display:inline-grid; place-items:center; width:30px; height:30px; border-radius:10px; border:2px solid var(--ink); background:var(--lime); font-size:16px; }
+  .fm-warn { background:var(--coral); } .fm-ok { background:var(--mint); }
+  .fm-rings { display:grid; grid-template-columns:repeat(4,1fr); gap:6px; }
+  .fm-ring { display:flex; flex-direction:column; align-items:center; text-align:center; min-width:0; }
+  .fm-dial { position:relative; width:64px; height:64px; }
+  .fm-dial svg { width:64px; height:64px; display:block; }
+  .fm-arc { fill:none; stroke:var(--c); stroke-width:8; stroke-linecap:round; transition:stroke-dasharray .6s var(--out); }
+  .fm-e { position:absolute; inset:0; display:grid; place-items:center; font-size:20px; }
+  .fm-ring b { font-family:var(--font-display); font-weight:400; font-size:15px; margin-top:4px; line-height:1; }
+  .fm-ring small { font-size:10.5px; font-weight:800; color:var(--muted); line-height:1.15; margin-top:2px; white-space:nowrap; }
+  .fm-ring.low b, .fm-ring.low small { color:#e2412f; }
+  .fm-ring.low .fm-dial { animation:fm-pulse 1.6s ease-in-out infinite; }
+  @keyframes fm-pulse { 50% { transform:scale(1.06); } }
+  .fm-prod { display:flex; align-items:center; gap:8px; margin-top:12px; padding:8px 10px; border:2px solid var(--ink); border-radius:16px; background:var(--lilac); }
+  .fm-prod-l { font-size:12px; font-weight:900; white-space:nowrap; }
+  .fm-prod-bar { flex:1; height:12px; border:2px solid var(--ink); border-radius:999px; background:#fff; overflow:hidden; }
+  .fm-prod-bar i { display:block; height:100%; border-right:2px solid var(--ink); background:repeating-linear-gradient(-45deg,var(--violet) 0 6px,#a98bff 6px 12px); border-radius:999px; }
+  .fm-prod b { font-family:var(--font-display); font-weight:400; font-size:14px; }
   .job-card { display:flex; gap:12px; align-items:center; width:100%; margin-top:14px; padding:12px 14px; }
   .job-card b { display:block; font-size:15px; } .job-card small { display:block; font-size:12px; font-weight:700; }
   .up-row { margin-top:4px; padding-top:12px; }
@@ -412,14 +430,17 @@
   .bt-name { font-size:24px; } .bt small { font-weight:800; font-size:12px; opacity:.75; }
   .bt-emo { position:absolute; right:6px; bottom:4px; font-size:58px; }
   .svc-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:16px 6px; }
+  .big-tiles + .svc-grid, .big-tiles + .marquee + .svc-grid { margin-top:22px; }
+  .home-top .icon-btn { width:42px; height:42px; font-size:19px; }
+  .home-top > .home-logo { font-size:42px; }
+  .home-top > div { gap:7px !important; min-width:0; }
+  .feed-card .badge { color:var(--ink); }
   .svc { display:flex; flex-direction:column; align-items:center; text-align:center; gap:4px; }
   .svc-ic { width:66px; height:66px; border-radius:22px; border:var(--line); box-shadow:var(--shadow-sm); display:grid; place-items:center; font-size:32px; position:relative; transition:transform .2s var(--spring), box-shadow .2s var(--spring); }
   .svc:active .svc-ic { transform:translateY(3px) scale(.92) rotate(-6deg); box-shadow:none; }
   .svc b { font-size:12px; font-weight:900; margin-top:4px; } .svc small { font-size:10px; font-weight:700; color:var(--muted); line-height:1.15; }
   .promo { margin-top:26px; padding:20px; }
   .promo-emo { position:absolute; right:12px; top:44px; font-size:60px; }
-  .plus-card { display:block; width:100%; text-align:left; margin-top:14px; padding:20px; }
-  .plus-emo { position:absolute; right:18px; top:18px; font-size:64px; }
   .feed-card { width:220px; min-height:168px; text-align:left; display:flex; flex-direction:column; gap:10px; }
   .feed-card b { font-size:17px; font-weight:900; line-height:1.2; flex:1; }
   .feed-bottom { display:flex; justify-content:space-between; align-items:center; font-weight:800; font-size:13px; }

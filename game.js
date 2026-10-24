@@ -369,19 +369,26 @@
     const g0 = goal(); if (!g0 || !g0.done) return;
     set({ goalsDone: [...(S().goalsDone || []), g0.id] });
     FX.confetti();
-    Vibe.reward({ vibiki: g0.r, xp: 80, from });
+    Vibe.reward({ vibiki: g0.r, xp: Math.round(g0.r * 0.6), from });
     Vibe.modal(`<div class="m-emo float">${g0.e}</div><div class="display" style="font-size:26px">Цель выполнена!</div><p>«${g0.t}». +${g0.r} вайбиков. Следующая цель уже ждёт.</p><button class="btn black block" data-close>Дальше</button>`, { sound: "levelup" });
   }
 
+  // Квест «Стать легендой Vibe City»: четыре пути к легенде + ближайший шаг жизни
   function goalsSheet() {
-    const s = S(), done = s.goalsDone || [], cur = goal();
+    const s = S(), cur = goal();
+    const paths = Vibe.legend ? Vibe.legend.paths() : [];
     Vibe.ui.sheet(`
-      <div class="display" style="font-size:24px">Цели жизни</div>
-      <p class="muted" style="font-weight:700;margin:4px 0 12px">Выполнено ${done.length} из ${GOALS.length}. Корпорация подобрала их для тебя</p>
-      <div class="card" style="padding:4px 16px">${GOALS.map((g0) => {
-        const ok = done.includes(g0.id), now = cur && cur.id === g0.id;
-        return `<div class="li" style="${ok || now ? "" : "opacity:.5"}"><div class="ic ${ok ? "c-lime" : now ? "c-yellow" : "c-white"}">${ok ? "✓" : now ? g0.e : "🔒"}</div><div class="tx"><b>${g0.t}</b><small>${ok ? "выполнено" : now ? `сейчас · ${Math.round(cur.progress * 100)}% · +${g0.r} 🪙` : `+${g0.r} 🪙`}</small></div></div>`;
-      }).join("")}</div>`);
+      <div class="display" style="font-size:26px">Стань легендой Vibe City</div>
+      <p class="muted" style="font-weight:700;margin:4px 0 12px">Четыре пути — выбери свой. Можно идти по нескольким сразу. Легенду каждого пути Корпорация пришлёт письмом.</p>
+      <div class="stack">${paths.map((x) => `
+        <div class="card tight" style="display:flex;gap:12px;align-items:center;${x.done ? "background:var(--lime)" : ""}">
+          <span class="emo" style="font-size:34px">${x.e}</span>
+          <div style="flex:1;min-width:0"><b>${x.t}${x.done ? " ✓" : ""}</b><small style="display:block;font-weight:700">${x.how}</small>
+          <div class="progress" style="height:8px;margin-top:6px"><i style="--p:${Math.round(x.p * 100)}%"></i></div></div>
+        </div>`).join("")}</div>
+      ${cur ? `<h2 class="sec" style="margin-top:18px">Ближайший шаг</h2>
+      <div class="card tight" style="display:flex;gap:12px;align-items:center"><span class="emo" style="font-size:30px">${cur.e}</span><div style="flex:1"><b>${cur.t}</b><small style="display:block;font-weight:700">${Math.round(cur.progress * 100)}% · +${cur.r} 🪙</small></div></div>` : ""}
+      <div class="fine">Есть и пути, которых нет в этом списке. Корпорация о них не знает.</div>`);
   }
 
   /* ---------- Ежедневный бонус (реальные дни) ---------- */
@@ -393,7 +400,7 @@
     const y = new Date(); y.setDate(y.getDate() - 1);
     const yKey = `${y.getFullYear()}-${y.getMonth() + 1}-${y.getDate()}`;
     const streak = s.lastLogin === yKey ? (s.streak || 0) + 1 : 1;
-    const reward = Math.min(500, 40 + streak * 20);
+    const reward = Math.round(Math.min(500, 40 + streak * 20) * (Vibe.levels ? Vibe.levels.chestMult() : 1));
     set({ lastLogin: today, streak });
     const show = () => {
       if (Vibe.busy && Vibe.busy()) return setTimeout(show, 1500);

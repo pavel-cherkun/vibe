@@ -149,7 +149,9 @@
     let done = 0;
     for (let i = 0; i < n; i++) {
       const el = document.createElement("span");
-      el.className = "p"; el.textContent = emoji; el.style.fontSize = "26px";
+      el.className = "p"; el.style.fontSize = "26px";
+      if (emoji === "🪙" && window.Vibe && Vibe.coin) { el.innerHTML = Vibe.coin(26, { still: true }); el.style.lineHeight = "0"; }
+      else el.textContent = emoji;
       layer().appendChild(el);
       const mx = (a.x + b.x) / 2 + rand(-120, 120), my = Math.min(a.y, b.y) - rand(60, 180);
       const sx = a.x + rand(-30, 30), sy = a.y + rand(-20, 20);
@@ -192,30 +194,188 @@
   }
 
   /* ---------- Тост ---------- */
-  // opts: { go, params, onClick, label } — уведомление можно нажать и сразу сделать то, о чём оно просит.
+  // opts: { go, params, onClick, label, log } — уведомление можно нажать и сразу открыть источник.
   // Третьим аргументом можно передать сразу opts.
+  // Источник угадывается по тексту/эмодзи, если go не передан (письмо → Почта, сообщение → Чаты, деньги → Pay…).
+  // Входящие уведомления (не мгновенный отклик на нажатие) пишутся в историю — центр уведомлений Vibe.notifs.
+  let lastTap = 0;
+  document.addEventListener("pointerdown", () => { lastTap = Date.now(); }, { passive: true, capture: true });
+  const strip = (h) => String(h == null ? "" : h).replace(/<[^>]*>/g, "").replace(/\s+/g, " ").trim();
+  function guess(text, emoji) {
+    const t = strip(text), e = String(emoji || "");
+    const has = (n) => window.Vibe && Vibe.screens && Vibe.screens[n];
+    if (/[✉📧📨📬📩]/u.test(e) || /письм|почт[аеуы]|входящ/i.test(t)) return has("mail") ? { go: "mail" } : null;
+    if (e === "🤖" || /^Вайбот:/.test(t)) return { go: "chat", params: { id: "zabotik" } };
+    if (/достижени/i.test(t)) return { go: "profile" };
+    if (/напоминани|календар|задани[ея] дня|через \d+ мин|⏰/i.test(t) || /[⏰📅🗓]/u.test(e)) return { go: "calendar" };
+    const money = /зарплат|перев[оё]д|списа|начисл|кредит|долг|штраф|баланс|аванс|преми|₫/i;
+    if ((/^[А-ЯЁA-Z][^:\d]{0,26}: /.test(t) && !money.test(t.split(":")[0]) && !/^Vibe /.test(t)) || /сообщени|написал|написала|в чат/i.test(t) || e === "💬") return has("chats") ? { go: "chats" } : null;
+    if (/зарплат|перев[оё]д|списа|начисл|кредит|долг|штраф|баланс|аванс|премия/i.test(t)) return { go: "pay" };
+    if (/вайбик/i.test(t)) return { go: "profile" };
+    return null;
+  }
+  const emoHtml = (e) => (e === "🪙" && window.Vibe && Vibe.coin ? Vibe.coin(24) : e);
+
   function toast(text, emoji = "✨", ms = 2400, opts) {
     if (ms && typeof ms === "object") { opts = ms; ms = 2400; }
     opts = opts || {};
     const root = document.getElementById("toast-root");
+    if (!root) return;
+    const src = opts.go || opts.onClick ? null : guess(text, emoji);
+    const go = opts.go || (src && src.go), params = opts.params || (src && src.params) || {};
+    const act = !!(go || opts.onClick);
+    // В историю — всё, что пришло само (не в ответ на касание), и всё, у чего есть источник
+    const fromTap = Date.now() - lastTap < 1200;
+    if (opts.log !== false && (opts.log || go || !fromTap)) notifs.add({ t: text, e: emoji, go, p: params });
+
     const el = document.createElement("div");
-    const act = !!(opts.go || opts.onClick);
     el.className = "toast" + (act ? " act" : "");
-    el.innerHTML = `<span class="emo wobble">${emoji}</span><span class="tx">${text}</span>${act ? `<span class="go">${opts.label || "→"}</span>` : ""}`;
+    el.innerHTML = `<span class="emo wobble">${emoHtml(emoji)}</span><span class="tx">${text}</span>${act ? `<span class="go">${opts.label || "→"}</span>` : ""}`;
     root.appendChild(el);
     while (root.children.length > 3) root.firstChild.remove();
-    const kill = () => { el.classList.add("out"); setTimeout(() => el.remove(), 320); };
-    if (act) {
-      el.setAttribute("role", "button");
-      el.addEventListener("click", () => {
-        haptic(8);
-        kill();
-        if (opts.onClick) opts.onClick();
-        if (opts.go && window.Vibe) Vibe.go(opts.go, opts.params || {});
-      });
-    }
-    setTimeout(kill, act ? Math.max(ms, 3600) : ms);
+    let dead = false, timer = null, left = act ? Math.max(ms + 2600, 6000) : Math.max(ms + 1600, 4000), t0 = 0;
+    const kill = (up) => {
+      if (dead) return; dead = true; clearTimeout(timer);
+      el.classList.add(up ? "out-up" : "out");
+      setTimeout(() => el.remove(), 320);
+    };
+    const run = () => { t0 = Date.now(); clearTimeout(timer); timer = setTimeout(() => kill(), left); };
+    const pause = () => { clearTimeout(timer); left = Math.max(1500, left - (Date.now() - t0)); };
+    run();
+
+    // Касание: держишь — тост не исчезает; смахнул вверх — скрыл; тапнул — открыл источник
+    let y0 = null, dy = 0, moved = false;
+    el.addEventListener("pointerdown", (e) => { y0 = e.clientY; dy = 0; moved = false; pause(); el.style.transition = "none"; try { el.setPointerCapture(e.pointerId); } catch (x) {} });
+    el.addEventListener("pointermove", (e) => {
+      if (y0 == null) return;
+      dy = e.clientY - y0;
+      if (Math.abs(dy) > 6) moved = true;
+      if (moved) { el.style.transform = `translateY(${Math.min(0, dy)}px)`; el.style.opacity = String(Math.max(0.2, 1 + Math.min(0, dy) / 90)); }
+    });
+    const end = () => {
+      if (y0 == null) return;
+      y0 = null;
+      el.style.transition = "transform .2s var(--out), opacity .2s";
+      if (dy < -26) { el.style.transform = "translateY(-140%)"; el.style.opacity = "0"; haptic(6); dead = true; clearTimeout(timer); setTimeout(() => el.remove(), 220); return; }
+      el.style.transform = ""; el.style.opacity = "";
+      run();
+    };
+    el.addEventListener("pointerup", end);
+    el.addEventListener("pointercancel", end);
+    el.addEventListener("click", (e) => {
+      if (moved) { moved = false; return; }
+      if (!act) { kill(true); return; }
+      e.stopPropagation();
+      haptic(8);
+      kill();
+      if (opts.onClick) opts.onClick();
+      if (go && window.Vibe) Vibe.go(go, params);
+    });
   }
+
+  /* ---------- Центр уведомлений: история последних 30 ---------- */
+  const N_MAX = 30;
+  const notifs = {
+    list: () => ((window.Vibe && Vibe.state && Vibe.state.get().notifs) || []),
+    unread: () => notifs.list().filter((n) => !n.read).length,
+    add(n) {
+      if (!window.Vibe || !Vibe.state || !Vibe.state.get().profile) return;
+      const list = notifs.list();
+      const t = String(n.t || "");
+      // Тот же текст несколько секунд назад — не дублируем
+      if (list[0] && list[0].t === t && Date.now() - list[0].at < 8000) return;
+      let gt = "";
+      try { gt = Vibe.game && Vibe.state.get().game ? Vibe.game.info().label : ""; } catch (e) {}
+      const item = { id: Date.now().toString(36) + Math.random().toString(36).slice(2, 5), t, e: n.e || "🔔", go: n.go || "", p: n.p && Object.keys(n.p).length ? n.p : undefined, at: Date.now(), gt, read: false };
+      Vibe.state.set({ notifs: [item, ...list].slice(0, N_MAX) });
+      notifs.paint();
+    },
+    readAll(quiet) {
+      const list = notifs.list();
+      if (!list.some((n) => !n.read)) return;
+      Vibe.state.set({ notifs: list.map((n) => (n.read ? n : Object.assign({}, n, { read: true }))) });
+      if (!quiet) notifs.paint(); else setTimeout(notifs.paint, 0);
+    },
+    // Обновить все счётчики-колокольчики на экране: <span data-notif-count></span>
+    paint() {
+      const n = notifs.unread();
+      document.querySelectorAll("[data-notif-count]").forEach((el) => {
+        const txt = n > 99 ? "99+" : String(n);
+        el.hidden = !n;
+        if (el.textContent !== txt) { el.textContent = txt; if (n) bump(el); }
+      });
+    },
+    ago(at) {
+      const m = Math.round((Date.now() - at) / 60000);
+      if (m < 1) return "только что";
+      if (m < 60) return `${m} мин назад`;
+      const h = Math.round(m / 60);
+      if (h < 24) return `${h} ч назад`;
+      return `${Math.round(h / 24)} дн. назад`;
+    },
+    open() {
+      if (!window.Vibe || !Vibe.ui) return;
+      const list = notifs.list();
+      const unreadIds = new Set(list.filter((n) => !n.read).map((n) => n.id));
+      const row = (n) => `
+        <button class="nt-row ${unreadIds.has(n.id) ? "new" : ""} ${n.go ? "tap" : ""}" ${n.go ? `data-nt="${n.id}"` : "disabled"}>
+          <span class="nt-ic">${emoHtml(n.e)}</span>
+          <span class="nt-tx"><span class="nt-t">${n.t}</span><small>${notifs.ago(n.at)}${n.gt ? " · " + Vibe.esc(n.gt) : ""}</small></span>
+          ${n.go ? `<span class="nt-go">›</span>` : ""}
+        </button>`;
+      Vibe.ui.sheet(`
+        <div class="nt-head"><div class="display" style="font-size:26px">Уведомления</div>${list.length ? `<button class="chip" data-nt-clear>Очистить</button>` : ""}</div>
+        <p class="nt-sub">Последние ${N_MAX}. Корпорация помнит остальные</p>
+        ${list.length ? `<div class="nt-list">${list.map(row).join("")}</div>` : `<div class="nt-empty"><div class="emo float" style="font-size:54px">🔕</div><b>Пока тихо</b><small>Подозрительно тихо. Мы уже работаем над этим</small></div>`}
+        <button class="btn black block" style="margin-top:14px" data-close>Понятно</button>`, {
+        onMount(sh, close) {
+          sh.addEventListener("click", (e) => {
+            if (e.target.closest("[data-nt-clear]")) {
+              Vibe.state.set({ notifs: [] }); notifs.paint();
+              const l = sh.querySelector(".nt-list"); if (l) l.innerHTML = `<div class="nt-empty"><b>Пусто</b><small>История уведомлений очищена</small></div>`;
+              e.target.closest("[data-nt-clear]").remove();
+              return;
+            }
+            const b = e.target.closest("[data-nt]");
+            if (!b) return;
+            const n = notifs.list().find((x) => x.id === b.dataset.nt);
+            if (!n || !n.go) return;
+            close();
+            setTimeout(() => Vibe.go(n.go, n.p || {}), 200);
+          });
+        },
+      });
+      notifs.readAll();
+    },
+  };
+  if (window.Vibe) Vibe.notifs = notifs;
+  document.addEventListener("click", (e) => {
+    if (e.target.closest("[data-notifs]")) { e.preventDefault(); e.stopPropagation(); notifs.open(); }
+  }, true);
+  (function notifCss() {
+    const st = document.createElement("style");
+    st.textContent = `
+    .dot-count[hidden]{display:none}
+    .toast{pointer-events:auto;touch-action:none;user-select:none;-webkit-user-select:none}
+    .toast .emo .vcoin{vertical-align:middle}
+    .toast.out-up{animation:toast-out .25s ease both}
+    .toast .go{flex:0 0 auto;background:var(--lime);color:var(--ink);border-radius:999px;padding:4px 10px;font-size:12px;font-weight:900}
+    .nt-head{display:flex;justify-content:space-between;align-items:center;gap:10px}
+    .nt-sub{font-size:12px;font-weight:700;color:var(--muted);margin:2px 0 12px}
+    .nt-list{display:grid;gap:8px;max-height:58vh;overflow-y:auto;padding:2px 2px 6px}
+    .nt-row{display:flex;gap:12px;align-items:center;width:100%;text-align:left;background:var(--paper);border:2px solid var(--ink);border-radius:18px;padding:10px 12px;color:var(--ink)}
+    .nt-row[disabled]{opacity:1;cursor:default}
+    .nt-row.new{background:#f4ffd9;box-shadow:var(--shadow-sm)}
+    .nt-row.new .nt-ic::after{content:"";position:absolute;top:-3px;right:-3px;width:11px;height:11px;border-radius:50%;background:var(--pink);border:2px solid var(--ink)}
+    .nt-ic{position:relative;width:42px;height:42px;flex:0 0 42px;border-radius:14px;border:2px solid var(--ink);background:var(--yellow);display:grid;place-items:center;font-size:22px}
+    .nt-tx{flex:1;min-width:0;display:grid;gap:2px}
+    .nt-t{font-weight:800;font-size:14px;line-height:1.25;overflow-wrap:anywhere}
+    .nt-tx small{font-size:11px;font-weight:700;color:var(--muted)}
+    .nt-go{font-size:22px;font-weight:900}
+    .nt-empty{display:grid;justify-items:center;text-align:center;gap:4px;padding:18px 0}
+    .nt-empty small{color:var(--muted);font-weight:700}`;
+    document.head.appendChild(st);
+  })();
 
   /* ---------- Глобальный отклик на касание ---------- */
   document.addEventListener("pointerdown", (e) => {
@@ -226,5 +386,5 @@
     haptic(6);
   }, { passive: true });
 
-  window.FX = { sound, haptic, burst, confetti, coins, bump, shake, countTo, toast, ripple, pt, rand, pick };
+  window.FX = { sound, haptic, burst, confetti, coins, bump, shake, countTo, toast, ripple, pt, rand, pick, notifs };
 })();

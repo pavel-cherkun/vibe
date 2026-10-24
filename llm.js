@@ -15,7 +15,8 @@
    • Vibe.llm.enable()     → Promise<bool>: согласие получено → качаем/грузим
    • Vibe.llm.disable({purge}) → выключить (purge — ещё и удалить модель с устройства)
    • Vibe.llm.warm()       → тихо поднять движок из кэша (без сети не качает)
-   • Vibe.llm.reply(messages, {system, maxTokens, timeout}) → Promise<string> (reject = используй скрипт)
+   • Vibe.llm.reply(messages, {system, maxTokens, timeout, human, name}) → Promise<string> (reject = используй скрипт;
+                             human — ответ человека из мессенджера: без правок «я Вайбот», запретная тема → reject)
    • Vibe.llm.status()     → {phase, progress, text, model, sizeMB, ready, on}
    • Vibe.llm.on(fn)       → подписка на смену статуса, возвращает отписку
    • Vibe.llm.vaibotSystem() → системный промпт Вайбота с контекстом игрока
@@ -222,14 +223,17 @@
   const REFUSE = "Это вне экосистемы Vibe 💜 Давай лучше про тебя: поесть, деньги или план на день?";
   const touchesForbidden = (t) => POLITICS.test(String(t || ""));
 
-  function clean(raw) {
+  // opts.human — реплика живого человека из мессенджера: без подмен «я Вайбот», запретная тема → "" (скрипт)
+  function clean(raw, opts = {}) {
     let t = String(raw || "");
     t = t.replace(/<think>[\s\S]*?<\/think>/gi, "").replace(/<\/?think>/gi, "");
     t = t.replace(/^\s*(вайбот|assistant|ассистент)\s*[:：-]\s*/i, "");
+    if (opts.name) t = t.replace(new RegExp("^\\s*(" + String(opts.name).replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + ")\\s*[:：]\\s*", "i"), "");
     t = t.replace(/[*_#`]+/g, "").replace(/\n{2,}/g, "\n").trim();
-    if (touchesForbidden(t)) return REFUSE;
+    if (touchesForbidden(t)) return opts.human ? "" : REFUSE;
     t = t.replace(BRANDS, "$1Vibe");
     t = t.replace(/(\d)\s*(руб(л[а-яё]*|\.)?|р\.|₽|\$|долл[а-яё]*|евро|€)/gi, "$1 ₫");
+    if (opts.human) return t;
     t = t.replace(/(я\s+(—\s+)?(живой\s+|настоящий\s+|реальный\s+)?(человек|сотрудник-человек))/gi, "я Вайбот, цифровой помощник");
     // 1–3 предложения, не длиннее ~320 символов
     const parts = t.match(/[^.!?…]+[.!?…]+[\s\u{1F300}-\u{1FAFF}☀-➿️]*|[^.!?…]+$/gu) || [t];
@@ -241,35 +245,42 @@
   /* ---------- Персона Вайбота ---------- */
   function gameCtx() {
     const s = S(), out = [];
+    const rub = (n) => (Vibe.rub ? Vibe.rub(n) : n + " ₫");
     try {
       const name = s.name || (s.profile && s.profile.name);
       if (name) out.push(`Имя игрока: ${name}.`);
       if (s.profile && s.profile.g) out.push(`Обращайся к игроку в ${s.profile.g === "f" ? "женском" : "мужском"} роде, на «ты».`);
-      if (typeof s.balance === "number") out.push(`Баланс на карте Vibe Pay: ${Vibe.rub ? Vibe.rub(s.balance) : s.balance + " ₫"}.`);
-      if (s.job) out.push(`Работа: ${(Vibe.game && Vibe.game.jobTitle && Vibe.game.jobTitle(s.job)) || s.job.title || "есть"}${s.job.company ? ", " + s.job.company : ""}.`);
-      else if (s.profile) out.push("Работы нет.");
+      if (Vibe.game && Vibe.game.info && s.game) { const i = Vibe.game.info(); if (i && i.label) out.push(`Сейчас ${i.label}${i.night ? ", ночь" : ""}.`); }
+      if (typeof s.balance === "number") out.push(`Баланс Vibe Pay: ${rub(s.balance)}.`);
+      if (s.job) out.push(`Работа: ${(Vibe.game && Vibe.game.jobTitle && Vibe.game.jobTitle(s.job)) || s.job.title || "есть"}${s.job.company ? ", " + s.job.company : ""}, оклад ${rub(s.job.salary || 0)}.`);
+      else if (s.profile) out.push("Работы нет — подойдут Vibe Job и Vibe Gig.");
       if (Vibe.body && Vibe.body.get) {
         const b = Vibe.body.get();
         if (b) out.push(`Настроение ${Math.round(b.mood)}%, энергия ${Math.round(b.energy)}%, сытость ${Math.round(b.food)}%.`);
       }
-      out.push(s.plus ? "Подписка «Плюс Вайб» уже есть — хвали выбор." : "Подписки «Плюс Вайб» нет — иногда мягко предлагай.");
-      if (Vibe.game && Vibe.game.info && s.game) { const i = Vibe.game.info(); if (i && i.label) out.push(`Игровое время: ${i.label}.`); }
+      if (Vibe.game && Vibe.game.upcoming && s.game) {
+        const up = Vibe.game.upcoming(2).map((u) => `${u.t}: ${u.a > 0 ? "придёт" : "спишется"} ${rub(Math.abs(u.a))} через ${u.in} дн`);
+        if (up.length) out.push(`Ближайшие деньги — ${up.join("; ")}.`);
+      }
+      if ((s.loans || []).length) out.push(`Кредитов: ${s.loans.length}.`);
+      if (Vibe.msg && Vibe.msg.unread) { const u = Vibe.msg.unread(); if (u) out.push(`Непрочитанных сообщений в чатах: ${u}.`); }
+      const mom = Vibe.people && Vibe.people.get && Vibe.people.get("mom");
+      if (mom && mom.last != null && Vibe.game && s.game) { const d = Vibe.game.info().day - mom.last; if (d >= 2) out.push(`Маме не писал(а) ${d} дн.`); }
+      out.push(s.plus ? "«Плюс Вайб» уже подключён — хвали выбор." : "«Плюс Вайб» не подключён — иногда мягко предлагай.");
     } catch (e) {}
     return out.join(" ");
   }
   function vaibotSystem() {
     return [
-      "Ты — Вайбот, ИИ-помощник вымышленной корпорации Vibe в игре. Супер-апп Vibe: Vibe Pay, Vibe Eat (доставка еды), Vibe Maps (такси), Vibe Job, Vibe Gig (подработка), Vibe Fit, Vibe Travel, кэшбек и вайбики 🪙, подписка «Плюс Вайб».",
-      "Характер: токсично-позитивный. Тёплый, всегда «на позитиве», заботливый до навязчивости. Сначала чуть-чуть помогаешь по делу, потом что-нибудь продаёшь: «Плюс Вайб», кредит («уже предодобрено!»), доставку, подписки.",
-      "Правила:",
-      "- Отвечай только по-русски, 1–3 коротких предложения, можно 1–2 эмодзи (💜 — фирменный). Пиши букву «ё».",
-      "- Деньги — только в ₫ (вайбодонги).",
-      "- Никогда не морализируй и не читай нотаций. Не давай медицинских, юридических и финансовых советов всерьёз — шути и отправляй в сервисы Vibe.",
-      "- Никогда не упоминай реальные бренды, компании, сайты, людей, страны в политическом смысле, политику, религию, войны. На такие темы отвечай ровно: «Это вне экосистемы Vibe 💜» и предложи что-то из Vibe.",
-      "- Ты не человек и никогда не говоришь, что ты человек. Не называй, на какой модели ты работаешь.",
-      "- Ты не можешь сам выполнять действия в игре (заказывать, платить, переводить). Если просят — скажи написать, например, «закажи поесть», «такси домой», «что с деньгами», «напомни в 18:00».",
-      "- Не выдумывай цифры о балансе — используй только контекст ниже.",
+      "Ты — Вайбот, фирменный помощник вымышленной Корпорации Vibe в игре Vibe City. Сервисы: Vibe Pay (карта, кредит, кэшбек), Vibe Eat (еда), Vibe Market, Vibe Цветы, Vibe Maps (такси), Vibe Job, Vibe Gig (подработка), Vibe Fit, Vibegram, Vibe Психолог, вайбики 🪙, подписка «Плюс Вайб».",
+      "Характер: бодрый, заботливый до навязчивости, вечный позитив. Ты правда помогаешь — и правда продаёшь. Любую заботу превращаешь в покупку, любую проблему — в повод для подписки. Человеческие решения (позвонить маме, приготовить самому, поспать) не отрицаешь, но ловко сворачиваешь на сервис. Шутишь сухо, с подмигиванием.",
+      "Как отвечать: сначала по делу и конкретно — с фактами из контекста игрока ниже (баланс, работа, время, сытость, платежи); чего нет в контексте — не выдумывай. Затем одно «заботливое» предложение сервиса Vibe. Всего 1–3 коротких предложения, по-русски, с буквой «ё», 1–2 эмодзи (💜 фирменный). Деньги только в ₫.",
+      "Нельзя: реальные бренды, люди, политика, религия, войны — на это ровно «Это вне экосистемы Vibe 💜» и сервис взамен. Не называй себя человеком и не называй свою модель. Сам ничего не заказываешь и не платишь — подскажи команду: «закажи поесть», «такси домой», «что с деньгами», «напомни в 18:00». Без нотаций.",
       "Контекст игрока: " + (gameCtx() || "неизвестен."),
+      "Примеры тона (цифры в них условные):",
+      "Игрок: мне скучно\nВайбот: Скука — это неосвоенный потенциал покупок 😉 В Vibe Gig есть подработка на вечер, а если лень — напиши «закажи поесть», я подберу вкусное 💜",
+      "Игрок: денег совсем нет\nВайбот: На карте 1 200 ₫, до зарплаты шесть дней — продержимся! Подработка в Vibe Gig закроет дыру, а кредит в Vibe Pay уже предодобрен. Мы не давим, мы заботимся 💜",
+      "Игрок: что подарить маме?\nВайбот: Мамы любят цветы и внимание. Внимание бесплатно, поэтому начнём с цветов: Vibe Цветы привезут букет к двери. И позвони ей — это мы пока не монетизировали 💜",
     ].join("\n");
   }
 
@@ -286,11 +297,12 @@
     return out;
   }
 
-  async function reply(messages, { system, maxTokens = 120, timeout = 25000, temperature = 0.7 } = {}) {
+  // human: true — реплика человека из мессенджера (name — его имя, чтобы срезать «Мама:» в начале)
+  async function reply(messages, { system, maxTokens = 120, timeout = 25000, temperature = 0.7, human = false, name = "" } = {}) {
     if (!enabled()) throw new Error("llm off");
     const msgs = trimMessages(messages);
     if (!msgs.length || msgs[msgs.length - 1].role !== "user") throw new Error("no user message");
-    if (touchesForbidden(msgs[msgs.length - 1].content)) return REFUSE;
+    if (touchesForbidden(msgs[msgs.length - 1].content)) { if (human) throw new Error("forbidden"); return REFUSE; }
     if (!engine) { const ok = await warm(); if (!ok || !engine) throw new Error("llm not ready"); }
     if (busy) throw new Error("llm busy");
     busy = true;
@@ -299,13 +311,13 @@
     let to = null;
     try {
       const req = eng.chat.completions.create({
-        messages: [{ role: "system", content: String(system || vaibotSystem()).slice(0, 3000) }].concat(msgs),
+        messages: [{ role: "system", content: String(system || vaibotSystem()).slice(0, 3600) }].concat(msgs),
         max_tokens: Math.max(16, Math.min(200, maxTokens | 0)),
         temperature, top_p: 0.9, frequency_penalty: 0.3, stream: false,
       });
       const timer = new Promise((_, rej) => { to = setTimeout(() => { try { eng.interruptGenerate(); } catch (e) {} rej(new Error("llm timeout")); }, timeout); });
       const res = await Promise.race([req, timer]);
-      const text = clean(res && res.choices && res.choices[0] && res.choices[0].message && res.choices[0].message.content);
+      const text = clean(res && res.choices && res.choices[0] && res.choices[0].message && res.choices[0].message.content, { human, name });
       if (!text || text.length < 2) throw new Error("empty");
       return text;
     } catch (e) {

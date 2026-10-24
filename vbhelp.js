@@ -10,17 +10,60 @@
   const live = () => !!(S().profile && S().game);
 
   /* ---------- Аватарка в шапке ---------- */
-  const btnHtml = () => `<button class="vb-ava tap" data-vbask aria-label="Спросить Вайбота">${Vibe.zabotik(34, "smile")}</button>`;
-  function decorate(sc) {
-    if (!sc || !sc.dataset || SKIP.test(sc.dataset.screen || "") || sc.querySelector("[data-vbask]")) return;
-    const head = sc.querySelector(".head");
-    if (head) { head.insertAdjacentHTML("beforeend", btnHtml()); return; }
-    // Экраны со своей шапкой: календарь, Vibegram, профиль
+  // Аватарка никогда ничего не перекрывает: после вставки меряем шапку,
+  // и если заголовок сжался или элементы налезли друг на друга — убираем её с этого экрана.
+  const btnHtml = (size = 35) => `<button class="vb-ava tap" data-vbask aria-label="Спросить Вайбота">${Vibe.zabotik(size, "smile")}</button>`;
+  const hit = (a, b) => !(a.right <= b.left + 1 || a.left >= b.right - 1 || a.bottom <= b.top + 1 || a.top >= b.bottom - 1);
+  function fits(sc, btn, row) {
+    const r = btn.getBoundingClientRect();
+    if (!r.width) return true; // экран ещё не в раскладке — проверим при следующем проходе
+    const vw = document.documentElement.clientWidth;
+    if (r.right > vw - 4 || r.left < 4) return false;
+    if (row) {
+      if (row.scrollWidth > row.clientWidth + 2) return false;
+      const t = row.querySelector(".title, .cal-ttl, .vg-htitle");
+      if (t && (t.getBoundingClientRect().width < 120 || t.scrollWidth > t.clientWidth + 2)) return false;
+      for (const c of row.children) if (c !== btn && c.getBoundingClientRect().width && hit(c.getBoundingClientRect(), r)) return false;
+      return true;
+    }
+    // Угол карточки: не налезать на текст и кнопки внутри неё
+    const box = btn.parentElement;
+    for (const el of box.querySelectorAll("button, a, input, .badge, .display, .title, b, small, .progress, .lvl, .emo")) {
+      if (el === btn || btn.contains(el)) continue;
+      const q = el.getBoundingClientRect();
+      if (!q.width) continue;
+      // Текстовый блок шире кнопки — проверяем реальные строки текста, а не всю коробку
+      if (el.matches(".display, .title, b, small")) {
+        const rg = document.createRange(); rg.selectNodeContents(el);
+        if ([...rg.getClientRects()].some((lr) => lr.width && hit(lr, r))) return false;
+        continue;
+      }
+      if (hit(q, r)) return false;
+    }
+    return true;
+  }
+  function place(sc) {
+    const head = sc.querySelector(":scope > .head, .head");
+    if (head) { head.insertAdjacentHTML("beforeend", btnHtml()); return [head.lastElementChild, head]; }
+    // Экраны со своей шапкой: календарь, Vibegram
     const own = sc.querySelector(".cal-top, .vg-shell [data-top]");
-    if (own) { own.insertAdjacentHTML("beforeend", btnHtml()); return; }
-    // Главная и профиль: верхняя строка уже полная — аватарка садится в угол карточки
-    const hero = sc.querySelector(".prof-hero, .hello");
-    if (hero) { hero.insertAdjacentHTML("afterbegin", btnHtml().replace('class="vb-ava', 'class="vb-ava vb-abs')); }
+    if (own) { own.insertAdjacentHTML("beforeend", btnHtml(30)); return [own.lastElementChild, own]; }
+    // Главная: верхняя строка уже полная — аватарка встаёт последней в строку карточки приветствия
+    const hello = sc.querySelector(".hello");
+    if (hello) { hello.insertAdjacentHTML("beforeend", btnHtml()); return [hello.lastElementChild, hello]; }
+    // Профиль: аватарка садится в угол карточки
+    const hero = sc.querySelector(".prof-hero");
+    if (hero) { hero.insertAdjacentHTML("afterbegin", btnHtml().replace('class="vb-ava', 'class="vb-ava vb-abs')); return [hero.firstElementChild, null]; }
+    return [null, null];
+  }
+  function decorate(sc) {
+    if (!sc || !sc.dataset || sc.dataset.vbskip || SKIP.test(sc.dataset.screen || "") || sc.querySelector("[data-vbask]")) return;
+    // Переписка с людьми и с Вайботом: в шапке чата аватарка собеседника, вторая не нужна
+    if (sc.querySelector(".mx-head, .chat-head, [data-chat]")) { sc.dataset.vbskip = "chat"; return; }
+    const [btn, row] = place(sc);
+    if (!btn) return;
+    const check = () => { if (btn.isConnected && !fits(sc, btn, row)) { btn.remove(); sc.dataset.vbskip = "nofit"; } };
+    check(); setTimeout(check, 400); // второй раз — когда догрузятся шрифты и картинки
   }
   let pend = 0;
   const scan = () => { pend = 0; if (!live()) return; document.querySelectorAll(".screen").forEach(decorate); };
@@ -137,17 +180,18 @@
   /* ---------- Стили ---------- */
   const st = document.createElement("style");
   st.textContent = `
-  .vb-ava{width:40px;height:40px;flex:0 0 40px;border-radius:50%;border:2px solid var(--ink,#0e0e12);background:#fff;display:grid;place-items:center;padding:0;margin-left:auto;box-shadow:var(--shadow-sm);overflow:hidden}
+  .vb-ava{width:40px;height:40px;flex:0 0 40px;border-radius:50%;border:2.5px solid var(--ink,#0e0e12);background:var(--lime,#c6ff4d);display:grid;place-items:center;padding:0;margin:0 0 0 auto;box-shadow:var(--shadow-sm,0 3px 0 #0e0e12);overflow:hidden;position:relative;transition:transform .16s var(--spring),box-shadow .16s}
+  .vb-ava::before{content:"";position:absolute;inset:2.5px;border-radius:50%;background:#fff}
+  .vb-ava svg{position:relative;margin:0;transform:translateY(1px)}
+  .vb-ava:active{transform:translateY(3px);box-shadow:none}
   .head .vb-ava,.cal-top .vb-ava{margin-left:0}
   .cal-top{gap:8px}
-  .vg-shell [data-top] .vb-ava{width:34px;height:34px;flex-basis:34px;border-width:1.5px;box-shadow:none}
-  .vg-shell [data-top] .vb-ava svg{width:28px;height:28px}
+  .vg-shell [data-top] .vb-ava{width:34px;height:34px;flex-basis:34px;border-width:2px;box-shadow:none}
+  .vg-shell [data-top] .vb-ava::before{inset:2px}
   .prof-hero,.hello{position:relative}
-  .hello .display{padding-right:46px}
-  .hello .vb-abs{top:10px;right:10px}
-  .vb-ava.vb-abs{position:absolute;top:14px;right:14px;margin:0}
+  .hello > .vb-ava{margin:0;align-self:flex-start}
+  .vb-ava.vb-abs{position:absolute;top:10px;right:10px;margin:0;z-index:2}
   .head .title{flex:1;min-width:0}
-  .vb-ava svg{margin-top:4px}
   .vb-sh-h{display:flex;gap:12px;align-items:center;margin-bottom:10px}
   .vb-sh-h small{display:block;color:var(--muted,#6b6880);font-weight:700;font-size:12px}
   .vb-sh-log{max-height:42vh;overflow-y:auto;display:grid;gap:8px;padding:4px 0}
