@@ -1,7 +1,9 @@
 /* Vibe service worker: игра открывается без сети, а обновления приходят сразу.
    Сначала сеть, при неудаче — кэш. Версия кэша меняется вместе с ?v= в index.html. */
-const CACHE = "vibe-v37";
-self.addEventListener("install", (e) => { self.skipWaiting(); });
+const CACHE = "vibe-v38";
+// Оболочка кладётся в кэш при установке: приложение стартует и без сети
+const SHELL = ["./", "index.html", "manifest.webmanifest", "icon-192.png", "icon-512.png", "apple-touch-icon.png"];
+self.addEventListener("install", (e) => { self.skipWaiting(); e.waitUntil(caches.open(CACHE).then((c) => c.addAll(SHELL)).catch(() => {})); });
 self.addEventListener("activate", (e) => {
   e.waitUntil(caches.keys().then((ks) => Promise.all(ks.filter((k) => k !== CACHE).map((k) => caches.delete(k)))).then(() => self.clients.claim()));
 });
