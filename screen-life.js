@@ -199,9 +199,63 @@
   .lf-says{font-weight:800;font-size:13px;min-height:36px;display:grid;place-items:center;text-align:center;line-height:1.25}
   .lf-mute{width:70px;height:70px;border-radius:50%;border:3px solid var(--ink);background:#fff;font-size:32px;box-shadow:0 4px 0 var(--ink);transition:background .2s}
   .lf-mute.hot{background:var(--lime);animation:pulse .5s ease-in-out infinite}
-  .lf-appr{display:flex;flex-direction:column;gap:12px;justify-content:center;align-items:stretch;height:100%;padding:16px}
-  .lf-mock{font-size:66px;line-height:1;align-self:center}
   .lf-tdone{opacity:.62}
+  .lf-goal{position:absolute;left:8px;top:8px;z-index:2;background:#fff;border:2px solid var(--ink);border-radius:12px;padding:4px 9px;font-size:11px;font-weight:800;pointer-events:none}
+  .lf-mail.boss{background:var(--yellow)}
+  .lf-mail.boss small{display:block;font-size:10px;opacity:.7}
+  .lf-mail.phish{background:#fff}
+  .lf-num.x2{background:var(--yellow);font-size:17px}
+  .lf-game.lf-zoomarea{height:372px;background:#17121f}
+  .lf-zoom{display:flex;flex-direction:column;height:100%;padding:8px;gap:6px;color:#fff}
+  .lf-ztop{display:flex;justify-content:space-between;gap:6px;font-size:10px;font-weight:800;color:#bdb3d6;white-space:nowrap;overflow:hidden}
+  .lf-rec{color:#ff4b3e;animation:pulse 1.2s ease-in-out infinite}
+  .lf-zgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:5px}
+  .lf-zt{position:relative;aspect-ratio:1/0.95;border-radius:10px;overflow:hidden;border:2px solid #000;background:#2a2340}
+  .lf-zt svg{width:100%;height:100%;display:block}
+  .lf-zt.talk{border-color:var(--lime);box-shadow:0 0 0 2px var(--lime)}
+  .lf-zn{position:absolute;left:3px;bottom:3px;max-width:calc(100% - 6px);background:rgba(14,14,18,.78);color:#fff;font-size:8px;font-weight:800;padding:1px 4px;border-radius:5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .lf-zmic{position:absolute;right:3px;top:3px;font-size:10px;background:rgba(14,14,18,.7);border-radius:6px;padding:0 3px}
+  .lf-zm .o{display:none}
+  .lf-zt.talk .lf-zm .o{display:inline;animation:lf-talk .28s steps(2) infinite}
+  .lf-zt.talk .lf-zm .c{animation:lf-talkc .28s steps(2) infinite}
+  @keyframes lf-talk{50%{opacity:0}}
+  @keyframes lf-talkc{0%{opacity:0}50%{opacity:1}}
+  .lf-zoff{position:absolute;inset:0;display:none;place-items:center;background:#2a2340}
+  .lf-zoff b{width:38px;height:38px;border-radius:50%;background:var(--violet);border:2px solid #000;display:grid;place-items:center;font-size:18px;color:#fff}
+  .lf-zt.me.off .lf-zoff{display:grid}
+  .lf-zt.me.off .lf-zcam{display:none}
+  .lf-zcam{position:absolute;inset:0}
+  .lf-ztick{position:relative;height:36px;border-radius:9px;background:#0e0e12;border:2px solid #000;overflow:hidden}
+  .lf-ztx{position:absolute;top:50%;left:0;white-space:nowrap;font-size:14px;font-weight:700;color:#e9e2ff;transform:translate(10px,-50%);animation:lf-tick 70s linear forwards;will-change:transform}
+  .lf-ztx b{color:var(--lime)}
+  @keyframes lf-tick{from{transform:translate(10px,-50%)}to{transform:translate(-2600px,-50%)}}
+  .lf-zq{position:relative;min-height:40px;border-radius:12px;background:var(--yellow);color:var(--ink);border:2px solid #000;padding:6px 10px 9px;font-size:12px;line-height:1.2;text-align:center;overflow:hidden}
+  .lf-zq i{position:absolute;left:0;bottom:0;height:4px;width:100%;background:var(--pink);transform-origin:left;animation:lf-zqt linear forwards}
+  @keyframes lf-zqt{to{transform:scaleX(0)}}
+  .lf-zqin{animation:pop-in .3s var(--spring) both}
+  .lf-zbar{display:grid;grid-template-columns:repeat(4,1fr);gap:5px;margin-top:auto}
+  .lf-zbar button,.lf-edits button{display:flex;flex-direction:column;align-items:center;gap:1px;padding:5px 2px;border-radius:12px;border:2px solid #000;background:#2a2340;color:#fff;box-shadow:0 3px 0 #000;transition:background .15s}
+  .lf-zbar button i,.lf-edits button i{font-style:normal;font-size:20px;line-height:1.1}
+  .lf-zbar button small,.lf-edits button small{font-size:8.5px;font-weight:800;line-height:1.1;text-align:center}
+  .lf-zbar button.on{background:var(--violet)}
+  .lf-zbar button.hint{background:var(--lime);color:var(--ink);animation:pulse .6s ease-in-out infinite}
+  .lf-zbar button:active,.lf-edits button:active{transform:translateY(2px);box-shadow:0 1px 0 #000}
+  .lf-appr{display:flex;flex-direction:column;gap:9px;justify-content:center;align-items:stretch;height:100%;padding:12px}
+  .lf-mock{position:relative;align-self:center;width:150px;height:84px;border:2.5px solid var(--ink);border-radius:12px;background:#fff;display:grid;place-items:center;box-shadow:0 3px 0 var(--ink);transition:background .25s}
+  .lf-mlogo{font-family:var(--font-display);font-size:20px;transition:font-size .25s,color .25s}
+  .lf-mcat{position:absolute;right:6px;bottom:2px;font-size:22px;opacity:0;transition:opacity .2s}
+  .lf-mock[data-st=big] .lf-mlogo{font-size:32px}
+  .lf-mock[data-st=color]{background:var(--pink)}
+  .lf-mock[data-st=color] .lf-mlogo{color:var(--blue)}
+  .lf-mock[data-st=cat] .lf-mcat{opacity:1}
+  .lf-mfx{animation:jelly .5s var(--spring)}
+  .lf-client{position:relative;display:flex;align-items:center;gap:8px;background:#fff;border:2px solid var(--ink);border-radius:14px;padding:6px 8px 9px;overflow:hidden}
+  .lf-cava{font-size:24px}
+  .lf-client .lf-says{flex:1;min-height:30px;font-size:12.5px;place-items:center start;text-align:left}
+  .lf-ctimer{position:absolute;left:0;bottom:0;height:4px;width:100%;background:var(--orange);transform-origin:left}
+  @keyframes lf-ct{from{transform:scaleX(1)}to{transform:scaleX(0)}}
+  .lf-edits{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+  .lf-edits button{background:#fff;color:var(--ink);box-shadow:0 3px 0 var(--ink);border-color:var(--ink)}
   `;
   const styleEl = document.createElement("style");
   styleEl.textContent = css;
@@ -620,136 +674,346 @@
     { q: "Почему именно мы?", a: [["Вы мне снитесь", 0.5, "😳", "Нам тоже кто-то снится. Начальник"], ["Близко к дому", 0, "🏡", "А как же миссия?!"], ["Верю в вашу миссию", 1, "✨", "Мы сами в неё не до конца верим. Принято"]] },
   ];
 
-  /* --- Рабочие задачи (мини-игры) --- */
+  /* --- Рабочие задачи (мини-игры) ---
+     Каждая игра: (area, G, ui, ctx) → () => score 0..1. ctx = { lvl, k() — доля прошедшего времени 0..1, sum(text) — итог для экрана результата }.
+     Сложность растёт и внутри раунда (k), и с грейдом (lvl). Премия в game.completeTask пропорциональна score. */
   const TASKS = [
-    { id: "mail", e: "📬", t: "Разбери почту", d: "Тапай письма, не трогай «СРОЧНО!!!»", dur: 10, bg: "c-sky" },
-    { id: "call", e: "📞", t: "Созвон", d: "Сними мьют, когда спросят тебя", dur: 10, bg: "c-lilac" },
-    { id: "report", e: "📊", t: "Отчёт", d: "Лови растущие цифры, падающие не трогай", dur: 9, bg: "c-lime" },
-    { id: "approve", e: "🎨", t: "Согласуй макет", d: "Жми быстрее, чем клиент передумает", dur: 8, bg: "c-pink" },
+    { id: "mail", e: "📬", t: "Разбери почту", d: "Тапай письма. Начальник ⭐ — в приоритете. «СРОЧНО!!!» и 🎣 не трогай", dur: 12, bg: "c-sky" },
+    { id: "call", e: "📞", t: "Созвон", d: "Слушай синергию и реагируй на команды: камера, мьют, «да, согласен»", dur: 20, bg: "c-lilac" },
+    { id: "report", e: "📊", t: "Отчёт", d: "Лови растущие цифры, 💹 — вдвойне. Падающие не трогай", dur: 11, bg: "c-lime" },
+    { id: "approve", e: "🎨", t: "Согласуй макет", d: "Клиент хочет правку — жми нужную кнопку, пока не передумал", dur: 14, bg: "c-pink" },
   ];
   const todayTasks = () => { const d = Vibe.game.info().day; return [0, 1, 2].map((i) => TASKS[(d + i * (1 + (d % 3))) % TASKS.length]); };
 
+  /* --- Портреты участников созвона (дофаминовый вектор, viewBox 0 0 100 100) --- */
+  const ZI = "#1b1430";
+  const zs = `stroke="${ZI}" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"`;
+  const zS = `stroke="${ZI}" stroke-width="3.5" stroke-linejoin="round" stroke-linecap="round"`;
+  const zEye = (x, y, r = 3.2) => `<circle cx="${x}" cy="${y}" r="${r}" fill="${ZI}"/><circle cx="${x + r * 0.35}" cy="${y - r * 0.35}" r="${r * 0.33}" fill="#fff"/>`;
+  const zNose = (x, y) => `<path d="M${x} ${y} C${x - 3.5} ${y + 6} ${x - 4} ${y + 9.5} ${x + 0.5} ${y + 9.5} C${x + 2.6} ${y + 9.5} ${x + 3} ${y + 8} ${x + 2.2} ${y + 6.5}" fill="none" ${zs}/>`;
+  const zMouth = (y = 68) => `<g class="lf-zm"><path class="c" d="M43 ${y} Q50 ${y + 5} 57 ${y}" fill="none" ${zs}/><ellipse class="o" cx="50" cy="${y + 1.5}" rx="5" ry="4" fill="#ff4b3e" ${zs}/></g>`;
+  const zCheeks = (y = 62) => `<ellipse cx="34" cy="${y}" rx="5" ry="3" fill="#ff6bcb" opacity=".7"/><ellipse cx="66" cy="${y}" rx="5" ry="3" fill="#ff6bcb" opacity=".7"/>`;
+  const zShoulders = (fill, extra = "") => `<path d="M10 100 C10 82 26 76 50 76 C74 76 90 82 90 100 Z" fill="${fill}" ${zS}/>${extra}`;
+  const zHead = (skin) => `<ellipse cx="22" cy="54" rx="5" ry="7" fill="${skin}" ${zs}/><ellipse cx="78" cy="54" rx="5" ry="7" fill="${skin}" ${zs}/><ellipse cx="50" cy="52" rx="27" ry="29" fill="${skin}" ${zS}/>`;
+  const ZOOM = [
+    { id: "boss", n: "Геннадий (CEO)", bg: "#8fd8ff", svg: () => `
+      ${zShoulders("#2f5bff", `<path d="M42 76 L50 88 L58 76 Z" fill="#fff" ${zs}/><path d="M48 80 L52 80 L54 98 L50 102 L46 98 Z" fill="#ff4b3e" ${zs}/>`)}
+      ${zHead("#f6c9a3")}
+      <path d="M24 46 C22 36 27 30 32 32 M76 46 C78 36 73 30 68 32" fill="none" stroke="${ZI}" stroke-width="4" stroke-linecap="round"/>
+      <path d="M38 22 Q44 17 50 22" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" opacity=".8"/>
+      <rect x="31" y="44" width="15" height="11" rx="3" fill="#fff" fill-opacity=".45" ${zs}/><rect x="54" y="44" width="15" height="11" rx="3" fill="#fff" fill-opacity=".45" ${zs}/><path d="M46 49 H54" ${zs}/>
+      ${zEye(39, 50, 2.6)}${zEye(61, 50, 2.6)}${zNose(50, 54)}${zCheeks(63)}${zMouth(69)}` },
+    { id: "hr", n: "Алина (HR)", bg: "#ffb3e0", svg: () => `
+      ${zShoulders("#c6ff4d")}
+      <circle cx="50" cy="18" r="11" fill="#8b5cf6" ${zS}/>
+      ${zHead("#d99a6c")}
+      <path d="M23 50 C20 26 36 20 50 22 C64 20 80 26 77 50 C72 36 62 32 50 33 C38 32 28 36 23 50 Z" fill="#8b5cf6" ${zS}/>
+      ${zEye(40, 51)}${zEye(60, 51)}<path d="M35 44 l-3 -3 M65 44 l3 -3" ${zs}/>${zNose(50, 54)}${zCheeks(63)}
+      <g class="lf-zm"><path class="c" d="M40 67 Q50 77 60 67 Z" fill="#fff" ${zs}/><ellipse class="o" cx="50" cy="70" rx="6" ry="5" fill="#ff4b3e" ${zs}/></g>
+      <circle cx="24" cy="64" r="3" fill="#ffd23f" ${zs}/><circle cx="76" cy="64" r="3" fill="#ffd23f" ${zs}/>` },
+    { id: "dev", n: "Тимур (дизайн)", bg: "#c6ff4d", svg: () => `
+      ${zShoulders("#ff8a1f")}
+      ${zHead("#8d5a3b")}
+      <g>${[[28, 34], [36, 26], [46, 22], [56, 22], [65, 26], [72, 34]].map(([x, y]) => `<circle cx="${x}" cy="${y}" r="8" fill="${ZI}"/>`).join("")}</g>
+      <path d="M20 54 C18 26 82 26 80 54" fill="none" stroke="${ZI}" stroke-width="4"/>
+      <rect x="15" y="48" width="9" height="15" rx="4" fill="#ff6bcb" ${zs}/><path d="M20 62 Q24 74 38 72" fill="none" ${zs}/><circle cx="39" cy="72" r="2.5" fill="${ZI}"/>
+      ${zEye(40, 51)}${zEye(60, 51)}${zNose(50, 54)}${zMouth(69)}` },
+    { id: "ana", n: "Ольга (аналитика)", bg: "#ffd23f", svg: () => `
+      ${zShoulders("#7cf5c8")}
+      <path d="M22 50 C18 70 20 90 28 96 L38 78 Z M78 50 C82 70 80 90 72 96 L62 78 Z" fill="#ff4b3e" ${zS}/>
+      ${zHead("#f6c9a3")}
+      <path d="M23 52 C20 24 80 24 77 52 C70 40 60 34 52 32 C46 40 34 44 23 52 Z" fill="#ff4b3e" ${zS}/>
+      <path d="M34 52 Q39 55 44 52 M56 52 Q61 55 66 52" fill="none" stroke="${ZI}" stroke-width="3" stroke-linecap="round"/>
+      <circle cx="39" cy="52" r="8" fill="none" ${zs}/><circle cx="61" cy="52" r="8" fill="none" ${zs}/><path d="M47 52 H53" ${zs}/>
+      ${zNose(50, 55)}${zMouth(70)}
+      <text x="72" y="28" font-family="Manrope, sans-serif" font-weight="900" font-size="11" fill="${ZI}">z</text><text x="80" y="20" font-family="Manrope, sans-serif" font-weight="900" font-size="8" fill="${ZI}">z</text>` },
+    { id: "cat", n: "Кот бухгалтера", bg: "#c9b6ff", svg: () => `
+      <path d="M14 100 C14 80 30 72 50 72 C70 72 86 80 86 100 Z" fill="#ff8a1f" ${zS}/>
+      <path d="M24 40 L22 14 L42 30 Z M76 40 L78 14 L58 30 Z" fill="#ff8a1f" ${zS}/><path d="M27 34 L26 22 L36 30 Z M73 34 L74 22 L64 30 Z" fill="#ffb3e0"/>
+      <ellipse cx="50" cy="52" rx="30" ry="26" fill="#ff8a1f" ${zS}/>
+      <path d="M44 32 L46 40 M50 30 V40 M56 32 L54 40" stroke="${ZI}" stroke-width="2.5" stroke-linecap="round"/>
+      <ellipse cx="38" cy="50" rx="6" ry="7" fill="#c6ff4d" ${zs}/><ellipse cx="62" cy="50" rx="6" ry="7" fill="#c6ff4d" ${zs}/><rect x="37" y="45" width="2.4" height="10" rx="1.2" fill="${ZI}"/><rect x="61" y="45" width="2.4" height="10" rx="1.2" fill="${ZI}"/>
+      <path d="M47 58 L53 58 L50 62 Z" fill="#ff6bcb" ${zs}/><path d="M50 62 Q46 67 42 64 M50 62 Q54 67 58 64" fill="none" ${zs}/>
+      <path d="M30 60 L14 58 M30 64 L15 67 M70 60 L86 58 M70 64 L85 67" stroke="${ZI}" stroke-width="2" stroke-linecap="round"/>` },
+  ];
+  const zMe = (fem) => `
+    ${zShoulders("#ff6bcb")}
+    ${zHead("#f6c9a3")}
+    ${fem ? `<path d="M22 54 C16 74 22 92 30 96 L36 70 Z M78 54 C84 74 78 92 70 96 L64 70 Z" fill="#7a4a2b" ${zS}/>` : ""}
+    <path d="M23 50 C20 24 80 22 77 50 C72 38 58 34 46 36 C36 37 28 42 23 50 Z" fill="#7a4a2b" ${zS}/>
+    ${zEye(40, 52)}${zEye(60, 52)}${zNose(50, 55)}${zCheeks(64)}${zMouth(70)}
+    <path d="M30 80 Q50 72 70 80" fill="none" stroke="#fff" stroke-width="3" stroke-dasharray="1 5" stroke-linecap="round"/>`;
+  const zSvg = (body, bg) => `<svg viewBox="0 0 100 100" preserveAspectRatio="xMidYMax slice"><rect width="100" height="100" fill="${bg}"/>${body}</svg>`;
+
+  // Бегущая строка созвона: генератор корпоративного текста (дочитать нельзя — фраза меняется раньше, чем доедет)
+  const BS_A = ["Коллеги, давайте синхронизируемся по", "Если коротко, то в рамках", "Я бы хотел ещё раз подсветить", "Важно, чтобы мы все одинаково понимали", "Предлагаю зафиксировать, что", "Возвращаясь к вопросу про", "Чтобы не растекаться, обсудим"];
+  const BS_B = ["квартальные OKR", "дорожную карту экосистемы", "синергию между вертикалями", "клиентский путь в моменте", "оптимизацию ресурсов команды", "нашу ДНК и ценности", "стратегию роста через удержание", "фреймворк приоритизации"];
+  const BS_C = ["с учётом вводных от смежников", "и без потери фокуса на ценности", "в парадигме data-driven подхода", "с прицелом на следующий спринт", "в логике «быстрых побед»", "через призму вовлечённости", "но это не точно, давайте офлайн"];
+  const BS_D = ["Там есть нюанс, к нему вернёмся", "Это, кстати, тоже про культуру", "Ну вы понимаете, о чём я", "Я сейчас поделюсь экраном, видно?", "Короче, давайте вынесем в отдельную встречу", "И это только первый слайд из сорока"];
+  const bsLine = () => `${pick(BS_A)} ${pick(BS_B)} ${pick(BS_C)}. ${pick(BS_D)}. ${pick(BS_A)} ${pick(BS_B)}, ${pick(BS_C)}…`;
+
   const GAMES = {
-    mail(area, G, ui) {
-      let good = 0, bad = 0;
-      const GOOD = ["Отчёт за квартал", "Созвон в 15:00", "Счёт на оплату", "Обед в пятницу?", "Новый тикет", "Доступ к VPN", "Отпуск согласован?"];
-      const SPAM = ["СРОЧНО!!!", "Re: Fwd: СРОЧНО!!!", "ВСЕМ!!! ВАЖНО", "Срочно!!! (нет)"];
+    mail(area, G, ui, ctx) {
+      const goal = 8 + Math.min(4, ctx.lvl - 1);
+      let good = 0, bad = 0, missedBoss = 0, combo = 0;
+      area.insertAdjacentHTML("beforeend", `<div class="lf-goal">Цель: ${goal} писем · <span data-cmb></span></div>`);
+      const cmb = $(area, "[data-cmb]");
+      const GOOD = ["Отчёт за квартал", "Созвон в 15:00", "Счёт на оплату", "Обед в пятницу?", "Новый тикет", "Доступ к VPN", "Отпуск согласован?", "Пропуск на парковку", "Протокол встречи", "ДР у Светы 🎂"];
+      const BOSS = ["Зайди ко мне", "Это срочно, но не горит", "Глянь вечером", "Можешь до 18:00?"];
+      const SPAM = ["СРОЧНО!!!", "Re: Fwd: СРОЧНО!!!", "ВСЕМ!!! ВАЖНО", "Срочно!!! (нет)", "Ответить всем: +1"];
+      const PHISH = ["Ваш бонус! Подтвердите пароль", "Бухгалтерия: скачайте акт.exe", "IT: срочно смените пароль тут"];
+      const kinds = () => {
+        const k = ctx.k(), r = Math.random();
+        const ph = ctx.lvl >= 3 || k > 0.45 ? 0.12 : 0;
+        if (r < 0.12 + k * 0.05) return "boss";
+        if (r < 0.12 + k * 0.05 + ph) return "phish";
+        if (r < 0.42 + k * 0.08 + ph) return "spam";
+        return "good";
+      };
       const spawn = () => {
-        const spam = Math.random() < 0.33;
+        const kind = kinds();
         const b = document.createElement("button");
-        b.className = "lf-gi lf-mail" + (spam ? " spam" : "");
-        b.innerHTML = `<span>${spam ? "🔥" : "📧"}</span>${spam ? pick(SPAM) : pick(GOOD)}`;
+        b.className = `lf-gi lf-mail ${kind}`;
+        const txt = kind === "boss" ? `<small>Начальник</small>${pick(BOSS)}` : kind === "phish" ? pick(PHISH) : kind === "spam" ? pick(SPAM) : pick(GOOD);
+        b.innerHTML = `<span>${{ boss: "⭐", phish: "🎣", spam: "🔥", good: "📧" }[kind]}</span>${txt}`;
         b.style.left = rnd(3, 50) + "%";
-        b.style.top = rnd(3, 80) + "%";
+        b.style.top = rnd(14, 80) + "%";
         area.appendChild(b);
         const gone = () => { b.classList.add("out"); G.to(() => b.remove(), 260); };
         b.addEventListener("pointerdown", (e) => {
           e.preventDefault();
           if (b.dataset.done) return;
           b.dataset.done = 1;
-          if (spam) { bad++; FX.shake(b); FX.toast("Ты {открыл|открыла} «СРОЧНО!!!». Теперь ты в 14 чатах", "🔥", 1400); }
-          else { good++; FX.burst(b, { emojis: ["✅", "📬"], count: 5, spread: 50 }); }
+          if (kind === "spam" || kind === "phish") {
+            bad += kind === "phish" ? 1.5 : 1; combo = 0;
+            FX.shake(b);
+            FX.toast(kind === "phish" ? "Это был фишинг. IT уже пишет тебе. Капсом" : "Ты {открыл|открыла} «СРОЧНО!!!». Теперь ты в 14 чатах", kind === "phish" ? "🎣" : "🔥", 1400);
+          } else {
+            combo++;
+            good += kind === "boss" ? 2 : 1 + (combo >= 5 ? 0.5 : 0);
+            FX.burst(b, { emojis: kind === "boss" ? ["⭐", "✅"] : ["✅", "📬"], count: 5, spread: 50 });
+          }
+          cmb.textContent = combo >= 5 ? `серия ×1,5 🔥` : combo >= 2 ? `серия ${combo}` : "";
           gone();
-          ui(good - bad);
+          ui(`${Math.floor(good)}/${goal}`);
+          if (good >= goal && !area.dataset.won) { area.dataset.won = 1; cmb.textContent = "цель выполнена ✅"; FX.sound.success(); ctx.end(); }
         });
-        G.to(() => { if (!b.dataset.done) { b.dataset.done = 1; gone(); } }, 1750);
+        const life = Math.max(1000, 1900 - ctx.k() * 700 - (ctx.lvl - 2) * 80) * (kind === "boss" ? 0.75 : 1);
+        G.to(() => { if (!b.dataset.done) { b.dataset.done = 1; if (kind === "boss") { missedBoss++; combo = 0; } gone(); } }, life);
       };
-      spawn();
-      G.every(spawn, 620);
-      return () => clamp((good - bad * 1.5) / 9);
+      ui(`0/${goal}`);
+      (function loop() { spawn(); G.to(loop, Math.max(330, 700 - ctx.k() * 330 - (ctx.lvl - 2) * 25)); })();
+      return () => {
+        ctx.sum(`Писем разобрано: ${Math.floor(good)} из ${goal}${bad ? ` · ошибок: ${bad}` : ""}${missedBoss ? ` · начальник без ответа: ${missedBoss}` : ""}`);
+        return clamp((good - bad * 1.5 - missedBoss * 0.5) / goal);
+      };
     },
-    call(area, G, ui) {
-      const me = S().name || (S().profile && S().profile.name) || "коллега";
-      area.innerHTML = `<div class="lf-call"><div class="lf-faces">${["👨‍💼", "👩‍💻", "🧔", "🐈"].map((f) => `<span>${f}</span>`).join("")}</div><div class="lf-says" data-says>Начальник рассказывает про синергию…</div><button class="lf-mute" data-mute>🔇</button></div>`;
-      const BLAH = ["…и поэтому синергия…", "…давайте возьмём в работу…", "…кто-нибудь пошарит экран?…", "…вас не слышно, вы на мьюте…", "…вернёмся к KPI…", "…это можно было письмом…"];
-      const mute = $(area, "[data-mute]"), says = $(area, "[data-says]");
-      let open = false, hits = 0, fails = 0, prompts = 0, winId = null;
-      const blah = G.every(() => { if (!open) says.textContent = pick(BLAH); }, 1300);
-      const schedule = () => G.to(ask, rnd(900, 1700));
-      function ask() {
-        prompts++; open = true;
-        says.textContent = `…а что думает ${me}? 👀`;
-        mute.classList.add("hot");
-        FX.bump(says);
-        winId = G.to(() => {
-          if (!open) return;
-          open = false; fails++;
-          mute.classList.remove("hot");
-          says.textContent = "…видимо, связь. Едем дальше 😐";
-          schedule();
-        }, 1350);
+
+    call(area, G, ui, ctx) {
+      const fem = Vibe.g ? Vibe.g(false, true) : false;
+      const myName = (S().profile && S().profile.name) || S().name || "Ты";
+      area.classList.add("lf-zoomarea");
+      area.innerHTML = `<div class="lf-zoom">
+        <div class="lf-ztop"><span class="lf-rec">● REC</span><span>Синк по синку · 47 участников</span><span data-zt>00:00</span></div>
+        <div class="lf-zgrid">
+          ${ZOOM.slice(0, 5).map((p, i) => `<div class="lf-zt ${i === 0 ? "talk" : ""}" data-z="${p.id}">${zSvg(p.svg(), p.bg)}<span class="lf-zn">${p.n}</span>${i === 3 ? `<span class="lf-zmic">🔇</span>` : ""}</div>`).join("")}
+          <div class="lf-zt me off" data-z="me"><div class="lf-zoff"><b>${esc(String(myName).slice(0, 1).toUpperCase())}</b></div><div class="lf-zcam">${zSvg(zMe(fem), "#7cf5c8")}</div><span class="lf-zn">${esc(myName)} (вы)</span><span class="lf-zmic" data-mymic>🔇</span></div>
+        </div>
+        <div class="lf-ztick"><div class="lf-ztx" data-tx></div></div>
+        <div class="lf-zq" data-q><b>Пока просто слушай и делай вид, что понимаешь 🙂</b></div>
+        <div class="lf-zbar">
+          <button data-b="mic"><i data-micic>🔇</i><small>Микрофон</small></button>
+          <button data-b="cam"><i data-camic>📷</i><small>Камера</small></button>
+          <button data-b="yes"><i>👍</i><small>«Да, согласен»</small></button>
+          <button data-b="hand"><i>✋</i><small>Рука</small></button>
+        </div>
+      </div>`;
+      const tx = $(area, "[data-tx]"), q = $(area, "[data-q]"), me = $(area, '[data-z="me"]');
+      let mic = false, cam = false, open = null, hits = 0, fails = 0, prompts = 0, winId = null, t0 = performance.now();
+      // Говорящий — с «живым» ртом; бегущая строка сменяется раньше, чем дочитаешь
+      const talkers = ["boss", "boss", "hr", "dev", "ana"];
+      let talker = "boss";
+      const setTalk = (id) => { talker = id; $$(area, ".lf-zt").forEach((t) => t.classList.toggle("talk", t.dataset.z === id)); };
+      const speaker = () => (ZOOM.find((p) => p.id === talker) || ZOOM[0]).n.split(" ")[0];
+      function newLine() {
+        tx.style.animation = "none"; void tx.offsetWidth;
+        tx.innerHTML = `<b>${speaker()}:</b> ${bsLine()} ${bsLine()}`;
+        tx.style.animation = "";
       }
-      mute.addEventListener("pointerdown", (e) => {
+      newLine();
+      G.every(() => { if (Math.random() < 0.4) setTalk(pick(talkers)); newLine(); }, 5200);
+      G.every(() => { const s = Math.floor((performance.now() - t0) / 1000) + 2843; $(area, "[data-zt]").textContent = `${String(Math.floor(s / 60)).padStart(2, "0")}:${String(s % 60).padStart(2, "0")}`; }, 1000);
+      const setMic = (v) => { mic = v; $(area, "[data-micic]").textContent = v ? "🎙️" : "🔇"; $(area, "[data-mymic]").textContent = v ? "🎙️" : "🔇"; $(area, '[data-b="mic"]').classList.toggle("on", v); };
+      const setCam = (v) => { cam = v; me.classList.toggle("off", !v); $(area, '[data-b="cam"]').classList.toggle("on", v); };
+      // Команды зависят от текущего состояния: камера/мьют переключаются туда-обратно
+      const QTE = () => {
+        const opts = [
+          cam ? { t: "Выключи камеру — ты в пижаме!", b: "cam", fx: () => setCam(false) } : { t: `${speaker()}: «Включите камеры, хочу видеть лица»`, b: "cam", fx: () => setCam(true) },
+          mic ? { t: "Замьютьcя! У соседа дрель", b: "mic", fx: () => setMic(false) } : { t: `«А что думает ${esc(myName)}?» — сними мьют`, b: "mic", fx: () => setMic(true) },
+          { t: `${speaker()}: «Все согласны?»`, b: "yes", fx: () => {} },
+          { t: "«Кто возьмёт задачу?» — подними руку", b: "hand", fx: () => {} },
+        ];
+        if (ctx.k() > 0.5) opts.push({ t: "«Дайте обратную связь… да, согласен?»", b: "yes", fx: () => {} });
+        return pick(opts);
+      };
+      const win = () => Math.max(1000, 2100 - ctx.k() * 900 - (ctx.lvl - 2) * 90);
+      function ask() {
+        const o = QTE();
+        prompts++; open = o;
+        q.hidden = false;
+        q.innerHTML = `<b>${o.t}</b><i style="animation-duration:${win()}ms"></i>`;
+        q.classList.remove("lf-zqin"); void q.offsetWidth; q.classList.add("lf-zqin");
+        $$(area, ".lf-zbar button").forEach((b) => b.classList.toggle("hint", ctx.lvl <= 2 && b.dataset.b === o.b));
+        winId = G.to(() => {
+          if (open !== o) return;
+          open = null; fails++;
+          q.innerHTML = `<b>…видимо, связь. Едем дальше 😐</b>`;
+          $$(area, ".lf-zbar button").forEach((b) => b.classList.remove("hint"));
+          ui(`${hits}/${prompts}`);
+          next();
+        }, win());
+      }
+      const next = () => G.to(ask, rnd(1200, 2200) - ctx.k() * 500);
+      $$(area, ".lf-zbar button").forEach((btn) => btn.addEventListener("pointerdown", (e) => {
         e.preventDefault();
-        if (open) {
-          open = false; hits++;
-          G.stop(winId);
-          mute.classList.remove("hot");
-          mute.textContent = "🎙️";
-          says.textContent = pick(["«Полностью согласен с предыдущим оратором» 👏", "«Давайте синк после синка» 🔥", "«Я бы добавил ценности» ✨"]);
-          FX.burst(mute, { emojis: ["🎙️", "✨", "👏"], count: 8, spread: 70 });
-          G.to(() => { mute.textContent = "🔇"; }, 600);
-          ui(hits);
-          schedule();
-        } else {
+        const b = btn.dataset.b;
+        FX.bump(btn);
+        if (!open) {
           fails++;
-          FX.shake(mute);
-          says.textContent = "Ты {перебил|перебила} начальника 😬";
+          FX.shake(btn);
+          q.hidden = false;
+          q.innerHTML = `<b>${b === "yes" ? "Ты {согласился|согласилась} с тишиной. Все посмотрели" : b === "hand" ? "Ты {поднял|подняла} руку. Тебе дали задачу. Три" : `Ты {перебил|перебила} ${speaker()}а 😬`}</b>`;
+          ui(`${hits}/${prompts}`);
+          return;
         }
-      });
-      schedule();
-      void blah;
-      return () => clamp(hits / Math.max(3, prompts) - fails * 0.12);
+        G.stop(winId);
+        $$(area, ".lf-zbar button").forEach((x) => x.classList.remove("hint"));
+        if (b === open.b) {
+          hits++; open.fx(); open = null;
+          q.innerHTML = `<b>${pick(["«Да-да, полностью согласен с предыдущим оратором» 👏", "Начальник кивнул. Это успех", "«Отличная мысль, давайте синк после синка» 🔥", "Ты в кадре и в моменте ✨"])}</b>`;
+          FX.burst(btn, { emojis: ["✨", "👏", "💼"], count: 8, spread: 70 });
+          if (b === "cam" && cam) FX.bump(me);
+        } else {
+          fails++; open = null;
+          FX.shake(btn);
+          q.innerHTML = `<b>${pick(["Не та кнопка. Все видели твой потолок", "Ты {включил|включила} не то. Кот бухгалтера осуждает", "Мимо. «Вас не слышно, вы на мьюте»"])}</b>`;
+        }
+        ui(`${hits}/${prompts}`);
+        next();
+      }));
+      ui("0/0");
+      // Первые секунды — только слушать: QTE начинается, когда текст уже утомил
+      G.to(ask, 4200);
+      return () => {
+        ctx.sum(`Реакций вовремя: ${hits} из ${prompts}${fails ? ` · промахов: ${fails}` : ""} · дочитано синергии: 0%`);
+        return clamp(hits / Math.max(3, prompts) - fails * 0.08);
+      };
     },
-    report(area, G, ui) {
+
+    report(area, G, ui, ctx) {
+      const goal = 9 + Math.min(4, ctx.lvl - 1);
       let good = 0, bad = 0;
-      G.every(() => {
-        const up = Math.random() < 0.62;
+      area.insertAdjacentHTML("beforeend", `<div class="lf-goal">Цель: +${goal} роста · 💹 = ×2</div>`);
+      ui(`0/${goal}`);
+      const spawn = () => {
+        const k = ctx.k();
+        const r = Math.random();
+        const kind = r < 0.1 ? "x2" : r < 0.6 - k * 0.1 ? "up" : "down";
         const b = document.createElement("button");
-        b.className = "lf-gi lf-num " + (up ? "up" : "down");
-        b.textContent = up ? `📈 +${rnd(3, 40)}%` : `📉 −${rnd(3, 30)}%`;
-        b.style.left = rnd(3, 66) + "%";
+        b.className = "lf-gi lf-num " + (kind === "down" ? "down" : "up") + (kind === "x2" ? " x2" : "");
+        b.textContent = kind === "x2" ? `💹 ×2` : kind === "up" ? `📈 +${rnd(3, 40)}%` : pick([`📉 −${rnd(3, 30)}%`, `📉 −${rnd(3, 30)}%`, `📊 «скорректировано»`]);
+        const lx = rnd(4, 60);
+        b.style.left = lx + "%";
         b.style.top = "100%";
         area.appendChild(b);
-        const anim = b.animate([{ transform: "translateY(0)" }, { transform: `translateY(-${area.clientHeight + 70}px)` }], { duration: rnd(2300, 3300), easing: "linear" });
+        const speed = Math.max(1300, 3000 - k * 1300 - (ctx.lvl - 2) * 120) * (kind === "x2" ? 0.8 : 1);
+        const sway = lx < 30 ? rnd(0, 30) : rnd(-30, 0);
+        const anim = b.animate([{ transform: "translate(0,0)" }, { transform: `translate(${sway}px,-${area.clientHeight + 70}px)` }], { duration: speed, easing: "linear" });
         anim.onfinish = () => b.remove();
         b.addEventListener("pointerdown", (e) => {
           e.preventDefault();
           if (b.dataset.done) return;
           b.dataset.done = 1;
-          if (up) { good++; FX.burst(b, { emojis: ["📈", "✨", "💹"], count: 6, spread: 55 }); }
+          if (kind !== "down") { good += kind === "x2" ? 2 : 1; FX.burst(b, { emojis: ["📈", "✨", "💹"], count: 6, spread: 55 }); }
           else { bad++; FX.burst(b, { emojis: ["📉", "💀"], count: 5, spread: 50 }); FX.sound.error(); }
           anim.cancel(); b.remove();
-          ui(good - bad);
+          ui(`${good}/${goal}`);
+          if (good >= goal && !area.dataset.won) { area.dataset.won = 1; FX.sound.success(); FX.burst(area, { emojis: ["📈", "💹", "✨"], count: 14 }); ctx.end(); }
         });
-      }, 500);
-      return () => clamp((good - bad * 1.5) / 10);
+      };
+      (function loop() { spawn(); G.to(loop, Math.max(260, 520 - ctx.k() * 240 - (ctx.lvl - 2) * 20)); })();
+      return () => {
+        ctx.sum(`Рост в отчёте: +${good} из ${goal}${bad ? ` · падений попало в отчёт: ${bad}` : ""}`);
+        return clamp((good - bad * 1.5) / goal);
+      };
     },
-    approve(area, G, ui) {
-      area.innerHTML = `<div class="lf-appr"><div class="lf-mock emo" data-mock>🖼️</div><div class="progress"><i data-ap style="--p:0%;transition:width .12s linear"></i></div><button class="btn black xl block" data-tapme>Согласовать! 👆</button><div class="lf-says" data-says>Клиент смотрит макет…</div></div>`;
-      const CL = ["А можно логотип побольше?", "Сделайте, чтобы было «вау»", "Давайте синий, но красный", "Верните как в первой версии", "Шрифт какой-то грустный", "А если добавить котика?"];
-      const bar = $(area, "[data-ap]"), says = $(area, "[data-says]"), mock = $(area, "[data-mock]");
-      let v = 0, max = 0, taps = 0, done = false;
-      const draw = () => { bar.style.setProperty("--p", v + "%"); max = Math.max(max, v); };
-      $(area, "[data-tapme]").addEventListener("pointerdown", (e) => {
-        e.preventDefault();
+
+    approve(area, G, ui, ctx) {
+      const EDITS = {
+        big: { b: "🔍", l: "Крупнее", q: ["А можно логотип побольше?", "Цену покрупнее, люди не видят", "Сделайте, чтобы было «вау» (крупно)"] },
+        color: { b: "🎨", l: "Цвет", q: ["Давайте синий, но красный", "Цвет какой-то грустный", "Можно цвет как у конкурентов, но наш?"] },
+        cat: { b: "😺", l: "Котика", q: ["А если добавить котика?", "Не хватает эмоции. Котик?", "Мой сын говорит, нужен кот"] },
+        undo: { b: "↩️", l: "Как было", q: ["Верните как в первой версии", "Нет, лучше как было вчера", "Откатите всё, я передумал"] },
+      };
+      const keys = Object.keys(EDITS);
+      area.innerHTML = `<div class="lf-appr">
+        <div class="lf-mock" data-mock><span class="lf-mlogo">LOGO</span><span class="lf-mcat">😺</span></div>
+        <div class="lf-client"><span class="lf-cava">🧑‍💼</span><div class="lf-says" data-says>Клиент смотрит макет…</div><i class="lf-ctimer" data-ct></i></div>
+        <div class="progress"><i data-ap style="--p:0%;transition:width .2s"></i></div>
+        <div class="lf-edits">${keys.map((k) => `<button data-e="${k}"><i>${EDITS[k].b}</i><small>${EDITS[k].l}</small></button>`).join("")}</div>
+      </div>`;
+      const bar = $(area, "[data-ap]"), says = $(area, "[data-says]"), mock = $(area, "[data-mock]"), ct = $(area, "[data-ct]");
+      let v = 0, max = 0, want = null, done = false, ok = 0, wrong = 0, late = 0, wid = null, finishedAt = 0;
+      const draw = () => { bar.style.setProperty("--p", v + "%"); max = Math.max(max, v); ui(`${Math.round(v)}%`); };
+      const life = () => Math.max(1100, 2700 - ctx.k() * 1200 - (ctx.lvl - 2) * 120);
+      function demand() {
         if (done) return;
-        taps++;
-        v = Math.min(100, v + 5);
-        if (taps % 4 === 0) FX.bump(mock);
+        const prev = want;
+        do { want = pick(keys); } while (want === prev && Math.random() < 0.7);
+        says.textContent = `«${pick(EDITS[want].q)}»`;
+        FX.bump(says);
+        const L = life();
+        ct.style.animation = "none"; void ct.offsetWidth; ct.style.animation = `lf-ct ${L}ms linear forwards`;
+        wid = G.to(() => { if (done) return; late++; v = Math.max(0, v - 8); draw(); says.textContent = "«Вы меня вообще слышите?» 😤"; FX.shake(mock); G.to(demand, 500); }, L);
+      }
+      $$(area, "[data-e]").forEach((btn) => btn.addEventListener("pointerdown", (e) => {
+        e.preventDefault();
+        if (done || !want) return;
+        FX.bump(btn);
+        G.stop(wid);
+        const k = btn.dataset.e;
+        if (k === want) {
+          ok++;
+          v = Math.min(100, v + Math.max(8, 12 - (ctx.lvl - 2)));
+          mock.dataset.st = k;
+          mock.classList.remove("lf-mfx"); void mock.offsetWidth; mock.classList.add("lf-mfx");
+          FX.burst(btn, { emojis: ["✨", EDITS[k].b], count: 6, spread: 50 });
+        } else {
+          wrong++;
+          v = Math.max(0, v - 12);
+          FX.shake(btn);
+          says.textContent = pick(["«Я не это имел в виду»", "«Стало хуже. Как вы это сделали?»", "«Давайте созвонимся и обсудим»"]);
+        }
+        want = null;
         draw();
-        ui(Math.round(v));
         if (v >= 100) {
-          done = true;
+          done = true; finishedAt = ctx.k();
           says.textContent = "СОГЛАСОВАНО ✅ (до завтра)";
-          mock.textContent = "🏆";
+          ct.style.animation = "none";
           FX.burst(mock, { emojis: ["✅", "🎨", "✨", "🏆"], count: 18 });
           FX.sound.success();
+          ctx.end(1200);
+          return;
         }
-      });
-      G.every(() => { if (!done) { v = Math.max(0, v - 1); draw(); } }, 100);
-      G.every(() => { if (done) return; says.textContent = pick(CL); FX.bump(says); v = Math.max(0, v - 8); draw(); }, 2100);
-      return () => (done ? 1 : clamp((max / 100) * 0.9));
+        G.to(demand, 380);
+      }));
+      G.to(demand, 300);
+      // Клиент остывает: согласование само тает
+      G.every(() => { if (!done && v > 0) { v = Math.max(0, v - 1); draw(); } }, 450);
+      return () => {
+        ctx.sum(`Правок угадано: ${ok}${wrong ? ` · мимо: ${wrong}` : ""}${late ? ` · клиент не дождался: ${late}` : ""}${done ? ` · согласовано за ${Math.round(finishedAt * 100)}% времени` : ` · согласование: ${Math.round(max)}%`}`);
+        return done ? clamp(0.85 + (1 - finishedAt) * 0.3) : clamp((max / 100) * 0.85 - wrong * 0.03);
+      };
     },
   };
 
@@ -1233,7 +1497,7 @@
       }
       function runTask(type) {
         const G = bag();
-        let finished = false, result = null;
+        let finished = false, result = null, summary = "";
         Vibe.modal(`
           <div class="lf-gtop"><b style="font-size:16px">${type.e} ${type.t}</b><span class="timer-pill">⏱ <span data-gt>${type.dur},0</span></span></div>
           <div class="lf-tbar"><i data-gbar></i></div>
@@ -1257,19 +1521,21 @@
               FX.bump(cd);
               G.to(() => {
                 cd.remove();
-                result = GAMES[type.id](area, G, ui);
                 const t0 = performance.now(), dur = type.dur * 1000;
+                let endNow = false;
+                const ctx = { lvl: (S().job && S().job.level) || 2, k: () => clamp((performance.now() - t0) / dur), sum: (t) => { summary = t; }, end: (ms = 900) => G.to(() => { endNow = true; }, ms) };
+                result = GAMES[type.id](area, G, ui, ctx);
                 const tm = G.every(() => {
                   const k = clamp((performance.now() - t0) / dur);
                   $(m, "[data-gbar]").style.transform = `scaleX(${1 - k})`;
                   $(m, "[data-gt]").textContent = dec(Math.max(0, (dur - (performance.now() - t0)) / 1000));
-                  if (k >= 1) {
+                  if (k >= 1 || endNow) {
                     G.stop(tm);
                     finished = true;
                     const sc = result ? result() : 0;
                     G.clear();
                     close();
-                    finishTask(sc);
+                    finishTask(sc, summary);
                   }
                 }, 100);
               }, 450);
@@ -1277,7 +1543,7 @@
           },
         });
       }
-      function finishTask(score) {
+      function finishTask(score, summary = "") {
         const prev = (S().job && S().job.perf) || 0;
         const res = Vibe.game.completeTask(score);
         if (!res) { FX.toast("Задачи на сегодня закончились", "🌙"); paint(); return; }
@@ -1288,6 +1554,7 @@
         T.to(() => Vibe.modal(`
           <div class="m-emo float">${g[0]}</div><div class="display">${g[1]}</div>
           <div class="big-num" style="font-size:44px;margin:6px 0" data-sc>${Math.round(score * 100)}%</div>
+          ${summary ? `<div class="lf-note" style="margin:0 0 10px;text-align:left">${summary}</div>` : ""}
           <p>${g[2]}. Премия <b style="color:var(--ink)">+${rub(res.bonus)}</b> придёт с зарплатой 30-го.</p>
           <div class="progress" style="margin:0 0 6px;height:16px"><i data-rp style="--p:${prev}%;background:var(--grad)"></i></div>
           <div class="lf-mini" style="margin-bottom:14px">До повышения: ${res.perf}% из 100 · ${where}</div>
